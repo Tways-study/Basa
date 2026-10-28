@@ -1,0 +1,69 @@
+# Secrets: keys live in .env.local only. Only .env.example (names, no values) is committed.
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+*.p12
+*.pfx
+*.crt
+*.cer
+id_rsa*
+id_ed25519*
+credentials.json
+service-account*.json
+*secret*.json
+.npmrc
+.netrc
+
+# Supabase local state (the CLI writes keys and temp data here; migrations/ stays tracked)
+supabase/.temp/
+supabase/.branches/
+supabase/.env
+supabase/config.toml.local
+
+# Claude Code local settings (project .mcp.json and CLAUDE.md stay tracked)
+.claude/settings.local.json
+.claude/*.local.*
+
+# Vercel
+.vercel
+
+# Dependencies
+node_modules/
+.pnp
+.pnp.*
+.yarn/*
+
+# Next.js
+.next/
+out/
+next-env.d.ts
+
+# Build and test output
+build/
+coverage/
+*.tsbuildinfo
+playwright-report/
+test-results/
+blob-report/
+playwright/.cache/
+
+# Eval output that may embed raw model responses; commit results.json deliberately instead
+eval/raw/
+eval/tmp/
+
+# Logs
+*.log
+npm-debug.log*
+pnpm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# OS and editor
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/*
+!.vscode/extensions.json
+*.swp
