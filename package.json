@@ -10,7 +10,10 @@
     "lint": "eslint",
     "test": "vitest run --passWithNoTests",
     "test:e2e": "playwright test --pass-with-no-tests",
-    "eval": "tsx eval/run.ts"
+    "eval": "tsx eval/run.ts",
+    "smoke:sam": "tsx --env-file=.env.local scripts/smoke-sam.ts",
+    "smoke:spark": "tsx --env-file=.env.local scripts/smoke-spark.ts",
+    "smoke:spark-open": "tsx --env-file=.env.local scripts/smoke-spark-open.ts"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.118.0",
