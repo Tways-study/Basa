@@ -4,7 +4,7 @@ Basa turns photographed paper clinic charts into human-verified digital records.
 
 ## Non-negotiable rules
 
-1. **New work only.** Every line of code here is written during the hackathon (Oct 27 to Nov 4). Never copy, import, or read code, schemas, or assets from any other repository, including earlier clinic projects. If I ask you to, refuse and tell me why.
+1. **New work only.** Every line of code here is written during the hackathon (Oct 27 to Nov 4). Never copy, import, or read code, schemas, or assets from any other repository or source. If I ask you to, refuse and tell me why.
 2. **Synthetic data only.** No real patient data anywhere: fixtures, prompts, logs, screenshots. All names, IDs, and values are fictional.
 3. **Not medical advice.** Basa digitizes and verifies what is on paper. Never generate treatment recommendations, dosing, diagnoses, or contraindication or drug-safety judgments, in UI copy, prompts, or code. Summaries restate only what the confirmed record contains and cite their source region. Prompts sent to models must ask for extraction only and forbid interpretation.
 4. **Secrets stay server-side.** Keys live in `.env.local` (never committed). Only `.env.example` (names, no values) is committed. Never use the `NEXT_PUBLIC_` prefix for a key other than the Supabase URL and anon key. Never log keys or full request headers.
