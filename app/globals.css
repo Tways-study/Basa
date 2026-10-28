@@ -1,0 +1,16 @@
+@import "tailwindcss";
+
+/* Palette from CLAUDE.md. Color carries meaning only: green = agreed, amber = needs a human, red = unreadable or failed. */
+:root {
+  --paper: #f4efe6;
+  --ink: #1b1a17;
+  --line: #d9d2c3;
+  --verified: #2f6b4f;
+  --flag: #b7791f;
+  --stamp: #c8341f;
+}
+
+body {
+  background: var(--paper);
+  color: var(--ink);
+}
