@@ -1,0 +1,178 @@
+# Basa
+
+Photograph a paper clinic chart. Two Meta models read it. A person settles every number they disagree on.
+
+Basa turns photographed paper clinic charts into human-verified digital records. It is our entry for the **Meta Global AI Developer Hackathon** (Build for Your World).
+
+> **New codebase, nothing reused, synthetic data only.**
+> Every line of code here was written during the hackathon (Oct 27 to Nov 4, 2026). No code, schemas, or assets come from any other repository. No real patient data exists anywhere in this project: every name, ID, and value in fixtures, prompts, logs, and screenshots is fictional.
+
+**Team:** Tways (tech lead, pipeline) · Alex (frontend, offline) · Adrian (data, eval, QA)
+**Hard deadline:** Thu Nov 5, 2026, 10:00 AM PHT · **Our submit target:** Wed Nov 4, 8:00 PM PHT
+
+## Not medical advice
+
+Basa digitizes and verifies what is on paper. It never produces treatment recommendations, dosing, diagnoses, or contraindication or drug-safety judgments. Summaries restate only what the confirmed record contains, and every line cites its source region on the scan. Prompts sent to models ask for extraction only and forbid interpretation.
+
+## Why
+
+A confident wrong number in a medical record is worse than a blank. Plain OCR reads a creased, stamped, handwritten chart confidently and sometimes wrongly (7.2 read as 1.2). Basa segments the page, reads each region with two independent models, and stops to show a person every place the two disagree.
+
+## How it works
+
+```
+Capture → IndexedDB outbox → POST /api/sync → segment → read twice → reconcile → review → record
+```
+
+| # | Stage | Where | What it does |
+|---|---|---|---|
+| 1 | Capture | Device | Saves the photo on the phone first, even with no signal |
+| 2 | Outbox | Device (IndexedDB via `idb`) | Queue that sends scans when the connection returns |
+| 3 | `POST /api/sync` | Server (Vercel) | Validates and stores the scan, starts processing |
+| 4 | Segment | SAM 3.1 (Meta API) | Finds the lab table, handwritten note, header, and stamp |
+| 5 | Two readers | Muse Spark (Meta API) and Muse Spark Open `meta-models/muse-spark-open-1026` (Baseten) | Each reads every region independently and returns JSON |
+| 6 | Reconcile | Server, pure function | Normalizes both readings, then compares field by field |
+| 7 | Review | Device | Source crop beside both readings; a person decides every flagged field |
+| 8 | Record | Supabase | Confirmed values with provenance, and a summary that cites its source region |
+
+**Reconciliation rules.** Both readings are normalized (trim, case, spacing, unit forms, numeric parsing). A match is `agreed`. A difference, or a field one reader could not read, is `flagged`. `agreed` fields are fast-confirm. `flagged` fields require an explicit choice or edit, and Basa never silently picks one model's answer.
+
+**Reliability.** Each stage is idempotent and persisted, so a retry never duplicates work. A whole scan is never held in one request: per-region work runs in parallel, every model call has a timeout and bounded retries, and `MAX_MODEL_CALLS_PER_SCAN` caps cost per scan. The UI polls job status.
+
+Job states: `queued → segmenting → reading → reconciling → needs_review → done`, with `failed` reachable from any state.
+
+### Shared field keys
+
+The contract between model output, reconcile, the review screen, and the ground-truth files. `n` counts from 1, top to bottom. Unclear text is `null`, never a guess. A row only one reader found is flagged automatically.
+
+| Region | Keys |
+|---|---|
+| table | `row{n}.test` · `row{n}.value` · `row{n}.unit` |
+| handwriting | `line{n}` |
+| stamp | `stamp.present` · `stamp.text` |
+| signature | `signature.present` |
+| header | `header.patient_name` · `header.chart_no` · `header.date` |
+
+## How we prove it works
+
+Thirty synthetic charts (10 dev, 20 held-out test, 10 marked hard), scored against typed ground truth. Prompts are tuned on the dev set only; the held-out set is run once at the end for the final numbers.
+
+| Condition | What runs |
+|---|---|
+| A. Baseline | One whole-image read |
+| B. Segmented | SAM regions, one reader each |
+| C. Basa | SAM, two readers, reconcile and flag |
+
+Metrics: field accuracy, table row recall, hallucinated rows, **error catch rate** (the share of wrong fields Basa flags; the headline number), and review burden (the share of correct fields flagged by mistake). Results are written to `eval/results.json` and `docs/eval-results.md`. If condition C does not beat A, the honest result is documented.
+
+## Stack
+
+Next.js (App Router) · TypeScript (strict) · Tailwind · Supabase (Postgres and Storage, RLS on every table) · Zod on every external input and model output · IndexedDB via `idb` · Vitest · Playwright · Vercel · pnpm
+
+Server Components by default; `"use client"` only for capture, the outbox, and the review screen.
+
+## Project layout
+
+```
+app/                    routes; app/api/sync/route.ts is the sync endpoint
+lib/models/             one adapter per model: segment() and readRegion(), Zod-validated
+lib/pipeline/           stages and orchestration; reconcile.ts holds pure functions
+lib/outbox/             IndexedDB queue and sync
+lib/schemas/            Zod schemas shared by client and server
+eval/                   fixtures (*.jpg + *.json ground truth), manifest.json, run.ts, results.json
+supabase/migrations/    database migrations
+docs/                   models-notes.md, new-work.md, eval-results.md
+```
+
+### Data model (Supabase)
+
+`scans` (id, status, image_path, created_at) · `regions` (id, scan_id, kind: table | handwriting | stamp | printed, bbox, mask_path) · `readings` (id, region_id, model, structured_json, latency_ms, error) · `reviews` (id, region_id, final_json, field_status, edited, reviewed_at) · `recognition_event` (id, region_id, readings snapshot, human_final, created_at)
+
+`readings` has a unique constraint on `(region_id, model)` so retries cannot duplicate. RLS is on every table with no anon policies; the server uses the service role key and the browser never reads these tables directly. The storage bucket is private, accessed through server-created signed URLs.
+
+## Getting started
+
+```bash
+pnpm install
+cp .env.example .env.local   # fill in values; never commit .env.local
+pnpm dev
+```
+
+To work without credentials, set `MOCK_MODELS=true`: every model adapter returns fixture data with no network call.
+
+### Environment variables
+
+| Variable | Exposed to browser? |
+|---|---|
+| `META_API_KEY`, `META_API_BASE_URL`, `META_SPARK_MODEL`, `META_SAM_MODEL` | No |
+| `BASETEN_API_KEY`, `BASETEN_MODEL_URL` | No |
+| `SUPABASE_SERVICE_ROLE_KEY` | **Never** |
+| `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY` | Yes, by design |
+| `MAX_MODEL_CALLS_PER_SCAN` | No |
+| `MOCK_MODELS` | No (`false` in Production) |
+
+Only `.env.example` (names, no values) is committed. Model request and response shapes live in `docs/models-notes.md`, written from the Day-1 smoke test.
+
+### Commands
+
+| Command | Purpose |
+|---|---|
+| `pnpm dev` | Start the dev server |
+| `pnpm build` | Production build |
+| `pnpm typecheck` | Type check |
+| `pnpm lint` | Lint |
+| `pnpm test` | Unit tests (Vitest) |
+| `pnpm test:e2e` | Happy-path end-to-end test (Playwright, mock mode) |
+| `pnpm eval` | Run the eval harness |
+
+Before calling work done: `pnpm typecheck && pnpm lint && pnpm test` must pass.
+
+## Design direction
+
+Paper-and-ink editorial, built for tired eyes in a bright clinic.
+
+- **Fonts:** Fraunces (display), IBM Plex Sans (body), IBM Plex Mono (extracted values)
+- **Color carries meaning only:** paper `#F4EFE6`, ink `#1B1A17`, muted line `#D9D2C3`; verified green `#2F6B4F` = models agreed, flag amber `#B7791F` = needs a human, stamp red `#C8341F` = unreadable or failed
+- **The review screen is the hero:** source crop and both readings side by side, flagged fields impossible to miss, touch targets of at least 44px, works from 360px wide up to desktop
+- **Motion** only where it explains something (SAM masks animating in, status badge changes), and it respects `prefers-reduced-motion`
+- **Accessibility:** AA contrast, keyboard-operable review, a label on every control
+
+## Build plan
+
+The sequence lives in [`BUILD_PLAN.md`](./BUILD_PLAN.md); the rules live in [`CLAUDE.md`](./CLAUDE.md). A phase is finished only when every "Done when" line is true and it is logged in `docs/new-work.md`.
+
+| Phase | Owner | When (PHT) | Done when |
+|---|---|---|---|
+| 0. Repo, scaffold, accounts | Tways | Oct 27 | A push to `main` deploys a blank page; typecheck, lint, and tests pass on the empty project |
+| 1. Smoke test and contracts | Tways | Oct 28, by noon | All three models return parseable output; schemas and reconcile merged; mock mode runs with no credentials |
+| 2. Database and storage | Adrian | Oct 28 | Anon-key reads and writes refused on every table; bucket is private |
+| 3. Walking skeleton | Tways, Alex | Oct 29 | A phone photo reaches a stored result on the live URL; no secret in browser traffic |
+| 4. Full pipeline | Tways | Oct 30 | Two readers disagree and produce flagged fields; a killed scan resumes without duplicates; call cap works. **Scope freeze, 8 PM** |
+| 5. Review UI | Alex | Oct 29 to 31 | A scan can be reviewed end to end at 360px and on a real phone |
+| 6. Offline outbox | Alex | Oct 30 to Nov 1 | Capture offline, reconnect, it syncs once with no duplicate |
+| 7. Eval harness | Adrian, Tways | Oct 28 to Nov 3 | `pnpm eval` writes results; final numbers come from held-out charts only |
+| 8. Hardening | Tways, Alex | Nov 1 to 2 | Demo chart runs three times in a row; all checks pass. **Feature freeze Nov 3, noon** |
+| 9. Deployment checklist | Tways | Repeat before each milestone | See `BUILD_PLAN.md` |
+
+### If we fall behind
+
+Cut in this order, decided in advance:
+
+1. Service worker caching and motion polish
+2. Summary becomes a plain cited list
+3. Handwriting regions (keep tables, stamps, headers)
+4. Move the open-weights reader from Baseten to Modal if Baseten fails twice
+5. Second reader becomes Muse Spark with a different prompt (drop the Open Weights claim)
+6. Muse Spark proposes region boxes if SAM output is unusable
+
+## Out of scope
+
+Auth and roles, multi-clinic tenancy, patient management, scheduling, billing, prescribing, e-signing, dosing, any treatment, diagnosis, or drug-safety output, native mobile apps, model training or fine-tuning, real patient data.
+
+## Deployment
+
+Deployed on Vercel; every push to `main` deploys, and `main` must always deploy. The full checklist (migrations, security verification, Preview deploy, `maxDuration`, real-phone smoke test, secret scan) is Phase 9 of [`BUILD_PLAN.md`](./BUILD_PLAN.md). Rollback: promote the last known-good deployment in Vercel first, then debug on a branch. No debugging on `main` after Nov 3.
+
+## Contributing
+
+One branch per person: `tways/...`, `alex/...`, `adrian/...`. Small commits with conventional messages (`feat:`, `fix:`, `docs:`, `test:`). Log every finished feature with its date in `docs/new-work.md`.
