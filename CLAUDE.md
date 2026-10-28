@@ -35,6 +35,20 @@ Next.js (App Router), TypeScript strict, Tailwind, Supabase (Postgres and Storag
 
 Data model (Supabase): `scans` (id, status, image_path, created_at), `regions` (id, scan_id, kind: table | handwriting | stamp | printed, bbox, mask_path), `readings` (id, region_id, model, structured_json, latency_ms, error), `reviews` (id, region_id, final_json, field_status, edited, reviewed_at), `recognition_event` (id, region_id, readings snapshot, human_final, created_at).
 
+## Shared field keys
+
+The contract between model output, reconcile, the review screen, and the ground-truth files. Change it only when all three of us agree.
+
+| Region | Keys |
+|---|---|
+| table | `row{n}.test`, `row{n}.value`, `row{n}.unit` |
+| handwriting | `line{n}` |
+| stamp | `stamp.present`, `stamp.text` |
+| signature | `signature.present` |
+| header | `header.patient_name`, `header.chart_no`, `header.date` |
+
+`n` counts from 1, top to bottom. Unclear text is `null`, never a guess. A row only one reader found is `flagged` automatically.
+
 ## Environment variables
 
 `META_API_KEY`, `META_API_BASE_URL`, `META_SPARK_MODEL`, `META_SAM_MODEL`, `BASETEN_API_KEY`, `BASETEN_MODEL_URL`, `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY`, `SUPABASE_SERVICE_ROLE_KEY` (server only), `MAX_MODEL_CALLS_PER_SCAN` (cost guard; enforce it in code).

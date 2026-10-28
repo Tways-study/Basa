@@ -156,7 +156,7 @@ Paper-and-ink editorial, built for tired eyes in a bright clinic.
 
 ## Build plan
 
-The sequence lives in [`BUILD_PLAN.md`](./BUILD_PLAN.md); the rules live in [`CLAUDE.md`](./CLAUDE.md). A phase is finished only when every "Done when" line is true and it is logged in `docs/new-work.md`.
+The sequence lives in [`docs/BUILD_PLAN.md`](./docs/BUILD_PLAN.md); the rules live in [`CLAUDE.md`](./CLAUDE.md). A phase is finished only when every "Done when" line is true and it is logged in `docs/new-work.md`.
 
 | Phase | Owner | When (PHT) | Done when |
 |---|---|---|---|
@@ -169,7 +169,7 @@ The sequence lives in [`BUILD_PLAN.md`](./BUILD_PLAN.md); the rules live in [`CL
 | 6. Offline outbox | Alex | Oct 30 to Nov 1 | Capture offline, reconnect, it syncs once with no duplicate |
 | 7. Eval harness | Adrian, Tways | Oct 28 to Nov 3 | `pnpm eval` writes results; final numbers come from held-out charts only |
 | 8. Hardening | Tways, Alex | Nov 1 to 2 | Demo chart runs three times in a row; all checks pass. **Feature freeze Nov 3, noon** |
-| 9. Deployment checklist | Tways | Repeat before each milestone | See `BUILD_PLAN.md` |
+| 9. Deployment checklist | Tways | Repeat before each milestone | See `docs/BUILD_PLAN.md` |
 
 ### If we fall behind
 
@@ -188,7 +188,7 @@ Auth and roles, multi-clinic tenancy, patient management, scheduling, billing, p
 
 ## Deployment
 
-Deployed on Vercel; every push to `main` deploys, and `main` must always deploy. The full checklist (migrations, security verification, Preview deploy, `maxDuration`, real-phone smoke test, secret scan) is Phase 9 of [`BUILD_PLAN.md`](./BUILD_PLAN.md). Rollback: promote the last known-good deployment in Vercel first, then debug on a branch. No debugging on `main` after Nov 3.
+Deployed on Vercel; every push to `main` deploys, and `main` must always deploy. The full checklist (migrations, security verification, Preview deploy, `maxDuration`, real-phone smoke test, secret scan) is Phase 9 of [`docs/BUILD_PLAN.md`](./docs/BUILD_PLAN.md). Rollback: promote the last known-good deployment in Vercel first, then debug on a branch. No debugging on `main` after Nov 3.
 
 ## Contributing
 
