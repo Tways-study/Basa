@@ -14,9 +14,26 @@ Basa turns photographed paper clinic charts into human-verified digital records.
 
 Basa digitizes and verifies what is on paper. It never produces treatment recommendations, dosing, diagnoses, or contraindication or drug-safety judgments. Summaries restate only what the confirmed record contains, and every line cites its source region on the scan. Prompts sent to models ask for extraction only and forbid interpretation.
 
-## Why
+## The problem
 
-A confident wrong number in a medical record is worse than a blank. Plain OCR reads a creased, stamped, handwritten chart confidently and sometimes wrongly (7.2 read as 1.2). Basa segments the page, reads each region with two independent models, and stops to show a person every place the two disagree.
+Many clinics still run on paper. A patient's whole history can live in ink, a rubber stamp, and handwriting on a creased page, and it is one bad reading away from a wrong number.
+
+Plain OCR does not solve this safely. It reads a messy chart confidently and sometimes wrongly (7.2 read as 1.2), and gives no signal about which values to doubt. In a medical record, a confident wrong number is worse than a blank. Clinic internet is also unreliable, so a tool that needs a connection to capture a chart fails where it is needed most.
+
+## What Basa solves
+
+- **Errors no longer pass silently.** Segmentation splits the page into regions, so no model has to read one messy page all at once. Two independent models read each region, and Basa flags every field where they disagree instead of trusting either one.
+- **A person stays in control.** The reviewer sees the original ink beside both readings and decides each flagged field. Every correction is logged, and Basa never silently picks a model's answer.
+- **Capture works offline.** Photos are saved on the device first and sync on their own when the connection returns.
+- **Every line is traceable.** The record restates only what is on the paper, and each summary line cites its source region on the scan.
+- **No clinical judgment is added.** Basa digitizes and verifies. It gives no advice, so it makes the paper trustworthy without replacing the clinician.
+
+## Impact
+
+- **Faster review, focused attention.** Fields where both models agree are fast-confirm, so a person spends time only on the disagreements.
+- **Fewer wrong values reach the record.** The headline measure is the error catch rate: the share of wrong fields Basa flags for review. It is reported next to review burden, the share of correct fields flagged by mistake, so the gain is not bought by flagging everything.
+- **Claims backed by evidence.** Basa is scored against a single whole-image read on 20 held-out synthetic charts. The real numbers are published in `docs/eval-results.md`, including an honest result if Basa does not win.
+- **Built for the clinics paper still runs.** It works on a phone, at 360px wide, with unreliable connectivity, and with readable, high-contrast screens made for tired eyes in a bright clinic.
 
 ## How it works
 
