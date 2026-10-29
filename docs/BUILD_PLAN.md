@@ -28,7 +28,7 @@ Done when
 
 Tasks
 1. One tiny script per model (SAM 3.1, Muse Spark, Muse Spark Open on Baseten): send one test image, print the raw response. Run from a server-side script, never the browser.
-2. Write what you actually observed into `docs/models-notes.md`: endpoint, auth header name, request shape, response shape, image size limits, latency, error format. Do not guess any of it.
+2. Write what you actually observed into `docs/models-notes.md`: endpoint, auth header name, request shape, response shape, image size limits, latency, error format. Do not guess any of it. Mark each row **observed** (we saw it) or **documented** (read from the provider's official docs, not yet run). Run a text-only call first (`pnpm smoke:<name>`), then the image call.
 3. Write Zod schemas in `lib/schemas/` (field, reading, reconciled field, region, job status) and `lib/pipeline/reconcile.ts` with unit tests.
 4. Add `MOCK_MODELS=true`: every adapter returns fixture data with no network call.
 
@@ -71,7 +71,7 @@ Done when
 
 Tasks
 1. Job states: `queued → segmenting → reading → reconciling → needs_review → done`, with `failed` reachable from any state. Each stage is idempotent: re-running it must not create duplicate rows.
-2. Add the second reader (Muse Spark Open via Baseten). Run both readers per region with `Promise.allSettled`; cap concurrency at about 4.
+2. Add the second reader (Muse Spark Open via Baseten). Run both readers per region with `Promise.allSettled`; cap concurrency at about 4. Per `docs/models-notes.md`: read only `message.content` (never `reasoning_content`), leave `max_tokens` headroom for reasoning, and parse SAM's streamed special-token output into Zod-validated boxes and masks (one SAM request per object type, each counted against the call cap).
 3. Wire in `reconcile`: write `agreed` / `flagged` per field.
 4. Cost guard: enforce `MAX_MODEL_CALLS_PER_SCAN` in code.
 5. Timeouts and bounded retries on every model call.
@@ -145,8 +145,8 @@ Do a first full deploy in Phase 3 and repeat this list before each milestone. A 
 ### Environment variables in Vercel (Production and Preview)
 | Variable | Exposed to browser? |
 |---|---|
-| `META_API_KEY`, `META_API_BASE_URL`, `META_SPARK_MODEL`, `META_SAM_MODEL` | No |
-| `BASETEN_API_KEY`, `BASETEN_MODEL_URL` | No |
+| `META_API_KEY`, `META_API_BASE_URL` (`https://api.meta.ai/v1`, no trailing slash or period), `META_SPARK_MODEL` (`muse-spark-1.3`), `META_SAM_MODEL` (`sam-3.1`) | No |
+| `BASETEN_API_KEY`, `BASETEN_MODEL_URL` (the full chat-completions endpoint) | No |
 | `SUPABASE_SERVICE_ROLE_KEY` | **No, never** |
 | `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY` | Yes (designed to be public) |
 | `MAX_MODEL_CALLS_PER_SCAN` | No |
