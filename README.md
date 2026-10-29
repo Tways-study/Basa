@@ -85,18 +85,22 @@ Metrics: field accuracy, table row recall, hallucinated rows, **error catch rate
 
 ## Stack
 
-Next.js (App Router) · TypeScript (strict) · Tailwind · Supabase (Postgres and Storage, RLS on every table) · Zod on every external input and model output · IndexedDB via `idb` · Vitest · Playwright · Vercel · pnpm
+Next.js (App Router) · TypeScript (strict) · Tailwind · shadcn/ui (Radix) · lucide-react · Supabase (Postgres and Storage, RLS on every table) · Zod on every external input and model output · IndexedDB via `idb` · Vitest · Playwright · Vercel · pnpm
 
-Server Components by default; `"use client"` only for capture, the outbox, and the review screen.
+Server Components by default; `"use client"` only for capture, the outbox, and the screens that poll or review (results page, review screen).
 
 ## Project layout
 
 ```
-app/                    routes; app/api/sync/route.ts is the sync endpoint
+app/                    routes: capture (/), results (/scans/[id]), /api/sync, /api/scans/[id]
+components/             shadcn components in ui/, our own in capture/ and scan/
 lib/models/             one adapter per model: segment() and readRegion(), Zod-validated
 lib/pipeline/           stages and orchestration; reconcile.ts holds pure functions
 lib/outbox/             IndexedDB queue and sync
 lib/schemas/            Zod schemas shared by client and server
+lib/server/             Supabase client, store and storage (server only)
+lib/client/             browser-only helpers (photo downscale before upload)
+lib/ui/                 pure UI logic: status, polling backoff, field formatting
 eval/                   fixtures (*.jpg + *.json ground truth), manifest.json, run.ts, results.json
 supabase/migrations/    database migrations
 docs/                   models-notes.md, new-work.md, eval-results.md
@@ -104,7 +108,7 @@ docs/                   models-notes.md, new-work.md, eval-results.md
 
 ### Data model (Supabase)
 
-`scans` (id, status, image_path, created_at) · `regions` (id, scan_id, kind: table | handwriting | stamp | printed, bbox, mask_path) · `readings` (id, region_id, model, structured_json, latency_ms, error) · `reviews` (id, region_id, final_json, field_status, edited, reviewed_at) · `recognition_event` (id, region_id, readings snapshot, human_final, created_at)
+`scans` (id, status, image_path, created_at) · `regions` (id, scan_id, kind: table | handwriting | stamp | printed | header | signature, bbox, mask_path) · `readings` (id, region_id, model, structured_json, latency_ms, error) · `reviews` (id, region_id, final_json, field_status, edited, reviewed_at) · `recognition_event` (id, region_id, readings snapshot, human_final, created_at)
 
 `readings` has a unique constraint on `(region_id, model)` so retries cannot duplicate. RLS is on every table with no anon policies; the server uses the service role key and the browser never reads these tables directly. The storage bucket is private, accessed through server-created signed URLs.
 

@@ -19,6 +19,7 @@ Model facts that shape the code (details and sources in `docs/models-notes.md`):
 - Muse Spark uses `POST /chat/completions`, with the image as a base64 data URL, and also proposes region boxes (0-1000 grid). Reasoning counts toward `max_tokens`: send `reasoning_effort: "minimal"` with `max_tokens` 1500, and treat `finish_reason: length` or empty content as a failed reading. Use Standard-mode model IDs only, never `-contributor` (that mode lets Meta train on our content).
 - Muse Spark Open on Baseten always emits `reasoning_content`. Read only `message.content`, never store the reasoning, send `reasoning_effort: "low"` with `max_tokens` 1500, and treat `finish_reason: length` as a failed reading. It cannot propose region boxes. The target model is `meta-models/muse-spark-open-1026`, which the organizers tied to Baseten hackathon credits. We did not receive credits (only some users did; partner credits are not required to compete), and `-1026` returns 404 for our current key (checked 2026-10-29), while `meta-models/muse-spark-open` returns 200. Until `-1026` works for us, develop with the unsuffixed ID via `--model` / env. Do not claim the Open Weights prize until the organizers rule on eligibility; the README and demo must say plainly how the open-weight model is used.
 
+- Read prompts need an exact output shape. Give each region kind the JSON it must return and say any other key is wrong. A one-key schema (signature) plus the word "transcription" in the preamble made Muse Spark answer under a `transcription` key in about two runs in three (observed 2026-10-30). Keep that word out of read prompts. A reading that breaks the shared field keys is a failed reading, shown to the person, never repaired silently.
 - Each stage is idempotent and persisted, so a retry never duplicates work. Stages write to the database; the UI polls job status.
 - Never hold a whole scan in one request. Per-region work runs in parallel; every model call has a timeout and bounded retries.
 - Reconciliation: normalize both readings (trim, case, spacing, unit forms, numeric parsing), then compare field by field. Match = `agreed`. Different, or one unreadable = `flagged`.
@@ -26,16 +27,21 @@ Model facts that shape the code (details and sources in `docs/models-notes.md`):
 
 ## Stack
 
-Next.js (App Router), TypeScript strict, Tailwind, shadcn/ui (Radix primitives, restyled to our palette), lucide-react (icons), GSAP with `@gsap/react` (SAM mask reveal only), Supabase (Postgres and Storage, RLS on every table), Zod on every external input and every model output, IndexedDB via `idb`, Vitest (unit), Playwright (one happy-path e2e), Vercel. Package manager: pnpm. Prefer Server Components; use `"use client"` only for capture, the outbox, and the review screen.
+Next.js (App Router), TypeScript strict, Tailwind, shadcn/ui (Radix primitives, restyled to our palette), lucide-react (icons), GSAP with `@gsap/react` (SAM mask reveal only), Supabase (Postgres and Storage, RLS on every table), Zod on every external input and every model output, IndexedDB via `idb`, Vitest (unit), Playwright (one happy-path e2e), Vercel. Package manager: pnpm. Prefer Server Components; use `"use client"` only for capture, the outbox, and the screens that poll or review (results page, review screen).
+
+Next.js 16 with `cacheComponents`: anything that reads `params`, `searchParams` or other request data must sit inside `<Suspense>`. This version differs from older Next.js examples, so read the matching guide in `node_modules/next/dist/docs/` before using a Next.js API.
 
 ## Layout
 
-- `app/` routes; `app/api/sync/route.ts` is the sync endpoint
-- `components/ui/` shadcn components, restyled to the palette; `components/` our own components
+- `app/` routes: `app/page.tsx` is the capture screen, `app/scans/[id]/page.tsx` the results page, `app/api/sync/route.ts` the sync endpoint, `app/api/scans/[id]/route.ts` job status and results
+- `components/ui/` shadcn components (button, badge, dialog), restyled to the palette; `components/capture/` and `components/scan/` our own components
 - `lib/models/` one adapter per model, exposing `segment()` and `readRegion()`; each returns Zod-validated data; model IDs and base URLs come from env
 - `lib/pipeline/` stages and orchestration; `lib/pipeline/reconcile.ts` holds pure functions
 - `lib/outbox/` IndexedDB queue and sync
 - `lib/schemas/` Zod schemas shared by client and server
+- `lib/server/` Supabase client, store and storage. Server only: no client file may import it, or `lib/env.ts`
+- `lib/client/` browser-only helpers (photo downscale before upload)
+- `lib/ui/` pure UI logic (status labels, polling backoff, field formatting), unit tested
 - `eval/` fixtures (`eval/fixtures/*.jpg` plus `*.json` ground truth), `eval/run.ts`, `eval/results.json`
 - `docs/` holds `models-notes.md`, `new-work.md` (what was built, and when), `eval-results.md`
 
@@ -61,9 +67,11 @@ The contract between model output, reconcile, the review screen, and the ground-
 
 Format notes: `META_API_BASE_URL` is `https://api.meta.ai/v1` (no trailing slash or period; the adapters append the path). `BASETEN_MODEL_URL` is the full chat-completions endpoint, not just the base. Check shape without printing values: `awk -F= '/_URL=/{print $1, ($2 ~ /^https?:\/\//) ? "ok" : "NOT A URL"}' .env.local`. Smoke-script errors must never echo a value.
 
+Vercel: names must match exactly (`SUPABASE_URL`, not `NEXT_SUPABASE_URL`), and each variable needs both Production and Preview ticked. A variable scoped to Production only makes Preview deploys fail with `missing or invalid environment variables`. Changes reach only new deployments, so redeploy after editing them.
+
 ## Commands
 
-`pnpm dev`, `pnpm build`, `pnpm typecheck`, `pnpm lint`, `pnpm test`, `pnpm test:e2e`, `pnpm eval`.
+`pnpm dev`, `pnpm build`, `pnpm typecheck`, `pnpm lint`, `pnpm test`, `pnpm test:e2e`, `pnpm eval`. One real model call each, for checking a model: `pnpm smoke:spark`, `pnpm smoke:spark-open`, `pnpm smoke:sam`.
 
 ## How to work with me
 
@@ -88,6 +96,8 @@ Paper-and-ink editorial, built for tired eyes in a bright clinic. Not a generic 
 - The review screen is the hero: source crop and both readings side by side, flagged fields impossible to miss, touch targets of at least 44px, works from 360px wide up to desktop.
 - Motion only where it explains something: SAM masks animating in, status badge changes. Respect `prefers-reduced-motion`.
 - shadcn: use only the components we need, mapped to the palette variables and Fraunces / IBM Plex. No default shadcn theme, no Inter. Keep the six palette variables in `app/globals.css` when running `shadcn init`.
+- Amber `#B7791F` on paper is only about 3.2:1, below AA for text, so use amber as a fill or border with ink text, never as small text. Green (about 5.5:1) and red (about 4.6:1) pass.
+- One 6px radius everywhere. Buttons and badges use the variants in `components/ui/`; targets are at least 44px tall (56px for the main capture action).
 - Icons come from lucide-react only. Decorative icons get `aria-hidden`; an icon-only control gets an `aria-label`. Pair color with an icon or text (agreed = Check, flagged = TriangleAlert, unreadable = CircleX) so meaning never rests on color alone.
 - GSAP is only for the SAM mask reveal on the review screen: a lazy-loaded client component, `useGSAP`, and `gsap.matchMedia()` for reduced motion. Never in capture or the outbox. Status badges use CSS transitions.
 - Accessibility: AA contrast, keyboard-operable review, a label on every control.
