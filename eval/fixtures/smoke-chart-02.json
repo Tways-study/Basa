@@ -1,0 +1,59 @@
+{
+  "header.patient_name": "Maria L. Dela Vega",
+  "header.chart_no": "CH-004217",
+  "header.date": "2026-03-14",
+  "row1.test": "Hemoglobin",
+  "row1.value": "13.2",
+  "row1.unit": "g/dL",
+  "row2.test": "White blood cells",
+  "row2.value": "6.8",
+  "row2.unit": "x10^9/L",
+  "row3.test": "Glucose, fasting",
+  "row3.value": "5.4",
+  "row3.unit": "mmol/L",
+  "row4.test": "Creatinine",
+  "row4.value": "78",
+  "row4.unit": "umol/L",
+  "line1": "Sample taken 08:15, fasting.",
+  "line2": "Repeat count sent to lab B.",
+  "stamp.present": true,
+  "stamp.text": "RECEIVED LAB DEPT 14 MAR",
+  "signature.present": true,
+  "_image": {
+    "width": 1100,
+    "height": 1400
+  },
+  "_regions": {
+    "printed": {
+      "x1": 169,
+      "y1": 129,
+      "x2": 930,
+      "y2": 378
+    },
+    "table": {
+      "x1": 173,
+      "y1": 333,
+      "x2": 952,
+      "y2": 601
+    },
+    "handwriting": {
+      "x1": 178,
+      "y1": 644,
+      "x2": 530,
+      "y2": 752
+    },
+    "stamp": {
+      "x1": 750,
+      "y1": 813,
+      "x2": 974,
+      "y2": 930
+    },
+    "signature": {
+      "x1": 220,
+      "y1": 1130,
+      "x2": 402,
+      "y2": 1207
+    }
+  },
+  "_note": "Photo-like variant of smoke-chart-01: same fictional content, tilted with perspective, shadow, uneven light and noise. Handwriting and signature boxes are the ink (text) extent; the others are element bounds."
+}

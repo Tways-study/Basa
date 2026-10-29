@@ -71,7 +71,7 @@ Done when
 
 Tasks
 1. Job states: `queued → segmenting → reading → reconciling → needs_review → done`, with `failed` reachable from any state. Each stage is idempotent: re-running it must not create duplicate rows.
-2. Add the second reader (Muse Spark Open via Baseten). Run both readers per region with `Promise.allSettled`; cap concurrency at about 4. Per `docs/models-notes.md`: read only `message.content` (never `reasoning_content`), leave `max_tokens` headroom for reasoning, and parse SAM's streamed special-token output into Zod-validated boxes and masks (one SAM request per object type, each counted against the call cap).
+2. Add the second reader (Muse Spark Open via Baseten). Run both readers per region with `Promise.allSettled`; cap concurrency at about 4. Per `docs/models-notes.md`: read only `message.content` (never `reasoning_content`); set `reasoning_effort` (`minimal` for Muse Spark, `low` for Muse Spark Open) with `max_tokens` 1500 and fail a reading on `finish_reason: length`; parse SAM's streamed special-token output (delta events only) into Zod-validated boxes and masks. Region strategy proposed in `models-notes.md` (needs the team's OK): Muse Spark proposes padded boxes, then one SAM box-prompt request returns masks for all regions.
 3. Wire in `reconcile`: write `agreed` / `flagged` per field.
 4. Cost guard: enforce `MAX_MODEL_CALLS_PER_SCAN` in code.
 5. Timeouts and bounded retries on every model call.
@@ -146,7 +146,7 @@ Do a first full deploy in Phase 3 and repeat this list before each milestone. A 
 | Variable | Exposed to browser? |
 |---|---|
 | `META_API_KEY`, `META_API_BASE_URL` (`https://api.meta.ai/v1`, no trailing slash or period), `META_SPARK_MODEL` (`muse-spark-1.3`), `META_SAM_MODEL` (`sam-3.1`) | No |
-| `BASETEN_API_KEY`, `BASETEN_MODEL_URL` (the full chat-completions endpoint) | No |
+| `BASETEN_API_KEY`, `BASETEN_MODEL_URL` (the full chat-completions endpoint), `BASETEN_MODEL` (`meta-models/muse-spark-open`, or `-1026` if we get access) | No |
 | `SUPABASE_SERVICE_ROLE_KEY` | **No, never** |
 | `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY` | Yes (designed to be public) |
 | `MAX_MODEL_CALLS_PER_SCAN` | No |

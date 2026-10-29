@@ -9,6 +9,9 @@ import { requireEnv, runSmoke } from "./smoke-lib";
 //   pnpm smoke:spark-open chart.jpg                    adds the image as an OpenAI-style image_url part
 //   pnpm smoke:spark-open --model=meta-models/muse-spark-open-1026
 //   pnpm smoke:spark-open --auth=api-key
+//   pnpm smoke:spark-open chart.jpg --effort=low --max-tokens=1500
+// Model name precedence: --model flag, then BASETEN_MODEL from .env.local, then this default (the slug in Baseten's
+// public docs, which works with our own key). The hackathon target is meta-models/muse-spark-open-1026.
 const DEFAULT_MODEL = "meta-models/muse-spark-open";
 
 runSmoke("spark-open", (image, flags) => {
@@ -29,9 +32,12 @@ runSmoke("spark-open", (image, flags) => {
     url,
     headers: { "Content-Type": "application/json", Authorization: `${scheme} ${key}` },
     body: JSON.stringify({
-      model: flags.model ?? DEFAULT_MODEL,
+      model: flags.model ?? process.env.BASETEN_MODEL ?? DEFAULT_MODEL,
       // Reasoning tokens count toward max_tokens; 200 was fully spent on reasoning for an image (content came back null).
       max_tokens: Number(flags["max-tokens"] ?? 3000),
+      // Documented top-level parameter (Baseten docs: Reasoning). This model supports low/medium/high/xhigh and
+      // defaults to xhigh when omitted; "none" and "minimal" run as low.
+      ...(flags.effort ? { reasoning_effort: flags.effort } : {}),
       messages: [{ role: "user", content }],
     }),
   };

@@ -1,4 +1,5 @@
 import { readFile } from "node:fs/promises";
+import { z } from "zod";
 
 // Server-side only. Run with `pnpm smoke:<name> [path/to/synthetic-chart.jpg] [--flag=value]`.
 // With no image path the script sends a text-only call, which checks the key, URL and model name first.
@@ -52,6 +53,12 @@ export async function runSmoke(
     console.log(`[${name}] image bytes sent: ${image ? image.length : 0}`);
     console.log(text.length > 20_000 ? `${text.slice(0, 20_000)}\n... (truncated)` : text);
     if (!res.ok) process.exitCode = 1;
+    // A 200 with no usable answer is not a pass: reasoning can spend the whole max_tokens budget.
+    const problem = res.ok && res.headers.get("content-type")?.includes("application/json") ? unusableReply(text) : null;
+    if (problem) {
+      console.error(`[${name}] FAIL: ${problem}`);
+      process.exitCode = 1;
+    }
   } catch (err) {
     // A timeout or network error is a smoke-test result too: record it in models-notes.md.
     // Print only the error kind, never the error object: Node's fetch errors echo the input, which can be a secret.
@@ -60,6 +67,22 @@ export async function runSmoke(
     console.error(`[${name}] request failed after ${Math.round(performance.now() - started)}ms: ${kind}${code}`);
     process.exitCode = 1;
   }
+}
+
+const ChatReplySchema = z.object({
+  choices: z.array(
+    z.object({ finish_reason: z.string().nullable(), message: z.object({ content: z.string().nullable() }) }),
+  ),
+});
+
+/** Returns why a chat-completions reply has no usable answer, or null when it does (or is not a chat reply). */
+function unusableReply(body: string): string | null {
+  const parsed = ChatReplySchema.safeParse(JSON.parse(body));
+  if (!parsed.success || parsed.data.choices.length === 0) return null;
+  const { finish_reason, message } = parsed.data.choices[0];
+  if (finish_reason === "length") return "reply cut off (finish_reason=length). Raise --max-tokens; reasoning counts toward it.";
+  if (!message.content) return "reply has no content.";
+  return null;
 }
 
 export function requireEnv(name: string): string {

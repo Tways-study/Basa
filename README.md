@@ -122,7 +122,7 @@ To work without credentials, set `MOCK_MODELS=true`: every model adapter returns
 | Variable | Exposed to browser? |
 |---|---|
 | `META_API_KEY`, `META_API_BASE_URL`, `META_SPARK_MODEL`, `META_SAM_MODEL` | No |
-| `BASETEN_API_KEY`, `BASETEN_MODEL_URL` | No |
+| `BASETEN_API_KEY`, `BASETEN_MODEL_URL`, `BASETEN_MODEL` | No |
 | `SUPABASE_SERVICE_ROLE_KEY` | **Never** |
 | `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY` | Yes, by design |
 | `MAX_MODEL_CALLS_PER_SCAN` | No |
@@ -130,7 +130,7 @@ To work without credentials, set `MOCK_MODELS=true`: every model adapter returns
 
 Only `.env.example` (names, no values) is committed. Model request and response shapes live in `docs/models-notes.md`, each marked as observed in a smoke test or documented by the provider.
 
-Value formats: `META_API_BASE_URL` is `https://api.meta.ai/v1` (no trailing slash or period). `BASETEN_MODEL_URL` is the full chat-completions endpoint, not just the base URL. Meta keys start with `LLM_`.
+Value formats: `META_API_BASE_URL` is `https://api.meta.ai/v1` (no trailing slash or period). `BASETEN_MODEL_URL` is the full chat-completions endpoint, not just the base URL. `BASETEN_MODEL` is the model name (`meta-models/muse-spark-open`). Meta keys start with `LLM_`.
 
 ### Model smoke tests
 
