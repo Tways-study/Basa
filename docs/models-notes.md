@@ -16,7 +16,9 @@ Last updated: 2026-10-29
 
 | Item | Detail |
 |---|---|
-| Status | untested (shape documented; no call made yet) |
+| Status | ok, text and image (2026-10-29) |
+| Observed with the synthetic chart (2026-10-29) | Image input works (HTTP 200, 4.6 s, 980 completion tokens of which 842 were reasoning) and the transcription of `eval/fixtures/smoke-chart-01.jpg` matched the ground truth on every field. **With `max_tokens: 200` the whole budget went to reasoning: `content` was `null` and `finish_reason` was `length`.** Use at least 3000 and always check `finish_reason`; treat `length` as a failed reading, never as an answer |
+| Observed (text-only) | `POST {base}/chat/completions` with `Bearer` auth returned HTTP 200 in about 2.3 s for a one-word text prompt. Answer in `choices[0].message.content` (`ready`). The response also has `usage` with `completion_tokens_details.reasoning_tokens` (102 of 112 completion tokens on that reply), so reasoning tokens count toward `max_tokens` here too: leave headroom. `GET /v1/models` with our key returned 200 and lists `muse-spark-1.3` and `sam-3.1` |
 | Model ID | `muse-spark-1.3`, the latest version and Meta's recommendation for new work (documented). Do **not** use `muse-spark-1.3-contributor`: it lets Meta train on request content. Older: `muse-spark-1.2`, `muse-spark-1.1` |
 | Endpoint | `POST {META_API_BASE_URL}/chat/completions`, with the base URL `https://api.meta.ai/v1` (documented). Responses API (`/responses`) and Messages API also work for this model |
 | Auth header | `Authorization: Bearer <key>`. Keys start with `LLM_` (documented). Docs call the env var `MODEL_API_KEY`; ours is `META_API_KEY` |
@@ -32,7 +34,9 @@ Last updated: 2026-10-29
 
 | Item | Detail |
 |---|---|
-| Status | untested (shape documented; no call made yet) |
+| Status | ok for stamps; no matches for text, tables, handwriting or signatures on the synthetic chart (2026-10-29) |
+| Observed with the synthetic chart (2026-10-29) | Image call returns HTTP 200, `text/event-stream`, about 2 s. Prompt `stamp` (and `red stamp`) returned one object whose box `(626,746)-(832,844)` of a 900x1180 image sits exactly on the stamp, with a lossless (`~`) 99x207 mask. Prompts `table`, `grid of rows and columns`, `text`, `printed text`, `handwriting`, `handwritten text`, `cursive writing`, `line of text` and `signature` returned **zero matches** (a valid empty stream, not an error). The stream repeats the same payload in `response.output_text.delta` and again in the `*.done` and `response.completed` events: **read only the delta events** or every object is counted five times. Caveat: one clean rendered chart, not a photo; photos may behave differently |
+| Observed 2026-10-29 | `POST {base}/responses` with `Bearer` auth and a text-only prompt returned HTTP 400 in about 1 s with `{"error":{"code":null,"message":"SAM 3 requires an input_image or input_video content part in a user message","param":null,"type":"invalid_request_error"}}`. That confirms the key, URL and model name are accepted and that an image is mandatory. Error shape: `{"error":{"code","message","param","type"}}`; an unauthenticated call returned 401 with `type: authentication_error`, `code: invalid_api_key` |
 | Model ID | `sam-3.1` (documented) |
 | Endpoint | `POST {META_API_BASE_URL}/responses`, **not** chat completions (documented) |
 | Auth header | `Authorization: Bearer <key>` (documented) |
@@ -50,7 +54,8 @@ Last updated: 2026-10-29
 
 | Item | Detail |
 |---|---|
-| Status | ok for a text-only call (2026-10-29); image input untested |
+| Status | ok, text and image (2026-10-29) |
+| Observed with the synthetic chart (2026-10-29) | Image input works: HTTP 200, 9.5 s, 805 completion tokens of which 666 were reasoning; transcription matched the ground truth except `Lab B` for `lab B` (a case difference that reconcile's normalization should treat as agreed). **With `max_tokens: 200`, `content` was `null` and `finish_reason` was `length`**; its reasoning also spent time debating whether to transcribe a clinic sheet as personal data, so the prompt should state that the sheet is a fictional sample. Use at least 3000 and check `finish_reason` |
 | Model ID | **Target: `meta-models/muse-spark-open-1026`**, the model the organizers tied to Baseten hackathon credits. We did not receive those credits (only some users did; partner credits are not required to compete). **Observed 2026-10-29 with our current key:** `-1026` returns 404 `{"error":"please check the model you provided"}` (checked three times, the last on the correct endpoint), while `meta-models/muse-spark-open` returns 200 and is listed in Baseten's public docs. Until `-1026` works for us, use the unsuffixed ID for development |
 | Endpoint | `POST https://inference.baseten.co/v1/chat/completions`. `BASETEN_MODEL_URL` must hold this **full endpoint**. With only `/v1` the call returned 404 (observed; documented) |
 | Auth header | `Authorization: Bearer <key>` worked (observed) |
@@ -67,13 +72,13 @@ Last updated: 2026-10-29
 
 - **Decision (2026-10-29):** target model is `meta-models/muse-spark-open-1026`. No hackathon credits were issued to us and `-1026` fails (404) with our key, so development uses the unsuffixed ID on our own Baseten account. Set a spend alert on the Baseten account. Fallbacks if Baseten fails twice: Modal, then Muse Spark twice (see the cut order in `BUILD_PLAN.md`).
 - Organizers answered that the Best Build on Meta Open Weight Models prize needs a project built on Muse Glimmer or Muse Spark Open, served on our own hardware or through partner inference, and that mixing in hosted Muse models is fine. The demo and README must explain how and where the open-weight model is used. Whether the unsuffixed Baseten ID on our own account qualifies for the bonus is a pending ruling from the organizers; do not claim the prize until they answer.
-- Image runs for all three models need a synthetic chart (fictional data only).
+- Region proposals: SAM found the stamp but nothing else. Decide in Phase 4 whether Muse Spark proposes boxes for tables, handwriting and headers (cut order #6), and test SAM on a real photographed chart before relying on it.
 - Real image-size limits, rate limits and error bodies for the two Meta models.
 
 ## Go or no-go (post at the 8 PM check-in, Oct 28)
 
 | Model | Decision | Reason |
 |---|---|---|
-| SAM 3.1 | | shape documented, no call yet |
-| Muse Spark | | shape documented, no call yet |
-| Muse Spark Open | | text call ok; image call pending |
+| SAM 3.1 | Go for stamps, **no-go for tables, handwriting, signatures and headers** (proposed) | Found the stamp exactly; zero matches for every other prompt tried. Use the cut-order fallback (Muse Spark proposes region boxes) for those |
+| Muse Spark | Go | Read the whole chart correctly; needs `max_tokens` of 3000 or more |
+| Muse Spark Open | Go (on the unsuffixed model) | Read the whole chart; `-1026` unavailable to our key; Open Weights ruling pending |

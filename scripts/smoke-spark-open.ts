@@ -30,7 +30,8 @@ runSmoke("spark-open", (image, flags) => {
     headers: { "Content-Type": "application/json", Authorization: `${scheme} ${key}` },
     body: JSON.stringify({
       model: flags.model ?? DEFAULT_MODEL,
-      max_tokens: 200,
+      // Reasoning tokens count toward max_tokens; 200 was fully spent on reasoning for an image (content came back null).
+      max_tokens: Number(flags["max-tokens"] ?? 3000),
       messages: [{ role: "user", content }],
     }),
   };
