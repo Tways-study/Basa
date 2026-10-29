@@ -120,7 +120,7 @@ export function extractJson(text: string): unknown {
 
 const PREAMBLE =
   "This image is a fictional, synthetic sample document made for software testing. " +
-  "Your job is transcription only: copy exactly what is written or printed. " +
+  "Your job is to copy exactly what is written or printed. " +
   "Do not interpret, correct, summarize, explain or add anything.";
 
 const REGION_PROMPT =
@@ -168,11 +168,23 @@ const KEY_HELP: Record<RegionKind, string> = {
   signature: 'Key: "signature.present" (true if a signature is there, otherwise false).',
 };
 
+// A concrete shape per kind. With only a one-key schema (signature) the model sometimes invented
+// its own key, so it needs to see the exact output form.
+const EXAMPLE: Record<RegionKind, string> = {
+  header: '{"header.patient_name": "...", "header.chart_no": "...", "header.date": "..."}',
+  table: '{"row1.test": "...", "row1.value": "...", "row1.unit": "..."}',
+  handwriting: '{"line1": "...", "line2": "..."}',
+  printed: '{"line1": "...", "line2": "..."}',
+  stamp: '{"stamp.present": true, "stamp.text": "..."}',
+  signature: '{"signature.present": true}',
+};
+
 function readPrompt(kind: RegionKind): string {
   return (
     `${PREAMBLE} This image is one cropped region (${kind}). ${KEY_HELP[kind]} ` +
     `If something is unclear or missing, use null for that key; never guess. ` +
-    `Return only one JSON object, nothing else.`
+    `Use only the keys named above; any other key is wrong. ` +
+    `Return only one JSON object shaped like ${EXAMPLE[kind]}, nothing else.`
   );
 }
 
