@@ -6,6 +6,7 @@ import { requireEnv, runSmoke } from "./smoke-lib";
 //   pnpm smoke:spark                      text-only, checks key + URL + model name
 //   pnpm smoke:spark chart.jpg            adds the image as an image_url data URL
 //   pnpm smoke:spark chart.jpg --mime=image/png
+//   pnpm smoke:spark chart.jpg --effort=minimal --max-tokens=1500
 runSmoke("spark", (image, flags) => {
   const base = requireEnv("META_API_BASE_URL");
   const key = requireEnv("META_API_KEY");
@@ -25,6 +26,12 @@ runSmoke("spark", (image, flags) => {
     url: `${base}/chat/completions`,
     headers: { "Content-Type": "application/json", Authorization: `Bearer ${key}` },
     // Reasoning tokens count toward max_tokens; 200 was fully spent on reasoning for an image (content came back null).
-    body: JSON.stringify({ model, max_tokens: Number(flags["max-tokens"] ?? 3000), messages: [{ role: "user", content }] }),
+    body: JSON.stringify({
+      model,
+      max_tokens: Number(flags["max-tokens"] ?? 3000),
+      // Documented top-level parameter (docs: Reasoning). "none" is rejected with a 400. Omitted = model decides.
+      ...(flags.effort ? { reasoning_effort: flags.effort } : {}),
+      messages: [{ role: "user", content }],
+    }),
   };
 });

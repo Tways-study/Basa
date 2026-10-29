@@ -10,14 +10,15 @@ Never paste a key, a full header, or an account-identifying value here.
 
 Status key: `ok` returned something parseable · `fail` see notes · `untested`
 
-Last updated: 2026-10-29
+Last updated: 2026-10-29 (reasoning controls, region experiments)
 
 ## Muse Spark (Meta API), `muse-spark-1.3`
 
 | Item | Detail |
 |---|---|
 | Status | ok, text and image (2026-10-29) |
-| Observed with the synthetic chart (2026-10-29) | Image input works (HTTP 200, 4.6 s, 980 completion tokens of which 842 were reasoning) and the transcription of `eval/fixtures/smoke-chart-01.jpg` matched the ground truth on every field. **With `max_tokens: 200` the whole budget went to reasoning: `content` was `null` and `finish_reason` was `length`.** Use at least 3000 and always check `finish_reason`; treat `length` as a failed reading, never as an answer |
+| Observed with the synthetic chart (2026-10-29) | Image input works (HTTP 200, 4.6 s, 980 completion tokens of which 842 were reasoning) and the transcription of `eval/fixtures/smoke-chart-01.jpg` matched the ground truth on every field. **With `max_tokens: 200` the whole budget went to reasoning: `content` was `null` and `finish_reason` was `length`.** Always check `finish_reason`; treat `length` or empty `content` as a failed reading, never as an answer (`scripts/smoke-lib.ts` now exits non-zero on both) |
+| Reasoning control (documented, then observed 2026-10-29) | Top-level `reasoning_effort` on Chat Completions: `minimal`, `low`, `medium`, `high`, `xhigh`, `max` (`max` not on the `-contributor` ID). `none` is rejected with HTTP 400. Omitted = model decides. On the synthetic chart, every setting read the sheet equally well: `minimal` used 308 completion tokens (157 reasoning) in 2.7 s, `low` 428 in 2.7 s, `medium` 1091 in 4.7 s, default 860-1039 in 4.7-5.3 s. **Use `reasoning_effort: "minimal"` with `max_tokens: 1500` for extraction** (about 5x headroom over the 308 tokens used). A `max_tokens` of 50 returns `finish_reason: length` |
 | Observed (text-only) | `POST {base}/chat/completions` with `Bearer` auth returned HTTP 200 in about 2.3 s for a one-word text prompt. Answer in `choices[0].message.content` (`ready`). The response also has `usage` with `completion_tokens_details.reasoning_tokens` (102 of 112 completion tokens on that reply), so reasoning tokens count toward `max_tokens` here too: leave headroom. `GET /v1/models` with our key returned 200 and lists `muse-spark-1.3` and `sam-3.1` |
 | Model ID | `muse-spark-1.3`, the latest version and Meta's recommendation for new work (documented). Do **not** use `muse-spark-1.3-contributor`: it lets Meta train on request content. Older: `muse-spark-1.2`, `muse-spark-1.1` |
 | Endpoint | `POST {META_API_BASE_URL}/chat/completions`, with the base URL `https://api.meta.ai/v1` (documented). Responses API (`/responses`) and Messages API also work for this model |
@@ -26,45 +27,50 @@ Last updated: 2026-10-29
 | Response shape | OpenAI chat completion: answer in `choices[0].message.content`, token counts in `usage` (documented) |
 | Image limits | Up to 50 images per request, otherwise HTTP 400. Also bounded by payload size and context (1,048,576 tokens). Exact byte limit not yet found |
 | Coordinates | When asked for locations, the model uses a normalized 0-1000 grid, `(0,0)` top-left, not pixels. Convert using the dimensions of the exact image sent (documented) |
-| Latency | not measured |
-| Error format | see Meta "Error handling" doc (not read yet); record the real format from a failed call |
+| Region proposals (observed 2026-10-29) | Asked for boxes of five region kinds on the 0-1000 grid, it returned all five kinds in 3 of 3 runs on `eval/fixtures/smoke-chart-02.jpg` (tilted, shadowed, noisy), about 2.5 s each. Overlap with ground truth (IoU, 1.0 = exact): printed 0.73-0.75, table 0.67-0.71, handwriting 0.42-0.89, stamp 0.64-0.71, signature 0.19-0.64. **Boxes vary run to run**, so pad them and refine them (see the region strategy below). Ground truth for tilted regions is the axis-aligned bound, which caps IoU below 1 |
+| Latency | 2.3-5 s per call depending on reasoning effort (observed) |
+| Error format | `{"error":{"code","message","param","type"}}`, for example HTTP 400 `reasoning_effort 'none' is not supported for model 'muse-spark-1.3'` (observed) |
 | Fallback if it fails | Muse Spark proposes the same fields from the whole image (condition A in the eval) |
 
 ## SAM 3.1 (Meta API), `sam-3.1`
 
 | Item | Detail |
 |---|---|
-| Status | ok for stamps; no matches for text, tables, handwriting or signatures on the synthetic chart (2026-10-29) |
-| Observed with the synthetic chart (2026-10-29) | Image call returns HTTP 200, `text/event-stream`, about 2 s. Prompt `stamp` (and `red stamp`) returned one object whose box `(626,746)-(832,844)` of a 900x1180 image sits exactly on the stamp, with a lossless (`~`) 99x207 mask. Prompts `table`, `grid of rows and columns`, `text`, `printed text`, `handwriting`, `handwritten text`, `cursive writing`, `line of text` and `signature` returned **zero matches** (a valid empty stream, not an error). The stream repeats the same payload in `response.output_text.delta` and again in the `*.done` and `response.completed` events: **read only the delta events** or every object is counted five times. Caveat: one clean rendered chart, not a photo; photos may behave differently |
+| Status | ok: noun prompts find stamps only; **box prompts segment every region** (2026-10-29) |
+| Observed with the synthetic chart (2026-10-29) | Image call returns HTTP 200, `text/event-stream`, about 2 s. Prompt `stamp` (and `red stamp`) returned one object whose box `(626,746)-(832,844)` of a 900x1180 image sits exactly on the stamp, with a lossless (`~`) 99x207 mask. Prompts `table`, `grid of rows and columns`, `text`, `printed text`, `handwriting`, `handwritten text`, `cursive writing`, `line of text` and `signature` returned **zero matches** (a valid empty stream, not an error). The stream repeats the same payload in `response.output_text.delta` and again in the `*.done` and `response.completed` events: **read only the delta events** or every object is counted five times. On the photo-like `smoke-chart-02.jpg` the same pattern held: `stamp` found it (box within 2 px of the stamp), `document` found the whole sheet, and `table`, `handwritten text`, `signature` and `printed text` returned zero matches. Noun prompts only work on distinct visual objects |
+| Box and point prompts (documented, then observed 2026-10-29) | The `input_text` is either a noun phrase or box/point tokens, never both: `<0f>1<|box;x1=..;y1=..;x2=..;y2=..;w=<imgW>;h=<imgH>|>,2<|box;...|>`. Each object gets an id you choose; **several objects go in one request**. Coordinates are source pixels, `w` and `h` are the image size (a mismatched aspect ratio returns 400). Fed Muse Spark's five proposed boxes in one request, SAM returned five objects with masks and snapped to the real shapes: stamp IoU 0.99 (from a 0.64 proposal), handwriting 0.93, table 0.81, signature 0.65, printed 0.73 (ground truth for printed and table is a loose axis-aligned bound). Masks are lossless (`~`) rasters sized to each box |
 | Observed 2026-10-29 | `POST {base}/responses` with `Bearer` auth and a text-only prompt returned HTTP 400 in about 1 s with `{"error":{"code":null,"message":"SAM 3 requires an input_image or input_video content part in a user message","param":null,"type":"invalid_request_error"}}`. That confirms the key, URL and model name are accepted and that an image is mandatory. Error shape: `{"error":{"code","message","param","type"}}`; an unauthenticated call returned 401 with `type: authentication_error`, `code: invalid_api_key` |
 | Model ID | `sam-3.1` (documented) |
 | Endpoint | `POST {META_API_BASE_URL}/responses`, **not** chat completions (documented) |
 | Auth header | `Authorization: Bearer <key>` (documented) |
 | Request shape | `{"model": "sam-3.1", "stream": true, "input": [{"type": "message", "role": "user", "content": [{"type": "input_text", "text": "<short noun phrase>"}, {"type": "input_image", "image_url": "data:image/jpeg;base64,<bytes>"}]}]}` with header `Accept: text/event-stream` (documented) |
-| One object type per request | The prompt is one concrete noun phrase (for example "table"). To find several kinds of region, send several requests. This drives the per-scan call count and `MAX_MODEL_CALLS_PER_SCAN` |
+| One concept per noun request | A noun-phrase prompt names one concept, so several kinds need several requests. Box prompts avoid this: one request can carry all regions. Count each SAM request against `MAX_MODEL_CALLS_PER_SCAN` |
 | Response shape | **Not JSON.** A server-sent event stream. Each `response.output_text.delta` event holds one line of special-token text; `response.completed` ends the stream. A single image is one line, frame `<0f>`. Zero matches is valid: the stream completes with no delta events (documented) |
 | Line grammar | `<0f>` then comma-separated records: `id<|box;x1=..;y1=..;x2=..;y2=..;w=<imgW>;h=<imgH>|><|mask;x=0;y=0;data=<H>,<W>,<enc>payload|>`. Box corners are source pixels. Mask payload is base85, not base64; `enc` is `~` (lossless) or `!` (one-bit). Object ids are stable but can be sparse (0, 2). Confidence `c=` appears only when `include_confidence` is requested (documented, from "Reading segmentation output") |
 | Adapter implication | `lib/models/` needs a small parser for this grammar and a base85 mask decoder, with a Zod schema for the parsed result. Store boxes as fractions of `w` and `h` |
 | Image limits | not found yet |
 | Latency | not measured |
 | Error format | see Meta "Error handling" doc (not read yet) |
-| Fallback if it fails | Muse Spark proposes region boxes (0-1000 grid), per the cut order in `BUILD_PLAN.md` |
+| Fallback if it fails | Use Muse Spark's proposed boxes directly (padded) as the regions, without masks |
 
 ## Muse Spark Open (Baseten)
 
 | Item | Detail |
 |---|---|
 | Status | ok, text and image (2026-10-29) |
-| Observed with the synthetic chart (2026-10-29) | Image input works: HTTP 200, 9.5 s, 805 completion tokens of which 666 were reasoning; transcription matched the ground truth except `Lab B` for `lab B` (a case difference that reconcile's normalization should treat as agreed). **With `max_tokens: 200`, `content` was `null` and `finish_reason` was `length`**; its reasoning also spent time debating whether to transcribe a clinic sheet as personal data, so the prompt should state that the sheet is a fictional sample. Use at least 3000 and check `finish_reason` |
+| Observed with the synthetic chart (2026-10-29) | Image input works: HTTP 200, 9.5 s, 805 completion tokens of which 666 were reasoning; transcription matched the ground truth except `Lab B` for `lab B` (a case difference that reconcile's normalization should treat as agreed). **With `max_tokens: 200`, `content` was `null` and `finish_reason` was `length`**; its reasoning also spent time debating whether to transcribe a clinic sheet as personal data, so the prompt should state that the sheet is a fictional sample. Check `finish_reason`. See the reasoning control row |
+| Reasoning control (documented, then observed 2026-10-29) | Baseten's Model APIs take a top-level `reasoning_effort`. For this model the supported values are `low`, `medium`, `high`, `xhigh` (the default when omitted); `none` and `minimal` run as `low`. Reasoning is always on. Observed on the synthetic chart: default (xhigh) 1254 completion tokens (1115 reasoning) in 6.6 s; `low` 434 (295) in 4.1 s; `medium` 415 (276) in 3.8 s; `low` with `max_tokens: 300` still finished (268 tokens). All read the sheet equally well. **Use `reasoning_effort: "low"` with `max_tokens: 1500`.** A separate `reasoning.max_tokens` cap exists in Baseten's reference but is documented as enforced on another model only |
 | Model ID | **Target: `meta-models/muse-spark-open-1026`**, the model the organizers tied to Baseten hackathon credits. We did not receive those credits (only some users did; partner credits are not required to compete). **Observed 2026-10-29 with our current key:** `-1026` returns 404 `{"error":"please check the model you provided"}` (checked three times, the last on the correct endpoint), while `meta-models/muse-spark-open` returns 200 and is listed in Baseten's public docs. Until `-1026` works for us, use the unsuffixed ID for development |
 | Endpoint | `POST https://inference.baseten.co/v1/chat/completions`. `BASETEN_MODEL_URL` must hold this **full endpoint**. With only `/v1` the call returned 404 (observed; documented) |
 | Auth header | `Authorization: Bearer <key>` worked (observed) |
 | Request shape | OpenAI chat completions, same as Muse Spark above. The script sends a text-only prompt; the image form (`image_url` with a base64 data URL) is the OpenAI-compatible form and is untested here |
 | Response shape | OpenAI chat completion. The answer is in `choices[0].message.content`. The message also carries `reasoning_content` (the model's thinking, always on). **Read only `content`; never store or show `reasoning_content` as a reading** (observed) |
-| Token budget | Reasoning tokens count toward `max_tokens` (67 of 78 completion tokens on a one-word reply). A low cap can cut off the real answer, so the adapter needs generous headroom (observed) |
+| Token budget | Reasoning tokens count toward `max_tokens` (observed); `max_tokens` caps the whole completion (documented) |
 | Usage | `usage` returns prompt, completion and reasoning token counts (observed) |
-| Image support | Baseten's docs mark the model as supporting vision. Not yet confirmed by a call |
-| Latency | about 1.3 s for a one-word text reply (observed, one run) |
+| Image support | Confirmed by a call with the synthetic chart (observed) |
+| Region proposals | **Not usable.** With the same 0-1000-grid prompt it found printed and table roughly (IoU 0.5-0.8) but missed handwriting, stamp and signature (IoU about 0), likely because it does not use Meta's 0-1000 convention (observed 2 runs). Do not use it for region proposals |
+| Access to `-1026` | Baseten documents no endpoint that lists the models a key can call, so access cannot be checked by API; the 404 on `-1026` is the only evidence |
+| Latency | 3.4-6.6 s per image call depending on reasoning effort (observed) |
 | Error format | HTTP 404 with a JSON body `{"error": "<message>"}`; the message was empty for a wrong path and `please check the model you provided` for an unknown model name (observed) |
 | Fallback if it fails | Move the open-weights reader to Modal; if that fails too, the second reader becomes Muse Spark with a different prompt and the Open Weights claim is dropped |
 
@@ -72,13 +78,20 @@ Last updated: 2026-10-29
 
 - **Decision (2026-10-29):** target model is `meta-models/muse-spark-open-1026`. No hackathon credits were issued to us and `-1026` fails (404) with our key, so development uses the unsuffixed ID on our own Baseten account. Set a spend alert on the Baseten account. Fallbacks if Baseten fails twice: Modal, then Muse Spark twice (see the cut order in `BUILD_PLAN.md`).
 - Organizers answered that the Best Build on Meta Open Weight Models prize needs a project built on Muse Glimmer or Muse Spark Open, served on our own hardware or through partner inference, and that mixing in hosted Muse models is fine. The demo and README must explain how and where the open-weight model is used. Whether the unsuffixed Baseten ID on our own account qualifies for the bonus is a pending ruling from the organizers; do not claim the prize until they answer.
-- Region proposals: SAM found the stamp but nothing else. Decide in Phase 4 whether Muse Spark proposes boxes for tables, handwriting and headers (cut order #6), and test SAM on a real photographed chart before relying on it.
+- **Region strategy (proposed for Phase 4, needs the team's OK):** (1) one Muse Spark call proposes boxes for printed, table, handwriting, stamp and signature; (2) pad each box by about 4% and clamp to the image, because proposals vary run to run; (3) one SAM request with those boxes as prompts returns refined boxes and masks for all five (the masks feed the review screen's overlay); (4) the readers read the crops. About 2 setup calls per scan plus 2 reads per region, so about 12 calls, within the cap of 30. Open: results come from one synthetic photo-like chart and 3 Spark runs. Before relying on it, print a synthetic chart, photograph it with a phone, and re-run the experiments listed at the bottom of this file. Padding and a whole-image fallback read cover a bad box.
 - Real image-size limits, rate limits and error bodies for the two Meta models.
 
 ## Go or no-go (post at the 8 PM check-in, Oct 28)
 
 | Model | Decision | Reason |
 |---|---|---|
-| SAM 3.1 | Go for stamps, **no-go for tables, handwriting, signatures and headers** (proposed) | Found the stamp exactly; zero matches for every other prompt tried. Use the cut-order fallback (Muse Spark proposes region boxes) for those |
-| Muse Spark | Go | Read the whole chart correctly; needs `max_tokens` of 3000 or more |
-| Muse Spark Open | Go (on the unsuffixed model) | Read the whole chart; `-1026` unavailable to our key; Open Weights ruling pending |
+| SAM 3.1 | Go, **with box prompts, not noun prompts** (proposed) | Noun prompts found only the stamp. Box prompts from Muse Spark gave masks for all five regions in one request |
+| Muse Spark | Go | Reads the sheet correctly; use `reasoning_effort: minimal`, `max_tokens: 1500`; also the region proposer |
+| Muse Spark Open | Go as second reader (unsuffixed model), no-go as region proposer | Reads the sheet with `reasoning_effort: low`; `-1026` unavailable to our key; Open Weights ruling pending |
+
+## Reproducing the region experiments
+
+Fixtures: `eval/fixtures/smoke-chart-02.jpg` (photo-like variant of chart 1) and `smoke-chart-02.json` (field ground truth plus `_regions`, boxes in source pixels read from the rendered page; handwriting and signature are ink extent, the rest are element bounds).
+- Noun prompts: `pnpm smoke:sam eval/fixtures/smoke-chart-02.jpg --prompt="stamp"`.
+- Reasoning: `pnpm smoke:spark eval/fixtures/smoke-chart-02.jpg --effort=minimal --max-tokens=1500` and `pnpm smoke:spark-open eval/fixtures/smoke-chart-02.jpg --effort=low --max-tokens=1500`.
+- Region proposals and box prompts: a throwaway script (not committed) sent the prompt "Locate these regions and return only a JSON array ... on a normalized 0-1000 grid" with `reasoning_effort: minimal`, converted to pixels (`x * width / 1000`), scored IoU against `_regions`, then sent the five boxes as one SAM box-prompt request. If the team keeps this approach, Phase 4 should turn it into `eval/` code.
