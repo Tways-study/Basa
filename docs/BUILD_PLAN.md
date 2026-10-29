@@ -60,10 +60,12 @@ Tasks
 3. T: `GET /api/scans/[id]` returning job status and results.
 4. A: results page that polls status and renders the raw fields.
 5. Deploy. Add all server env vars in Vercel first (see Phase 9 list).
+6. A: UI foundation. Run `pnpm dlx shadcn@latest init`; map its CSS variables to the palette and keep the six variables already in `app/globals.css`; add only the components in use (button, badge, dialog). Add `lucide-react`. Load Fraunces, IBM Plex Sans and IBM Plex Mono with `next/font`. Tell Tways which dependencies were added and why.
 
 Done when
 - A real photo taken on a phone reaches a stored result on the public URL.
 - No secret appears in browser network traffic or the client bundle.
+- `pnpm build` passes and the capture screen uses the restyled shadcn button with a lucide icon.
 
 ## Phase 4 — Full pipeline (Oct 30) · T
 
@@ -88,10 +90,12 @@ Tasks
 2. SAM overlay drawn from stored fractional boxes.
 3. Write `reviews` and `recognition_event` rows on confirm.
 4. 44px touch targets, keyboard operation, labels on every control, 360px layout.
+5. SAM mask reveal with GSAP and `@gsap/react`: lazy-loaded client component, off under `prefers-reduced-motion`.
 
 Done when
 - A full scan can be reviewed end to end and a confirmed record is stored.
 - Works at 360px wide and on a real phone.
+- The mask appears without animation when reduced motion is on, and GSAP is not in the capture route's client chunks.
 
 ## Phase 6 — Offline outbox (Oct 30 to Nov 1) · A
 
@@ -123,7 +127,7 @@ Tasks
 2. `/api/scans/[id]/resume` endpoint.
 3. Empty, loading and error states for every screen.
 4. One Playwright happy-path test in mock mode.
-5. Accessibility pass (contrast, focus order, reduced motion).
+5. Accessibility pass (contrast, focus order, reduced motion; icon-only controls labeled; contrast checked on the restyled shadcn components).
 6. Secret scan of the repo and git history.
 
 Done when
@@ -167,7 +171,7 @@ Keep the last known-good deployment. If Production breaks, promote or roll back 
 ---
 
 ## Cut order if we fall behind
-1. Service worker caching and motion polish.
+1. Service worker caching and motion polish (GSAP mask reveal goes first: the mask just appears).
 2. Summary becomes a plain cited list.
 3. Handwriting regions (keep tables, stamps, headers).
 4. Move the open-weights reader from Baseten to Modal if Baseten fails twice.
