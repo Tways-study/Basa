@@ -4,7 +4,7 @@ Basa turns photographed paper clinic charts into human-verified digital records.
 
 ## Non-negotiable rules
 
-1. **New work only.** Every line of code here is written during the hackathon (Oct 27 to Nov 4). Never copy, import, or read code, schemas, or assets from any other repository or source. If I ask you to, refuse and tell me why.
+1. **New work only.** Every line of code here is written during the hackathon (Oct 27 to Nov 4). Never copy, import, or read code, schemas, or assets from any other repository or source. If I ask you to, refuse and tell me why. Exception, confirmed by the hackathon organizers (2026-10-29): UI libraries used within their own licenses are allowed, namely shadcn/ui (including component source its CLI generates), GSAP and lucide-react. They are not models the project calls at runtime. Nothing else is exempt.
 2. **Synthetic data only.** No real patient data anywhere: fixtures, prompts, logs, screenshots. All names, IDs, and values are fictional.
 3. **Not medical advice.** Basa digitizes and verifies what is on paper. Never generate treatment recommendations, dosing, diagnoses, or contraindication or drug-safety judgments, in UI copy, prompts, or code. Summaries restate only what the confirmed record contains and cite their source region. Prompts sent to models must ask for extraction only and forbid interpretation.
 4. **Secrets stay server-side.** Keys live in `.env.local` (never committed). Only `.env.example` (names, no values) is committed. Never use the `NEXT_PUBLIC_` prefix for a key other than the Supabase URL and anon key. Never log keys or full request headers.
@@ -21,11 +21,12 @@ Capture → IndexedDB outbox → `POST /api/sync` → segment (SAM 3.1, Meta API
 
 ## Stack
 
-Next.js (App Router), TypeScript strict, Tailwind, Supabase (Postgres and Storage, RLS on every table), Zod on every external input and every model output, IndexedDB via `idb`, Vitest (unit), Playwright (one happy-path e2e), Vercel. Package manager: pnpm. Prefer Server Components; use `"use client"` only for capture, the outbox, and the review screen.
+Next.js (App Router), TypeScript strict, Tailwind, shadcn/ui (Radix primitives, restyled to our palette), lucide-react (icons), GSAP with `@gsap/react` (SAM mask reveal only), Supabase (Postgres and Storage, RLS on every table), Zod on every external input and every model output, IndexedDB via `idb`, Vitest (unit), Playwright (one happy-path e2e), Vercel. Package manager: pnpm. Prefer Server Components; use `"use client"` only for capture, the outbox, and the review screen.
 
 ## Layout
 
 - `app/` routes; `app/api/sync/route.ts` is the sync endpoint
+- `components/ui/` shadcn components, restyled to the palette; `components/` our own components
 - `lib/models/` one adapter per model, exposing `segment()` and `readRegion()`; each returns Zod-validated data; model IDs and base URLs come from env
 - `lib/pipeline/` stages and orchestration; `lib/pipeline/reconcile.ts` holds pure functions
 - `lib/outbox/` IndexedDB queue and sync
@@ -79,6 +80,9 @@ Paper-and-ink editorial, built for tired eyes in a bright clinic. Not a generic 
 - Colors as CSS variables: paper `#F4EFE6`, ink `#1B1A17`, muted line `#D9D2C3`, verified green `#2F6B4F`, flag amber `#B7791F`, stamp red `#C8341F`. Color carries meaning only: green = models agreed, amber = needs a human, red = unreadable or failed.
 - The review screen is the hero: source crop and both readings side by side, flagged fields impossible to miss, touch targets of at least 44px, works from 360px wide up to desktop.
 - Motion only where it explains something: SAM masks animating in, status badge changes. Respect `prefers-reduced-motion`.
+- shadcn: use only the components we need, mapped to the palette variables and Fraunces / IBM Plex. No default shadcn theme, no Inter. Keep the six palette variables in `app/globals.css` when running `shadcn init`.
+- Icons come from lucide-react only. Decorative icons get `aria-hidden`; an icon-only control gets an `aria-label`. Pair color with an icon or text (agreed = Check, flagged = TriangleAlert, unreadable = CircleX) so meaning never rests on color alone.
+- GSAP is only for the SAM mask reveal on the review screen: a lazy-loaded client component, `useGSAP`, and `gsap.matchMedia()` for reduced motion. Never in capture or the outbox. Status badges use CSS transitions.
 - Accessibility: AA contrast, keyboard-operable review, a label on every control.
 
 ## Definition of done for a feature
