@@ -1,6 +1,7 @@
 import { readFile } from "node:fs/promises";
 
-// Server-side only. Run with `pnpm smoke:<name> path/to/synthetic-chart.jpg`.
+// Server-side only. Run with `pnpm smoke:<name> [path/to/synthetic-chart.jpg] [--flag=value]`.
+// With no image path the script sends a text-only call, which checks the key, URL and model name first.
 // Prints the raw response so we write down what the API really returns (docs/models-notes.md).
 // Never prints keys or request headers.
 
@@ -15,19 +16,19 @@ export class RequestShapeUnknown extends Error {}
 
 export async function runSmoke(
   name: string,
-  buildRequest: (image: Buffer) => SmokeRequest,
+  buildRequest: (image: Buffer | null, flags: Record<string, string>) => SmokeRequest,
 ): Promise<void> {
-  const imagePath = process.argv[2];
-  if (!imagePath) {
-    console.error(`Usage: pnpm smoke:${name} path/to/synthetic-chart.jpg (synthetic charts only)`);
-    process.exitCode = 1;
-    return;
-  }
+  const args = process.argv.slice(2);
+  const flags = Object.fromEntries(
+    args.filter((a) => a.startsWith("--")).map((a) => a.slice(2).split("=") as [string, string]),
+  );
+  const imagePath = args.find((a) => !a.startsWith("--"));
+  // Synthetic charts only: never point this at a real patient image.
+  const image = imagePath ? await readFile(imagePath) : null;
 
-  const image = await readFile(imagePath);
   let req: SmokeRequest;
   try {
-    req = buildRequest(image);
+    req = buildRequest(image, flags);
   } catch (err) {
     if (err instanceof RequestShapeUnknown) {
       console.error(`[${name}] ${err.message}`);
@@ -48,7 +49,7 @@ export async function runSmoke(
     const latencyMs = Math.round(performance.now() - started);
     const text = await res.text();
     console.log(`[${name}] status=${res.status} latency=${latencyMs}ms content-type=${res.headers.get("content-type")}`);
-    console.log(`[${name}] image bytes sent: ${image.length}`);
+    console.log(`[${name}] image bytes sent: ${image ? image.length : 0}`);
     console.log(text.length > 20_000 ? `${text.slice(0, 20_000)}\n... (truncated)` : text);
     if (!res.ok) process.exitCode = 1;
   } catch (err) {
