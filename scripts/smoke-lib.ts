@@ -54,7 +54,10 @@ export async function runSmoke(
     if (!res.ok) process.exitCode = 1;
   } catch (err) {
     // A timeout or network error is a smoke-test result too: record it in models-notes.md.
-    console.error(`[${name}] request failed after ${Math.round(performance.now() - started)}ms:`, err);
+    // Print only the error kind, never the error object: Node's fetch errors echo the input, which can be a secret.
+    const kind = err instanceof Error ? `${err.name}: ${err.message}` : "unknown error";
+    const code = err instanceof Error && err.cause instanceof Error ? ` (${err.cause.name})` : "";
+    console.error(`[${name}] request failed after ${Math.round(performance.now() - started)}ms: ${kind}${code}`);
     process.exitCode = 1;
   }
 }

@@ -16,7 +16,8 @@ Last updated: 2026-10-29
 
 | Item | Detail |
 |---|---|
-| Status | untested (shape documented; no call made yet) |
+| Status | ok for a text-only call (2026-10-29); image input untested |
+| Observed 2026-10-29 | `POST {base}/chat/completions` with `Bearer` auth returned HTTP 200 in about 2.3 s for a one-word text prompt. Answer in `choices[0].message.content` (`ready`). The response also has `usage` with `completion_tokens_details.reasoning_tokens` (102 of 112 completion tokens on that reply), so reasoning tokens count toward `max_tokens` here too: leave headroom. `GET /v1/models` with our key returned 200 and lists `muse-spark-1.3` and `sam-3.1` |
 | Model ID | `muse-spark-1.3`, the latest version and Meta's recommendation for new work (documented). Do **not** use `muse-spark-1.3-contributor`: it lets Meta train on request content. Older: `muse-spark-1.2`, `muse-spark-1.1` |
 | Endpoint | `POST {META_API_BASE_URL}/chat/completions`, with the base URL `https://api.meta.ai/v1` (documented). Responses API (`/responses`) and Messages API also work for this model |
 | Auth header | `Authorization: Bearer <key>`. Keys start with `LLM_` (documented). Docs call the env var `MODEL_API_KEY`; ours is `META_API_KEY` |
@@ -32,7 +33,8 @@ Last updated: 2026-10-29
 
 | Item | Detail |
 |---|---|
-| Status | untested (shape documented; no call made yet) |
+| Status | auth, URL and model name ok (2026-10-29); segmentation output untested (needs an image) |
+| Observed 2026-10-29 | `POST {base}/responses` with `Bearer` auth and a text-only prompt returned HTTP 400 in about 1 s with `{"error":{"code":null,"message":"SAM 3 requires an input_image or input_video content part in a user message","param":null,"type":"invalid_request_error"}}`. That confirms the key, URL and model name are accepted and that an image is mandatory. Error shape: `{"error":{"code","message","param","type"}}`; an unauthenticated call returned 401 with `type: authentication_error`, `code: invalid_api_key` |
 | Model ID | `sam-3.1` (documented) |
 | Endpoint | `POST {META_API_BASE_URL}/responses`, **not** chat completions (documented) |
 | Auth header | `Authorization: Bearer <key>` (documented) |
