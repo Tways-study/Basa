@@ -8,6 +8,7 @@ Basa turns photographed paper clinic charts into human-verified digital records.
 > Every line of code here was written during the hackathon (Oct 27 to Nov 4, 2026). No code, schemas, or assets come from any other repository. No real patient data exists anywhere in this project: every name, ID, and value in fixtures, prompts, logs, and screenshots is fictional.
 
 **Team:** Tways (tech lead, pipeline) · Alex (frontend, offline) · Adrian (data, eval, QA)
+**Track:** Startup (confirmed by the organizers)
 **Hard deadline:** Thu Nov 5, 2026, 10:00 AM PHT · **Our submit target:** Wed Nov 4, 8:00 PM PHT
 
 ## Not medical advice
