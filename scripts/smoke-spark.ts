@@ -24,6 +24,7 @@ runSmoke("spark", (image, flags) => {
   return {
     url: `${base}/chat/completions`,
     headers: { "Content-Type": "application/json", Authorization: `Bearer ${key}` },
-    body: JSON.stringify({ model, max_tokens: 200, messages: [{ role: "user", content }] }),
+    // Reasoning tokens count toward max_tokens; 200 was fully spent on reasoning for an image (content came back null).
+    body: JSON.stringify({ model, max_tokens: Number(flags["max-tokens"] ?? 3000), messages: [{ role: "user", content }] }),
   };
 });

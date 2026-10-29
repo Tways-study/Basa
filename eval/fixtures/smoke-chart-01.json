@@ -1,0 +1,22 @@
+{
+  "header.patient_name": "Maria L. Dela Vega",
+  "header.chart_no": "CH-004217",
+  "header.date": "2026-03-14",
+  "row1.test": "Hemoglobin",
+  "row1.value": "13.2",
+  "row1.unit": "g/dL",
+  "row2.test": "White blood cells",
+  "row2.value": "6.8",
+  "row2.unit": "x10^9/L",
+  "row3.test": "Glucose, fasting",
+  "row3.value": "5.4",
+  "row3.unit": "mmol/L",
+  "row4.test": "Creatinine",
+  "row4.value": "78",
+  "row4.unit": "umol/L",
+  "line1": "Sample taken 08:15, fasting.",
+  "line2": "Repeat count sent to lab B.",
+  "stamp.present": true,
+  "stamp.text": "RECEIVED LAB DEPT 14 MAR",
+  "signature.present": true
+}
