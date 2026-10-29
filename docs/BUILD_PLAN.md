@@ -148,7 +148,7 @@ Do a first full deploy in Phase 3 and repeat this list before each milestone. A 
 | `META_API_KEY`, `META_API_BASE_URL` (`https://api.meta.ai/v1`, no trailing slash or period), `META_SPARK_MODEL` (`muse-spark-1.3`), `META_SAM_MODEL` (`sam-3.1`) | No |
 | `BASETEN_API_KEY`, `BASETEN_MODEL_URL` (the full chat-completions endpoint), `BASETEN_MODEL` (`meta-models/muse-spark-open`, or `-1026` if we get access) | No |
 | `SUPABASE_SERVICE_ROLE_KEY` | **No, never** |
-| `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY` | Yes (designed to be public) |
+| `SUPABASE_URL`, `SUPABASE_ANON_KEY` | No (server only) |
 | `MAX_MODEL_CALLS_PER_SCAN` | No |
 | `MOCK_MODELS` | No, set to `false` in Production |
 

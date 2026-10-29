@@ -1,0 +1,155 @@
+import { describe, expect, it, vi } from "vitest";
+import { getModelAdapters } from "@/lib/models";
+import type { ModelAdapters } from "@/lib/models/types";
+import type { JobStatus, Reading, Region } from "@/lib/schemas";
+import type { ScanRecord, ScanStore } from "@/lib/server/store";
+import { buildScanResult } from "@/lib/server/store";
+import { STALE_AFTER_MS, decideStart, runPipeline, type PipelineDeps } from "./run";
+
+function fakeStore(scan: Partial<ScanRecord> = {}) {
+  const state = {
+    scan: { id: "s1", status: "queued" as JobStatus, imagePath: "s1.jpg", error: null as string | null, updatedAt: new Date(), ...scan },
+    regions: [] as Region[],
+    readings: new Map<string, Reading>(),
+    statuses: [] as JobStatus[],
+  };
+  const store: ScanStore = {
+    async getScan() { return { ...state.scan }; },
+    async createScan() {},
+    async setStatus(_id, status, error = null) { state.scan.status = status; state.scan.error = error; state.statuses.push(status); },
+    async getRegions() { return [...state.regions]; },
+    async insertRegions(scanId, regions) {
+      const rows = regions.map((r, i) => ({ id: `r${state.regions.length + i + 1}`, scanId, ...r }));
+      state.regions.push(...rows);
+      return rows;
+    },
+    async getReadings() { return [...state.readings.values()]; },
+    async upsertReading(r) { state.readings.set(`${r.regionId}:${r.model}`, r); },
+  };
+  return { state, store };
+}
+
+function deps(store: ScanStore, overrides: Partial<PipelineDeps> = {}): PipelineDeps {
+  return {
+    store,
+    createAdapters: () => getModelAdapters(), // MOCK_MODELS=true in these tests
+    loadImage: async () => new Uint8Array([1]),
+    crop: async (image) => image,
+    maxCalls: 30,
+    ...overrides,
+  };
+}
+
+describe("runPipeline (mock models)", () => {
+  it("segments, reads each region once and ends in needs_review", async () => {
+    vi.stubEnv("MOCK_MODELS", "true");
+    const { state, store } = fakeStore();
+    await runPipeline("s1", deps(store));
+    expect(state.scan.status).toBe("needs_review");
+    expect(state.regions).toHaveLength(4);
+    expect(state.readings.size).toBe(4);
+    expect(state.statuses).toEqual(["segmenting", "reading", "needs_review"]);
+  });
+
+  it("running it again, or after a crash, creates no duplicates", async () => {
+    vi.stubEnv("MOCK_MODELS", "true");
+    const { state, store } = fakeStore();
+    await runPipeline("s1", deps(store));
+    state.scan.status = "reading"; // pretend the first run died before finishing
+    state.readings.delete("r2:muse_spark"); // ...with one reading missing
+    await runPipeline("s1", deps(store));
+    expect(state.regions).toHaveLength(4);
+    expect(state.readings.size).toBe(4);
+    expect(state.scan.status).toBe("needs_review");
+  });
+
+  it("does not re-read regions that already have a good reading", async () => {
+    vi.stubEnv("MOCK_MODELS", "true");
+    const { store } = fakeStore();
+    await runPipeline("s1", deps(store));
+    const readRegion = vi.fn();
+    const adapters = getModelAdapters();
+    const spied: ModelAdapters = { ...adapters, readers: [{ id: "muse_spark", readRegion }] };
+    await runPipeline("s1", deps(store, { createAdapters: () => spied }));
+    expect(readRegion).not.toHaveBeenCalled();
+  });
+
+  it("a region that fails to read keeps its error and the scan still reaches review", async () => {
+    vi.stubEnv("MOCK_MODELS", "true");
+    const { state, store } = fakeStore();
+    const base = getModelAdapters();
+    const flaky: ModelAdapters = {
+      ...base,
+      readers: [
+        {
+          id: "muse_spark",
+          readRegion: async (input) => {
+            if (input.kind === "table") throw new Error("boom");
+            return base.readers[0].readRegion(input);
+          },
+        },
+      ],
+    };
+    await runPipeline("s1", deps(store, { createAdapters: () => flaky }));
+    expect(state.scan.status).toBe("needs_review");
+    expect([...state.readings.values()].filter((r) => r.error)).toHaveLength(1);
+  });
+
+  it("fails the scan with a message when no region can be read", async () => {
+    vi.stubEnv("MOCK_MODELS", "true");
+    const { state, store } = fakeStore();
+    const base = getModelAdapters();
+    const broken: ModelAdapters = { ...base, readers: [{ id: "muse_spark", readRegion: async () => { throw new Error("down"); } }] };
+    await runPipeline("s1", deps(store, { createAdapters: () => broken }));
+    expect(state.scan.status).toBe("failed");
+    expect(state.scan.error).toMatch(/No region could be read/);
+  });
+
+  it("stops and records a clear failure when the call cap is hit", async () => {
+    vi.stubEnv("MOCK_MODELS", "true");
+    const { state, store } = fakeStore();
+    const capped = (onRequest: () => void): ModelAdapters => {
+      const base = getModelAdapters();
+      return {
+        segmenter: { segment: async (img) => { onRequest(); return base.segmenter.segment(img); } },
+        readers: [{ id: "muse_spark", readRegion: async (i) => { onRequest(); return base.readers[0].readRegion(i); } }],
+      };
+    };
+    await runPipeline("s1", deps(store, { createAdapters: capped, maxCalls: 2 }));
+    expect(state.scan.status).toBe("failed");
+    expect(state.scan.error).toMatch(/limit of 2 model calls/);
+  });
+
+  it("fails the scan if the scan has no stored image", async () => {
+    const { state, store } = fakeStore({ imagePath: null });
+    await runPipeline("s1", deps(store));
+    expect(state.scan.status).toBe("failed");
+  });
+});
+
+describe("decideStart", () => {
+  const scan = (status: JobStatus, ageMs = 0): ScanRecord => ({
+    id: "s1", status, imagePath: "s1.jpg", error: null, updatedAt: new Date(1_000_000 - ageMs),
+  });
+  const now = 1_000_000;
+
+  it("starts a new scan", () => expect(decideStart(null, now)).toBe("start"));
+  it("leaves a finished scan alone", () => {
+    expect(decideStart(scan("needs_review"), now)).toBe("noop");
+    expect(decideStart(scan("done"), now)).toBe("noop");
+  });
+  it("leaves a scan that is actively running alone", () => expect(decideStart(scan("reading", 5_000), now)).toBe("noop"));
+  it("resumes a scan that went quiet", () => expect(decideStart(scan("reading", STALE_AFTER_MS + 1), now)).toBe("resume"));
+  it("resumes a failed scan", () => expect(decideStart(scan("failed"), now)).toBe("resume"));
+});
+
+describe("buildScanResult", () => {
+  it("attaches each region's readings and drops the region id from them", () => {
+    const scan: ScanRecord = { id: "s1", status: "needs_review", imagePath: "s1.jpg", error: null, updatedAt: new Date() };
+    const regions: Region[] = [{ id: "r1", scanId: "s1", kind: "stamp", bbox: { x: 0, y: 0, w: 1, h: 1 }, maskPath: null }];
+    const readings: Reading[] = [{ regionId: "r1", model: "muse_spark", fields: { "stamp.present": true }, latencyMs: 5, error: null }];
+    const result = buildScanResult(scan, regions, readings, "https://signed.example/x");
+    expect(result.regions[0].readings).toEqual([{ model: "muse_spark", fields: { "stamp.present": true }, latencyMs: 5, error: null }]);
+    expect(result.imageUrl).toBe("https://signed.example/x");
+  });
+});

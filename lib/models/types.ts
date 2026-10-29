@@ -28,5 +28,6 @@ export interface ReaderAdapter {
 
 export interface ModelAdapters {
   segmenter: SegmentAdapter;
-  readers: [ReaderAdapter, ReaderAdapter];
+  // One reader until Phase 4 adds Muse Spark Open; mock mode already returns two.
+  readers: [ReaderAdapter, ...ReaderAdapter[]];
 }

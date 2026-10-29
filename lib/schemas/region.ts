@@ -1,6 +1,6 @@
 import { z } from "zod";
 
-export const RegionKindSchema = z.enum(["table", "handwriting", "stamp", "printed"]);
+export const RegionKindSchema = z.enum(["table", "handwriting", "stamp", "printed", "header", "signature"]);
 export type RegionKind = z.infer<typeof RegionKindSchema>;
 
 // Fractions of the image (0 to 1), so the overlay scales with any screen size.
