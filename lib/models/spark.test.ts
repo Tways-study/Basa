@@ -39,6 +39,15 @@ describe("reader", () => {
     expect(sent.messages[0].content[1].image_url.url).toMatch(/^data:image\/jpeg;base64,/);
   });
 
+  it("shows the model the exact key shape, without the word that led it to invent a key", async () => {
+    const fetchImpl = vi.fn(async () => reply('{"signature.present": true}'));
+    await createSparkReader({ fetchImpl }).readRegion({ regionId: "r1", kind: "signature", image });
+    const [, init] = fetchImpl.mock.calls[0] as unknown as [string, RequestInit];
+    const prompt: string = JSON.parse(init.body as string).messages[0].content[0].text;
+    expect(prompt).toContain('{"signature.present": true}');
+    expect(prompt.toLowerCase()).not.toContain("transcription");
+  });
+
   it("treats finish_reason length as a failed reading, not an answer", async () => {
     const fetchImpl = vi.fn(async () => reply('{"line1":"cut off', "length"));
     const reading = await createSparkReader({ fetchImpl }).readRegion({ regionId: "r1", kind: "handwriting", image });
