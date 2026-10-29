@@ -37,7 +37,7 @@ Done when
 - Schemas and `reconcile` are merged to `main` and A and D have pulled them.
 - The app runs end to end in mock mode with no credentials.
 
-## Phase 2 — Database and storage (Oct 28) · D
+## Phase 2 — Database and storage (Oct 28) · D (done by T on Oct 29, who took over Adrian's part; see `docs/new-work.md`)
 
 Tasks
 1. Migration for `scans`, `regions`, `readings`, `reviews`, `recognition_event` (see CLAUDE.md data model). Add a unique constraint on `readings (region_id, model)` so retries cannot duplicate.
