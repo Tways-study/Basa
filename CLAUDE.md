@@ -1,6 +1,6 @@
 # Basa — Claude Code instructions
 
-Basa turns photographed paper clinic charts into human-verified digital records. It is our entry for the Meta Global AI Developer Hackathon. Hard deadline: Thu Nov 5, 2026, 10:00 AM PHT. Team: Tways (tech lead, pipeline), Alex (frontend, offline), Adrian (data, eval, QA).
+Basa turns photographed paper clinic charts into human-verified digital records. It is our entry for the Meta Global AI Developer Hackathon, in the Startup track. Hard deadline: Thu Nov 5, 2026, 10:00 AM PHT. Team: Tways (tech lead, pipeline), Alex (frontend, offline), Adrian (data, eval, QA).
 
 ## Non-negotiable rules
 
