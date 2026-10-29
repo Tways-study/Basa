@@ -125,7 +125,7 @@ To work without credentials, set `MOCK_MODELS=true`: every model adapter returns
 | `META_API_KEY`, `META_API_BASE_URL`, `META_SPARK_MODEL`, `META_SAM_MODEL` | No |
 | `BASETEN_API_KEY`, `BASETEN_MODEL_URL`, `BASETEN_MODEL` | No |
 | `SUPABASE_SERVICE_ROLE_KEY` | **Never** |
-| `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY` | Yes, by design |
+| `SUPABASE_URL`, `SUPABASE_ANON_KEY` | No |
 | `MAX_MODEL_CALLS_PER_SCAN` | No |
 | `MOCK_MODELS` | No (`false` in Production) |
 

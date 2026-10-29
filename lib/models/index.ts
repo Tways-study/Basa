@@ -1,15 +1,19 @@
 import { createMockAdapters } from "./mock";
+import { createSparkAdapters } from "./spark";
 import type { ModelAdapters } from "./types";
 
 export * from "./types";
 
+export interface AdapterOptions {
+  /** Called before every real HTTP attempt; the pipeline uses it to enforce MAX_MODEL_CALLS_PER_SCAN. */
+  onRequest?: () => void;
+}
+
 /**
- * Mock mode needs no credentials. The real adapters are not written yet on purpose:
- * their request and response shapes must come from docs/models-notes.md (Phase 1 smoke test), not guesses.
+ * Phase 3 has one real reader (Muse Spark). SAM and the Baseten reader arrive in Phase 4, so
+ * the second reader and mask segmentation are not wired here yet.
  */
-export function getModelAdapters(): ModelAdapters {
+export function getModelAdapters(opts: AdapterOptions = {}): ModelAdapters {
   if (process.env.MOCK_MODELS === "true") return createMockAdapters();
-  throw new Error(
-    "Real model adapters are not implemented yet. Set MOCK_MODELS=true, or finish the smoke test and docs/models-notes.md first.",
-  );
+  return createSparkAdapters({ onRequest: opts.onRequest });
 }

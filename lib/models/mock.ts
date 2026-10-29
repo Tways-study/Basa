@@ -16,7 +16,7 @@ import {
 // Every name, ID and value below is fictional. No network call is made in mock mode.
 
 const MOCK_REGIONS = [
-  { kind: "printed", bbox: { x: 0.05, y: 0.03, w: 0.9, h: 0.12 }, maskPath: null },
+  { kind: "header", bbox: { x: 0.05, y: 0.03, w: 0.9, h: 0.12 }, maskPath: null },
   { kind: "table", bbox: { x: 0.05, y: 0.2, w: 0.9, h: 0.4 }, maskPath: null },
   { kind: "handwriting", bbox: { x: 0.05, y: 0.64, w: 0.6, h: 0.18 }, maskPath: null },
   { kind: "stamp", bbox: { x: 0.68, y: 0.7, w: 0.27, h: 0.18 }, maskPath: null },
@@ -25,7 +25,8 @@ const MOCK_REGIONS = [
 // Reader A reads everything cleanly. Reader B differs in three places on purpose,
 // so the review screen and reconcile always have flagged fields to show in mock mode.
 const FIXTURES: Record<RegionKind, Record<ReaderId, ReadingFields>> = {
-  printed: {
+  printed: { muse_spark: {}, muse_spark_open: {} },
+  header: {
     muse_spark: { "header.patient_name": "Juan Sample", "header.chart_no": "SYN-0001", "header.date": "2026-10-20" },
     muse_spark_open: { "header.patient_name": "Juan Sample", "header.chart_no": "SYN-0001", "header.date": "2026-10-20" },
   },
@@ -50,6 +51,10 @@ const FIXTURES: Record<RegionKind, Record<ReaderId, ReadingFields>> = {
   stamp: {
     muse_spark: { "stamp.present": true, "stamp.text": "RECEIVED" },
     muse_spark_open: { "stamp.present": true, "stamp.text": "RECEIVED" },
+  },
+  signature: {
+    muse_spark: { "signature.present": true },
+    muse_spark_open: { "signature.present": true },
   },
 };
 

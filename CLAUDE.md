@@ -7,7 +7,7 @@ Basa turns photographed paper clinic charts into human-verified digital records.
 1. **New work only.** Every line of code here is written during the hackathon (Oct 27 to Nov 4). Never copy, import, or read code, schemas, or assets from any other repository or source. If I ask you to, refuse and tell me why. Exception, confirmed by the hackathon organizers (2026-10-29): UI libraries used within their own licenses are allowed, namely shadcn/ui (including component source its CLI generates), GSAP and lucide-react. They are not models the project calls at runtime. Nothing else is exempt.
 2. **Synthetic data only.** No real patient data anywhere: fixtures, prompts, logs, screenshots. All names, IDs, and values are fictional.
 3. **Not medical advice.** Basa digitizes and verifies what is on paper. Never generate treatment recommendations, dosing, diagnoses, or contraindication or drug-safety judgments, in UI copy, prompts, or code. Summaries restate only what the confirmed record contains and cite their source region. Prompts sent to models must ask for extraction only and forbid interpretation.
-4. **Secrets stay server-side.** Keys live in `.env.local` (never committed). Only `.env.example` (names, no values) is committed. Never use the `NEXT_PUBLIC_` prefix for a key other than the Supabase URL and anon key. Never log keys or full request headers.
+4. **Secrets stay server-side.** Keys live in `.env.local` (never committed). Only `.env.example` (names, no values) is committed. Never use the `NEXT_PUBLIC_` prefix on any key; all Supabase keys are server-side. Never log keys or full request headers.
 5. **Never invent API shapes.** Model request and response formats live in `docs/models-notes.md`, written after the Day-1 smoke test. If a detail is not there, stop and ask me. Do not guess endpoints, parameters, or model IDs.
 
 ## Pipeline
@@ -39,7 +39,7 @@ Next.js (App Router), TypeScript strict, Tailwind, shadcn/ui (Radix primitives, 
 - `eval/` fixtures (`eval/fixtures/*.jpg` plus `*.json` ground truth), `eval/run.ts`, `eval/results.json`
 - `docs/` holds `models-notes.md`, `new-work.md` (what was built, and when), `eval-results.md`
 
-Data model (Supabase): `scans` (id, status, image_path, created_at), `regions` (id, scan_id, kind: table | handwriting | stamp | printed, bbox, mask_path), `readings` (id, region_id, model, structured_json, latency_ms, error), `reviews` (id, region_id, final_json, field_status, edited, reviewed_at), `recognition_event` (id, region_id, readings snapshot, human_final, created_at).
+Data model (Supabase): `scans` (id, status, image_path, created_at), `regions` (id, scan_id, kind: table | handwriting | stamp | printed | header | signature, bbox, mask_path), `readings` (id, region_id, model, structured_json, latency_ms, error), `reviews` (id, region_id, final_json, field_status, edited, reviewed_at), `recognition_event` (id, region_id, readings snapshot, human_final, created_at).
 
 ## Shared field keys
 
@@ -57,7 +57,7 @@ The contract between model output, reconcile, the review screen, and the ground-
 
 ## Environment variables
 
-`META_API_KEY`, `META_API_BASE_URL`, `META_SPARK_MODEL`, `META_SAM_MODEL`, `BASETEN_API_KEY`, `BASETEN_MODEL_URL`, `BASETEN_MODEL`, `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY`, `SUPABASE_SERVICE_ROLE_KEY` (server only), `MAX_MODEL_CALLS_PER_SCAN` (cost guard; enforce it in code), `MOCK_MODELS` (`true` returns fixtures with no network; `false` in Production).
+`META_API_KEY`, `META_API_BASE_URL`, `META_SPARK_MODEL`, `META_SAM_MODEL`, `BASETEN_API_KEY`, `BASETEN_MODEL_URL`, `BASETEN_MODEL`, `SUPABASE_URL`, `SUPABASE_ANON_KEY`, `SUPABASE_SERVICE_ROLE_KEY` (all server only), `MAX_MODEL_CALLS_PER_SCAN` (cost guard; enforce it in code), `MOCK_MODELS` (`true` returns fixtures with no network; `false` in Production).
 
 Format notes: `META_API_BASE_URL` is `https://api.meta.ai/v1` (no trailing slash or period; the adapters append the path). `BASETEN_MODEL_URL` is the full chat-completions endpoint, not just the base. Check shape without printing values: `awk -F= '/_URL=/{print $1, ($2 ~ /^https?:\/\//) ? "ok" : "NOT A URL"}' .env.local`. Smoke-script errors must never echo a value.
 

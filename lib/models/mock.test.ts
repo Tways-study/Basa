@@ -5,9 +5,10 @@ import { getModelAdapters } from "./index";
 afterEach(() => vi.unstubAllEnvs());
 
 describe("mock mode", () => {
-  it("refuses to run real adapters that do not exist yet", () => {
+  it("returns the real single-reader adapters when mock mode is off", () => {
     vi.stubEnv("MOCK_MODELS", "false");
-    expect(() => getModelAdapters()).toThrow(/not implemented/);
+    const { readers } = getModelAdapters();
+    expect(readers.map((r) => r.id)).toEqual(["muse_spark"]);
   });
 
   it("runs segment, two readers and reconcile with no credentials", async () => {
@@ -16,7 +17,7 @@ describe("mock mode", () => {
     const image = new Uint8Array();
 
     const regions = await segmenter.segment(image);
-    expect(regions.map((r) => r.kind)).toEqual(["printed", "table", "handwriting", "stamp"]);
+    expect(regions.map((r) => r.kind)).toEqual(["header", "table", "handwriting", "stamp"]);
 
     const fields = [];
     for (const [i, region] of regions.entries()) {
