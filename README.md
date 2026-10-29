@@ -128,7 +128,13 @@ To work without credentials, set `MOCK_MODELS=true`: every model adapter returns
 | `MAX_MODEL_CALLS_PER_SCAN` | No |
 | `MOCK_MODELS` | No (`false` in Production) |
 
-Only `.env.example` (names, no values) is committed. Model request and response shapes live in `docs/models-notes.md`, written from the Day-1 smoke test.
+Only `.env.example` (names, no values) is committed. Model request and response shapes live in `docs/models-notes.md`, each marked as observed in a smoke test or documented by the provider.
+
+Value formats: `META_API_BASE_URL` is `https://api.meta.ai/v1` (no trailing slash or period). `BASETEN_MODEL_URL` is the full chat-completions endpoint, not just the base URL. Meta keys start with `LLM_`.
+
+### Model smoke tests
+
+`pnpm smoke:spark-open`, `pnpm smoke:spark` and `pnpm smoke:sam` call each model once from the server side and print the raw response (never keys or headers). With no image argument they send a text-only call to check the key, URL and model name; add a synthetic chart image as the first argument for the image call. Record what you see in `docs/models-notes.md`.
 
 ### Commands
 
