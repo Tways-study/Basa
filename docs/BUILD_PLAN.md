@@ -54,6 +54,8 @@ Done when
 
 Goal: one chart goes from phone camera to a stored result on the live URL, with a single reader. Ugly is fine. Working is the point.
 
+Status (2026-10-30): tasks 1 to 4 and 6 are done. The API shipped in PRs #15 and #16, and Tways built the UI (capture screen, results page, UI foundation) in PR #18. Production serves a real Muse Spark scan end to end. Preview variables are ticked and a Preview deploy of `4dd117d` reaches Supabase (checked 2026-10-30; the Meta and Baseten keys on Preview are not yet exercised). Still open: the real phone photo on the public URL (the first Done when line); the steps and a result log are in `docs/phone-test.md`.
+
 Tasks
 1. A: capture screen that opens the camera or file picker and shows the photo.
 2. T: `POST /api/sync` that validates the upload (Zod), stores the image, creates a `scans` row, runs segment then one reader, saves `regions` and `readings`.
@@ -75,6 +77,7 @@ Tasks
 3. Wire in `reconcile`: write `agreed` / `flagged` per field.
 4. Cost guard: enforce `MAX_MODEL_CALLS_PER_SCAN` in code.
 5. Timeouts and bounded retries on every model call.
+6. Table read prompt: skip the chart's own header row (`TEST`, `VALUE`, `UNIT`). Today it comes back as `row1` (observed 2026-10-30).
 
 Done when
 - A real chart produces flagged fields where the two readers differ.
@@ -143,6 +146,9 @@ Done when
 Do a first full deploy in Phase 3 and repeat this list before each milestone. A deployment you have not rehearsed is the most common way to lose a demo.
 
 ### Environment variables in Vercel (Production and Preview)
+
+Tick **Preview** as well as Production on every variable, with exactly these names. A Production-only variable makes Preview deploys fail with `missing or invalid environment variables`, and changes reach only new deployments.
+
 | Variable | Exposed to browser? |
 |---|---|
 | `META_API_KEY`, `META_API_BASE_URL` (`https://api.meta.ai/v1`, no trailing slash or period), `META_SPARK_MODEL` (`muse-spark-1.3`), `META_SAM_MODEL` (`sam-3.1`) | No |

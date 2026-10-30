@@ -74,6 +74,12 @@ Last updated: 2026-10-29 (reasoning controls, region experiments)
 | Error format | HTTP 404 with a JSON body `{"error": "<message>"}`; the message was empty for a wrong path and `please check the model you provided` for an unknown model name (observed) |
 | Fallback if it fails | Move the open-weights reader to Modal; if that fails too, the second reader becomes Muse Spark with a different prompt and the Open Weights claim is dropped |
 
+## Read prompts: what we learned (observed 2026-10-30)
+
+- **Signature readings failed at random.** The shared read prompt said "Your job is transcription only" and the signature schema has one key (`signature.present`). Muse Spark answered under a key named `transcription` in 2 of 3 local scans and once on Production, and the field-key check rejected it. After removing the word, giving each region kind an exact example JSON and saying any other key is wrong, 9 of 9 scans (6 local, 3 on Production) read all five regions with no reading errors.
+- **Table regions include the chart's own header row.** The reader returns `TEST`, `VALUE`, `UNIT` as `row1` (seen in the live UI run). Open: tell the table prompt to skip the header row (Phase 4).
+- **Per-region read time** in the live UI run was 0.7 to 2.1 s with `reasoning_effort: minimal`.
+
 ## Open questions
 
 - **Decision (2026-10-29):** target model is `meta-models/muse-spark-open-1026`. No hackathon credits were issued to us and `-1026` fails (404) with our key, so development uses the unsuffixed ID on our own Baseten account. Set a spend alert on the Baseten account. Fallbacks if Baseten fails twice: Modal, then Muse Spark twice (see the cut order in `BUILD_PLAN.md`).
