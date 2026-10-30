@@ -42,6 +42,6 @@ Expected traffic: one `POST /api/sync`, then repeated `GET /api/scans/<id>`. Che
 
 | Date | Device and browser | Network | Scan id | Reached `needs_review` | Secrets in traffic | Notes |
 |---|---|---|---|---|---|---|
-| | | | | | | |
+| 2026-10-30 | MacBook webcam (rehearsal, not a phone; browser not recorded) | Mac, not mobile data | `1703a77d-916a-457f-8e27-ef94b4830a7c` | Yes, in about 14 s: 5 regions, 10 readings (both readers), 0 errors, checked in the database | None seen. Tways saw only `POST /api/sync` and repeated `GET /api/scans/<id>` in the Network tab (self-reported; no key-string search recorded) | Production alias `basa-chi.vercel.app` on the Phase 4 build. Results page contents not reported. Does not close the phone line: still needs a real phone photo on mobile data of the printed chart. |
 
 After a pass, log it in `docs/new-work.md` with the date, and clear the synthetic test scans from the database and storage before the demo.
