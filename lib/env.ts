@@ -22,10 +22,25 @@ const MetaEnvSchema = z.object({
   META_SPARK_MODEL: z.string().min(1),
 });
 
+const SamEnvSchema = z.object({
+  META_API_KEY: z.string().min(1),
+  META_API_BASE_URL: z.url(),
+  META_SAM_MODEL: z.string().min(1),
+});
+
+const BasetenEnvSchema = z.object({
+  BASETEN_API_KEY: z.string().min(1),
+  // The full chat-completions endpoint (https://inference.baseten.co/v1/chat/completions), not just the base.
+  BASETEN_MODEL_URL: z.url(),
+  BASETEN_MODEL: z.string().min(1),
+});
+
 const PipelineEnvSchema = z.object({
   MAX_MODEL_CALLS_PER_SCAN: z.coerce.number().int().positive().default(30),
 });
 
 export const getSupabaseEnv = () => parseEnv(SupabaseEnvSchema, "Supabase");
 export const getMetaEnv = () => parseEnv(MetaEnvSchema, "Meta API");
+export const getSamEnv = () => parseEnv(SamEnvSchema, "SAM");
+export const getBasetenEnv = () => parseEnv(BasetenEnvSchema, "Baseten");
 export const getPipelineEnv = () => parseEnv(PipelineEnvSchema, "Pipeline");

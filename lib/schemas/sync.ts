@@ -1,6 +1,7 @@
 import { z } from "zod";
 import { JobStatusSchema } from "./job";
 import { ReadingSchema } from "./reading";
+import { ReconciledFieldSchema } from "./reconciled";
 import { RegionSchema } from "./region";
 
 // Vercel rejects request bodies over 4.5 MB, so stay under it. The capture screen must
@@ -26,6 +27,8 @@ export const ScanResultSchema = z.object({
   regions: z.array(
     RegionSchema.extend({
       readings: z.array(ReadingSchema.omit({ regionId: true })),
+      // Derived from the readings on every request (reconcile is pure), so it can never go stale.
+      fields: z.array(ReconciledFieldSchema),
     }),
   ),
 });

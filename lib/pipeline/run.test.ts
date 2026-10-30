@@ -41,14 +41,14 @@ function deps(store: ScanStore, overrides: Partial<PipelineDeps> = {}): Pipeline
 }
 
 describe("runPipeline (mock models)", () => {
-  it("segments, reads each region once and ends in needs_review", async () => {
+  it("segments, reads each region with both readers, reconciles and ends in needs_review", async () => {
     vi.stubEnv("MOCK_MODELS", "true");
     const { state, store } = fakeStore();
     await runPipeline("s1", deps(store));
     expect(state.scan.status).toBe("needs_review");
     expect(state.regions).toHaveLength(4);
-    expect(state.readings.size).toBe(4);
-    expect(state.statuses).toEqual(["segmenting", "reading", "needs_review"]);
+    expect(state.readings.size).toBe(8); // 4 regions x 2 readers
+    expect(state.statuses).toEqual(["segmenting", "reading", "reconciling", "needs_review"]);
   });
 
   it("running it again, or after a crash, creates no duplicates", async () => {
@@ -59,8 +59,26 @@ describe("runPipeline (mock models)", () => {
     state.readings.delete("r2:muse_spark"); // ...with one reading missing
     await runPipeline("s1", deps(store));
     expect(state.regions).toHaveLength(4);
-    expect(state.readings.size).toBe(4);
+    expect(state.readings.size).toBe(8);
     expect(state.scan.status).toBe("needs_review");
+  });
+
+  it("a killed scan resumes and re-reads only the missing reading", async () => {
+    vi.stubEnv("MOCK_MODELS", "true");
+    const { state, store } = fakeStore();
+    await runPipeline("s1", deps(store));
+    state.scan.status = "reading";
+    state.readings.delete("r3:muse_spark_open");
+    const calls: string[] = [];
+    const base = getModelAdapters();
+    const watch = (r: ModelAdapters["readers"][number]) => ({
+      id: r.id,
+      readRegion: (i: Parameters<typeof r.readRegion>[0]) => { calls.push(`${i.regionId}:${r.id}`); return r.readRegion(i); },
+    });
+    const spied: ModelAdapters = { ...base, readers: [watch(base.readers[0]), watch(base.readers[1])] };
+    await runPipeline("s1", deps(store, { createAdapters: () => spied }));
+    expect(calls).toEqual(["r3:muse_spark_open"]);
+    expect(state.readings.size).toBe(8);
   });
 
   it("does not re-read regions that already have a good reading", async () => {
@@ -151,5 +169,73 @@ describe("buildScanResult", () => {
     const result = buildScanResult(scan, regions, readings, "https://signed.example/x");
     expect(result.regions[0].readings).toEqual([{ model: "muse_spark", fields: { "stamp.present": true }, latencyMs: 5, error: null }]);
     expect(result.imageUrl).toBe("https://signed.example/x");
+  });
+});
+
+describe("two readers", () => {
+  it("runs at most four model calls at once", async () => {
+    vi.stubEnv("MOCK_MODELS", "true");
+    const { store } = fakeStore();
+    const base = getModelAdapters();
+    let inFlight = 0;
+    let peak = 0;
+    const slow = (r: ModelAdapters["readers"][number]) => ({
+      id: r.id,
+      readRegion: async (i: Parameters<typeof r.readRegion>[0]) => {
+        peak = Math.max(peak, ++inFlight);
+        await new Promise((res) => setTimeout(res, 5));
+        inFlight--;
+        return r.readRegion(i);
+      },
+    });
+    await runPipeline("s1", deps(store, { createAdapters: () => ({ ...base, readers: [slow(base.readers[0]), slow(base.readers[1])] }) }));
+    expect(peak).toBeGreaterThan(1);
+    expect(peak).toBeLessThanOrEqual(4);
+  });
+
+  it("when one reader is down the scan still reaches review, with every field flagged", async () => {
+    vi.stubEnv("MOCK_MODELS", "true");
+    const { state, store } = fakeStore();
+    const base = getModelAdapters();
+    const openDown = { id: "muse_spark_open" as const, readRegion: async () => { throw new Error("Muse Spark Open returned HTTP 503"); } };
+    await runPipeline("s1", deps(store, { createAdapters: () => ({ ...base, readers: [base.readers[0], openDown] }) }));
+    expect(state.scan.status).toBe("needs_review");
+    const result = buildScanResult(
+      { ...state.scan }, state.regions, [...state.readings.values()], null,
+    );
+    expect(result.regions.flatMap((r) => r.readings).filter((r) => r.error)).toHaveLength(4);
+    const fields = result.regions.flatMap((r) => r.fields);
+    expect(fields.length).toBeGreaterThan(0);
+    // Nothing is auto-agreed when only one reader answered, so a person must still decide.
+    expect(fields.every((f) => f.status === "flagged" && f.reason === "one_reader_only")).toBe(true);
+  });
+
+  it("flags the places where the two mock readers differ and agrees where they match", async () => {
+    vi.stubEnv("MOCK_MODELS", "true");
+    const { state, store } = fakeStore();
+    await runPipeline("s1", deps(store));
+    const result = buildScanResult({ ...state.scan }, state.regions, [...state.readings.values()], null);
+    const byKey = new Map(result.regions.flatMap((r) => r.fields).map((f) => [f.key, f]));
+    expect(byKey.get("row2.value")).toMatchObject({ status: "flagged", reason: "mismatch" }); // 7.2 vs 1.2
+    expect(byKey.get("row4.value")).toMatchObject({ status: "flagged", reason: "one_unreadable" });
+    expect(byKey.get("row3.unit")?.status).toBe("agreed"); // µmol/L and umol/L
+    expect(byKey.get("row1.value")?.status).toBe("agreed");
+  });
+
+  it("the call cap counts both readers", async () => {
+    vi.stubEnv("MOCK_MODELS", "true");
+    const { state, store } = fakeStore();
+    const counted = (onRequest: () => void): ModelAdapters => {
+      const base = getModelAdapters();
+      const wrap = (r: ModelAdapters["readers"][number]) => ({ id: r.id, readRegion: async (i: Parameters<typeof r.readRegion>[0]) => { onRequest(); return r.readRegion(i); } });
+      return { segmenter: { segment: async (img) => { onRequest(); return base.segmenter.segment(img); } }, readers: [wrap(base.readers[0]), wrap(base.readers[1])] };
+    };
+    // 1 segment call + 8 reads = 9 calls; a cap of 9 passes, a cap of 8 stops the scan.
+    await runPipeline("s1", deps(store, { createAdapters: counted, maxCalls: 9 }));
+    expect(state.scan.status).toBe("needs_review");
+    const second = fakeStore();
+    await runPipeline("s1", deps(second.store, { createAdapters: counted, maxCalls: 8 }));
+    expect(second.state.scan.status).toBe("failed");
+    expect(second.state.scan.error).toMatch(/limit of 8 model calls/);
   });
 });

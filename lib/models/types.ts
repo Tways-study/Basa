@@ -28,6 +28,6 @@ export interface ReaderAdapter {
 
 export interface ModelAdapters {
   segmenter: SegmentAdapter;
-  // One reader until Phase 4 adds Muse Spark Open; mock mode already returns two.
+  // Muse Spark first, Muse Spark Open second. reconcile compares them by id, not by position.
   readers: [ReaderAdapter, ...ReaderAdapter[]];
 }
