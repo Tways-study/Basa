@@ -4,7 +4,7 @@ import { z } from "zod";
 // docs/models-notes.md ("Muse Spark (Meta API)" and "Muse Spark Open (Baseten)").
 
 const MAX_TOKENS = 1500; // reasoning counts toward this, so it needs headroom (measured 308 to 434 used)
-const REQUEST_TIMEOUT_MS = 40_000;
+export const REQUEST_TIMEOUT_MS = 40_000;
 const RETRY_DELAYS_MS = [600, 1800]; // bounded: two retries, then the reading fails
 
 export interface ChatOptions {
@@ -41,9 +41,34 @@ const ErrorBodySchema = z.object({
   error: z.union([z.string(), z.object({ message: z.string().nullish() })]),
 });
 
-class RetryableError extends Error {}
+/** A failure worth another try (timeout, network error, 429, 5xx). Anything else fails the call at once. */
+export class RetryableError extends Error {}
 
 const defaultSleep = (ms: number) => new Promise<void>((r) => setTimeout(r, ms));
+
+/**
+ * Run `attempt` up to three times (two bounded retries). `onRequest` fires before every attempt so the
+ * per-scan call cap sees retries too. Shared by every model call.
+ */
+export async function withRetries<T>(
+  label: string,
+  opts: ChatOptions,
+  attempt: () => Promise<T>,
+): Promise<T> {
+  const sleep = opts.sleep ?? defaultSleep;
+  let lastError: Error = new Error(`${label} request failed`);
+  for (let n = 0; n <= RETRY_DELAYS_MS.length; n++) {
+    if (n > 0) await sleep(RETRY_DELAYS_MS[n - 1]);
+    opts.onRequest?.();
+    try {
+      return await attempt();
+    } catch (err) {
+      if (!(err instanceof RetryableError)) throw err;
+      lastError = err;
+    }
+  }
+  throw lastError;
+}
 
 export async function chatCompletion(
   target: ChatTarget,
@@ -52,7 +77,6 @@ export async function chatCompletion(
   opts: ChatOptions,
 ): Promise<string> {
   const doFetch = opts.fetchImpl ?? fetch;
-  const sleep = opts.sleep ?? defaultSleep;
   const body = JSON.stringify({
     model: target.model,
     reasoning_effort: target.reasoningEffort,
@@ -67,19 +91,7 @@ export async function chatCompletion(
       },
     ],
   });
-
-  let lastError: Error = new Error(`${target.label} request failed`);
-  for (let attempt = 0; attempt <= RETRY_DELAYS_MS.length; attempt++) {
-    if (attempt > 0) await sleep(RETRY_DELAYS_MS[attempt - 1]);
-    opts.onRequest?.();
-    try {
-      return await attemptOnce(doFetch, target, body);
-    } catch (err) {
-      if (!(err instanceof RetryableError)) throw err;
-      lastError = err;
-    }
-  }
-  throw lastError;
+  return withRetries(target.label, opts, () => attemptOnce(doFetch, target, body));
 }
 
 async function attemptOnce(doFetch: typeof fetch, target: ChatTarget, body: string): Promise<string> {

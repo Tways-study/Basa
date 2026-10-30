@@ -10,7 +10,7 @@ Source: Phase 4 in `docs/BUILD_PLAN.md`. Scope freeze at the 8 PM check-in on Oc
 4. **Reconcile in the pipeline.** Write `agreed` / `flagged` per field. A row only one reader found is `flagged`.
 5. **Job states.** `queued → segmenting → reading → reconciling → needs_review → done`, `failed` reachable from any state. Each stage idempotent; re-running creates no duplicate rows.
 6. **Cost guard and resilience.** `MAX_MODEL_CALLS_PER_SCAN` counts both readers (and SAM once it exists); a timeout and bounded retries on every model call.
-7. **SAM box-prompt step.** Held back. The region strategy (Muse Spark proposes boxes, one SAM request returns masks) still needs the team's OK and a test on a real phone photo of a printed chart. Fallback if SAM is unusable: padded Muse Spark boxes directly (cut-order item 6).
+7. **SAM box-prompt step.** Built 2026-10-30 for boxes only (see `docs/new-work.md`); mask decoding is blocked on a format spec. Original note: held back. The region strategy (Muse Spark proposes boxes, one SAM request returns masks) still needs the team's OK and a test on a real phone photo of a printed chart. Fallback if SAM is unusable: padded Muse Spark boxes directly (cut-order item 6).
 
 ## Done when (from the build plan)
 

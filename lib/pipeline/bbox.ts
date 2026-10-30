@@ -31,3 +31,12 @@ export function toPixelRect(box: BBox, width: number, height: number) {
   const h = Math.max(1, Math.min(height - top, Math.round(box.h * height)));
   return { left, top, width: w, height: h };
 }
+
+/** Overlap of two boxes, 0 to 1. Guards against a refined box snapping to the wrong object. */
+export function iou(a: BBox, b: BBox): number {
+  const w = Math.min(a.x + a.w, b.x + b.w) - Math.max(a.x, b.x);
+  const h = Math.min(a.y + a.h, b.y + b.h) - Math.max(a.y, b.y);
+  if (w <= 0 || h <= 0) return 0;
+  const inter = w * h;
+  return inter / (a.w * a.h + b.w * b.h - inter);
+}

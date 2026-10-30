@@ -71,7 +71,7 @@ Done when
 
 ## Phase 4 — Full pipeline (Oct 30) · T
 
-Status (2026-10-30): tasks 1 to 5 and 6 built on `tways/phase-4-pipeline` (see `docs/phase-4-plan.md`), SAM box prompts (part of task 2) held until the phone test. Done when: call cap and resume covered by unit tests; the real-chart flagged-fields line still needs a chart where the two real readers disagree.
+Status (2026-10-30): tasks 1 to 5 and 6 built on `tways/phase-4-pipeline` (see `docs/phase-4-plan.md`), SAM box refinement built (boxes only; mask decoding is blocked on the mask byte format, see `docs/models-notes.md`). Done when: call cap and resume covered by unit tests; the real-chart flagged-fields line still needs a chart where the two real readers disagree.
 
 Tasks
 1. Job states: `queued → segmenting → reading → reconciling → needs_review → done`, with `failed` reachable from any state. Each stage is idempotent: re-running it must not create duplicate rows.
