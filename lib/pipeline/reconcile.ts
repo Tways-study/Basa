@@ -1,4 +1,4 @@
-import type { FlagReason, ReadingFields, ReconciledField, RawValue } from "@/lib/schemas";
+import type { FlagReason, Reading, ReadingFields, ReconciledField, RawValue } from "@/lib/schemas";
 
 // Pure functions only: no I/O, so the eval harness and the server share the same logic.
 
@@ -93,4 +93,13 @@ function flagged(
 // row2 sorts before row10, so the review screen reads top to bottom.
 function compareKeys(a: string, b: string): number {
   return a.localeCompare(b, "en", { numeric: true });
+}
+
+/**
+ * Reconcile one region from its stored readings. A reader with no reading, or a failed one (empty
+ * fields), counts as having found nothing, so every field it should have read is flagged and a person decides.
+ */
+export function reconcileReadings(readings: Pick<Reading, "model" | "fields">[]): ReconciledField[] {
+  const fieldsOf = (model: Reading["model"]) => readings.find((r) => r.model === model)?.fields ?? {};
+  return reconcile(fieldsOf("muse_spark"), fieldsOf("muse_spark_open"));
 }

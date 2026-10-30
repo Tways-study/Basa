@@ -1,7 +1,8 @@
 import type { ModelAdapters } from "@/lib/models/types";
-import type { Reading, Region } from "@/lib/schemas";
+import { ReconciledFieldSchema, type Reading, type Region } from "@/lib/schemas";
 import type { ScanRecord, ScanStore } from "@/lib/server/store";
 import { BudgetExceededError, CallBudget } from "./budget";
+import { reconcileReadings } from "./reconcile";
 
 const CONCURRENCY = 4;
 // A run that has not touched its scan for this long is treated as crashed and may be resumed.
@@ -72,15 +73,24 @@ export async function runPipeline(scanId: string, deps: PipelineDeps): Promise<v
     const done = new Set(
       (await store.getReadings(scanId)).filter((r) => !r.error).map((r) => `${r.regionId}:${r.model}`),
     );
-    const [reader] = adapters.readers; // Phase 3: one reader. Phase 4 runs all of them.
-    const todo = regions.filter((r) => !done.has(`${r.id}:${reader.id}`));
+    // One task per (region, reader) that has no good reading yet, so a resume only redoes what is missing.
+    const todo = regions.flatMap((region) =>
+      adapters.readers.filter((reader) => !done.has(`${region.id}:${reader.id}`)).map((reader) => ({ region, reader })),
+    );
+    // Both readers need the same crop; cut it once per region.
+    const crops = new Map<string, Promise<Uint8Array>>();
+    const cropOf = (region: Region) => {
+      let crop = crops.get(region.id);
+      if (!crop) crops.set(region.id, (crop = deps.crop(image, region.bbox)));
+      return crop;
+    };
 
     let stopped: BudgetExceededError | null = null;
-    const outcomes = await pool(todo, CONCURRENCY, async (region): Promise<Reading | null> => {
+    // The cap on parallel tasks bounds parallel model calls, whichever reader a task belongs to.
+    const outcomes = await pool(todo, CONCURRENCY, async ({ region, reader }): Promise<Reading | null> => {
       if (stopped) return null;
       try {
-        const crop = await deps.crop(image, region.bbox);
-        const reading = await reader.readRegion({ regionId: region.id, kind: region.kind, image: crop });
+        const reading = await reader.readRegion({ regionId: region.id, kind: region.kind, image: await cropOf(region) });
         await store.upsertReading(reading);
         return reading;
       } catch (err) {
@@ -88,7 +98,7 @@ export async function runPipeline(scanId: string, deps: PipelineDeps): Promise<v
           stopped = err;
           return null;
         }
-        // One bad region must not sink the scan: keep the failure as that region's reading.
+        // One bad region or reader must not sink the scan: keep the failure as that reading.
         const failed: Reading = {
           regionId: region.id,
           model: reader.id,
@@ -105,7 +115,14 @@ export async function runPipeline(scanId: string, deps: PipelineDeps): Promise<v
     if (todo.length > 0 && outcomes.every((o) => o?.error)) {
       throw new Error("No region could be read. Try again, or retake the photo.");
     }
-    // Reconcile needs two readers (Phase 4); with one, the scan is ready for a person to look at.
+
+    // The reconciled fields are derived from the stored readings whenever they are asked for
+    // (see buildScanResult). Running it here makes a reconcile bug fail the scan, not the review screen.
+    await store.setStatus(scanId, "reconciling");
+    const readings = await store.getReadings(scanId);
+    for (const region of regions) {
+      ReconciledFieldSchema.array().parse(reconcileReadings(readings.filter((r) => r.regionId === region.id)));
+    }
     await store.setStatus(scanId, "needs_review");
   } catch (err) {
     const message = err instanceof Error ? err.message : "Processing failed";

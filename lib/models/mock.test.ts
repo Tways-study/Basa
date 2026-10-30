@@ -5,10 +5,10 @@ import { getModelAdapters } from "./index";
 afterEach(() => vi.unstubAllEnvs());
 
 describe("mock mode", () => {
-  it("returns the real single-reader adapters when mock mode is off", () => {
+  it("returns the two real readers, Muse Spark then Muse Spark Open, when mock mode is off", () => {
     vi.stubEnv("MOCK_MODELS", "false");
     const { readers } = getModelAdapters();
-    expect(readers.map((r) => r.id)).toEqual(["muse_spark"]);
+    expect(readers.map((r) => r.id)).toEqual(["muse_spark", "muse_spark_open"]);
   });
 
   it("runs segment, two readers and reconcile with no credentials", async () => {

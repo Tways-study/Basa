@@ -9,6 +9,7 @@ import {
   type ScanResult,
 } from "@/lib/schemas";
 import type { SegmentedRegion } from "@/lib/models/types";
+import { reconcileReadings } from "@/lib/pipeline/reconcile";
 import { getServiceClient } from "./supabase";
 
 export interface ScanRecord {
@@ -139,11 +140,13 @@ export function buildScanResult(
     status: scan.status,
     error: scan.error,
     imageUrl,
-    regions: regions.map((region) => ({
-      ...region,
-      readings: readings
-        .filter((r) => r.regionId === region.id)
-        .map(({ model, fields, latencyMs, error }) => ({ model, fields, latencyMs, error })),
-    })),
+    regions: regions.map((region) => {
+      const own = readings.filter((r) => r.regionId === region.id);
+      return {
+        ...region,
+        readings: own.map(({ model, fields, latencyMs, error }) => ({ model, fields, latencyMs, error })),
+        fields: reconcileReadings(own),
+      };
+    }),
   };
 }

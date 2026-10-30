@@ -71,6 +71,8 @@ Done when
 
 ## Phase 4 — Full pipeline (Oct 30) · T
 
+Status (2026-10-30): tasks 1 to 5 and 6 built on `tways/phase-4-pipeline` (see `docs/phase-4-plan.md`), SAM box prompts (part of task 2) held until the phone test. Done when: call cap and resume covered by unit tests; the real-chart flagged-fields line still needs a chart where the two real readers disagree.
+
 Tasks
 1. Job states: `queued → segmenting → reading → reconciling → needs_review → done`, with `failed` reachable from any state. Each stage is idempotent: re-running it must not create duplicate rows.
 2. Add the second reader (Muse Spark Open via Baseten). Run both readers per region with `Promise.allSettled`; cap concurrency at about 4. Per `docs/models-notes.md`: read only `message.content` (never `reasoning_content`); set `reasoning_effort` (`minimal` for Muse Spark, `low` for Muse Spark Open) with `max_tokens` 1500 and fail a reading on `finish_reason: length`; parse SAM's streamed special-token output (delta events only) into Zod-validated boxes and masks. Region strategy proposed in `models-notes.md` (needs the team's OK): Muse Spark proposes padded boxes, then one SAM box-prompt request returns masks for all regions.

@@ -48,6 +48,14 @@ describe("reader", () => {
     expect(prompt.toLowerCase()).not.toContain("transcription");
   });
 
+  it("tells the table reader to skip the chart's own header row", async () => {
+    const fetchImpl = vi.fn(async () => reply('{"row1.test": "Glucose", "row1.value": "5.1", "row1.unit": "mmol/L"}'));
+    await createSparkReader({ fetchImpl }).readRegion({ regionId: "r1", kind: "table", image });
+    const [, init] = fetchImpl.mock.calls[0] as unknown as [string, RequestInit];
+    const prompt: string = JSON.parse(init.body as string).messages[0].content[0].text;
+    expect(prompt).toContain("Skip the header row");
+  });
+
   it("treats finish_reason length as a failed reading, not an answer", async () => {
     const fetchImpl = vi.fn(async () => reply('{"line1":"cut off', "length"));
     const reading = await createSparkReader({ fetchImpl }).readRegion({ regionId: "r1", kind: "handwriting", image });

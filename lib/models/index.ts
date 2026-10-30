@@ -1,5 +1,6 @@
 import { createMockAdapters } from "./mock";
-import { createSparkAdapters } from "./spark";
+import { createBasetenReader } from "./baseten";
+import { createSparkReader, createSparkSegmenter } from "./spark";
 import type { ModelAdapters } from "./types";
 
 export * from "./types";
@@ -10,10 +11,13 @@ export interface AdapterOptions {
 }
 
 /**
- * Phase 3 has one real reader (Muse Spark). SAM and the Baseten reader arrive in Phase 4, so
- * the second reader and mask segmentation are not wired here yet.
+ * Muse Spark proposes the regions and reads them; Muse Spark Open (Baseten) reads them a second time.
+ * SAM masks are not wired yet: they wait for the region strategy to be tested on a real phone photo.
  */
 export function getModelAdapters(opts: AdapterOptions = {}): ModelAdapters {
   if (process.env.MOCK_MODELS === "true") return createMockAdapters();
-  return createSparkAdapters({ onRequest: opts.onRequest });
+  return {
+    segmenter: createSparkSegmenter({ onRequest: opts.onRequest }),
+    readers: [createSparkReader({ onRequest: opts.onRequest }), createBasetenReader({ onRequest: opts.onRequest })],
+  };
 }
