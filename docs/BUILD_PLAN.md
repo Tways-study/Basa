@@ -71,7 +71,7 @@ Done when
 
 ## Phase 4 — Full pipeline (Oct 30) · T
 
-Status (2026-10-30): tasks 1 to 5 and 6 built on `tways/phase-4-pipeline` (see `docs/phase-4-plan.md`), SAM box refinement built (boxes only; mask decoding is blocked on the mask byte format, see `docs/models-notes.md`). Done when: call cap and resume covered by unit tests; the real-chart flagged-fields line still needs a chart where the two real readers disagree.
+Status (2026-10-30): all three Done when lines shown on the real path (see `docs/new-work.md`): flagged fields from a real disagreement (once, on `eval/fixtures/hard-chart-01.jpg`), a real SIGKILL and resume with no duplicates, and the call cap on real calls. Tasks 1 to 6 built; SAM refines boxes but its masks are not decoded (format undocumented, see `docs/models-notes.md`). Open: the masks decision, and a finding that a clipped crop can make both readers agree on a wrong answer.
 
 Tasks
 1. Job states: `queued → segmenting → reading → reconciling → needs_review → done`, with `failed` reachable from any state. Each stage is idempotent: re-running it must not create duplicate rows.
