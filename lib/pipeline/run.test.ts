@@ -172,6 +172,23 @@ describe("buildScanResult", () => {
   });
 });
 
+describe("read crop", () => {
+  it("cuts a crop wider than the stored box, once per region, and leaves the stored box alone", async () => {
+    vi.stubEnv("MOCK_MODELS", "true");
+    const { state, store } = fakeStore();
+    const boxes: Region["bbox"][] = [];
+    const crop = vi.fn(async (image: Uint8Array, box: Region["bbox"]) => { boxes.push(box); return image; });
+    await runPipeline("s1", deps(store, { crop }));
+
+    expect(crop).toHaveBeenCalledTimes(4); // 4 regions, two readers each, one crop per region
+    for (const region of state.regions) {
+      const cut = boxes.find((b) => b.x <= region.bbox.x && b.y <= region.bbox.y && b.x + b.w >= region.bbox.x + region.bbox.w && b.y + b.h >= region.bbox.y + region.bbox.h && b.w * b.h > region.bbox.w * region.bbox.h);
+      expect(cut, `${region.kind} crop contains and exceeds its box`).toBeDefined();
+    }
+    expect(state.regions.find((r) => r.kind === "stamp")!.bbox).toEqual({ x: 0.68, y: 0.7, w: 0.27, h: 0.18 });
+  });
+});
+
 describe("two readers", () => {
   it("runs at most four model calls at once", async () => {
     vi.stubEnv("MOCK_MODELS", "true");

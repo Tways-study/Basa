@@ -2,9 +2,15 @@ import type { ModelAdapters } from "@/lib/models/types";
 import { ReconciledFieldSchema, type Reading, type Region } from "@/lib/schemas";
 import type { ScanRecord, ScanStore } from "@/lib/server/store";
 import { BudgetExceededError, CallBudget } from "./budget";
+import { growBBox } from "./bbox";
 import { reconcileReadings } from "./reconcile";
 
 const CONCURRENCY = 4;
+// Readers see the stored box grown by this fraction of its own size on every side. A proposed box often
+// ends a little short of the text, and both readers then drop the same words and still agree, so
+// reconcile cannot flag it. Measured on hard-chart-01.jpg with a clipped handwriting box: 0 failed
+// both readers, 0.12 fixed one clip and half of another, 0.2 fixed both (docs/new-work.md).
+export const READ_MARGIN = 0.2;
 // A run that has not touched its scan for this long is treated as crashed and may be resumed.
 // maxDuration on the sync route is 60 s, so 90 s means the original function is gone.
 export const STALE_AFTER_MS = 90_000;
@@ -81,7 +87,7 @@ export async function runPipeline(scanId: string, deps: PipelineDeps): Promise<v
     const crops = new Map<string, Promise<Uint8Array>>();
     const cropOf = (region: Region) => {
       let crop = crops.get(region.id);
-      if (!crop) crops.set(region.id, (crop = deps.crop(image, region.bbox)));
+      if (!crop) crops.set(region.id, (crop = deps.crop(image, growBBox(region.bbox, READ_MARGIN, READ_MARGIN))));
       return crop;
     };
 

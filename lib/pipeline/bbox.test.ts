@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { fromGrid, padBBox, toPixelRect } from "./bbox";
+import { fromGrid, growBBox, padBBox, toPixelRect } from "./bbox";
 
 describe("fromGrid", () => {
   it("turns 0-1000 corners into a fractional box", () => {
@@ -46,5 +46,18 @@ describe("toPixelRect", () => {
     expect(r.left + r.width).toBeLessThanOrEqual(100);
     expect(r.top + r.height).toBeLessThanOrEqual(100);
     expect(r.width).toBeGreaterThanOrEqual(1);
+  });
+});
+
+describe("growBBox", () => {
+  it("grows by a fraction of the box's own size on every side", () => {
+    const grown = growBBox({ x: 0.4, y: 0.4, w: 0.2, h: 0.1 }, 0.2, 0.5);
+    expect(grown.x).toBeCloseTo(0.36);
+    expect(grown.w).toBeCloseTo(0.28);
+    expect(grown.y).toBeCloseTo(0.35);
+    expect(grown.h).toBeCloseTo(0.2);
+  });
+  it("stays inside the image", () => {
+    expect(growBBox({ x: 0, y: 0.9, w: 0.5, h: 0.1 }, 0.5, 0.5)).toEqual({ x: 0, y: 0.85, w: 0.75, h: expect.closeTo(0.15) });
   });
 });

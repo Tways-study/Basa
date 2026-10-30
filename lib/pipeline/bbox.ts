@@ -40,3 +40,16 @@ export function iou(a: BBox, b: BBox): number {
   const inter = w * h;
   return inter / (a.w * a.h + b.w * b.h - inter);
 }
+
+/**
+ * Grow a box by a fraction of its own width and height, clamped to the image. Used for the crop a reader
+ * sees, so a box that falls a little short of the text still includes all of it. Relative on purpose:
+ * a fixed fraction of the page would pull a neighbouring region into a small box.
+ */
+export function growBBox(box: BBox, fx: number, fy: number): BBox {
+  const left = clamp01(box.x - box.w * fx);
+  const top = clamp01(box.y - box.h * fy);
+  const right = clamp01(box.x + box.w + box.w * fx);
+  const bottom = clamp01(box.y + box.h + box.h * fy);
+  return BBoxSchema.parse({ x: left, y: top, w: right - left, h: bottom - top });
+}
