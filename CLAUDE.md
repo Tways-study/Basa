@@ -82,7 +82,7 @@ Vercel: names must match exactly (`SUPABASE_URL`, not `NEXT_SUPABASE_URL`), and 
 - No swallowed errors and no empty catch blocks. Surface failures in the UI with a clear state.
 - Add short comments for non-obvious logic, saying why rather than what. When you make a non-trivial architecture choice, explain the tradeoff in your reply. I am learning the engineering underneath, not only shipping.
 - Do not add dependencies without telling me why.
-- Stay inside the task. Do not refactor unrelated files. After Oct 30 the out-of-scope list below is binding.
+- Stay inside the task. Do not refactor unrelated files. From 8 PM PHT on Oct 30 the scope freeze in `docs/BUILD_PLAN.md` and the out-of-scope list below are binding.
 
 ## Out of scope
 

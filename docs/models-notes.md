@@ -91,7 +91,7 @@ Last updated: 2026-10-29 (reasoning controls, region experiments)
 - **Region strategy (proposed for Phase 4, needs the team's OK):** (1) one Muse Spark call proposes boxes for printed, table, handwriting, stamp and signature; (2) pad each box by about 4% and clamp to the image, because proposals vary run to run; (3) one SAM request with those boxes as prompts returns refined boxes and masks for all five (the masks feed the review screen's overlay); (4) the readers read the crops. About 2 setup calls per scan plus 2 reads per region, so about 12 calls, within the cap of 30. Open: results come from one synthetic photo-like chart and 3 Spark runs. Before relying on it, print a synthetic chart, photograph it with a phone, and re-run the experiments listed at the bottom of this file. Padding and a whole-image fallback read cover a bad box.
 - Real image-size limits, rate limits and error bodies for the two Meta models.
 
-## Go or no-go (post at the 8 PM check-in, Oct 28)
+## Go or no-go (Oct 28)
 
 | Model | Decision | Reason |
 |---|---|---|
