@@ -71,7 +71,7 @@ Done when
 
 ## Phase 4 — Full pipeline (Oct 30) · T
 
-Status (2026-10-30): all three Done when lines shown on the real path (see `docs/new-work.md`): flagged fields from a real disagreement (once, on `eval/fixtures/hard-chart-01.jpg`), a real SIGKILL and resume with no duplicates, and the call cap on real calls. Tasks 1 to 6 built; SAM refines boxes but its masks are not decoded (format undocumented, see `docs/models-notes.md`). Masks decided: boxes only (2026-10-30). Clipped-crop risk addressed with a 20% read margin (`READ_MARGIN`); re-measure on a phone photo.
+**Complete (2026-10-30), confirmed by Tways.** Status (2026-10-30): all three Done when lines shown on the real path (see `docs/new-work.md`): flagged fields from a real disagreement (once, on `eval/fixtures/hard-chart-01.jpg`), a real SIGKILL and resume with no duplicates, and the call cap on real calls. Tasks 1 to 6 built; SAM refines boxes but its masks are not decoded (format undocumented, see `docs/models-notes.md`). Masks decided: boxes only (2026-10-30). Clipped-crop risk addressed with a 20% read margin (`READ_MARGIN`); re-measure on a phone photo.
 
 Tasks
 1. Job states: `queued → segmenting → reading → reconciling → needs_review → done`, with `failed` reachable from any state. Each stage is idempotent: re-running it must not create duplicate rows.
