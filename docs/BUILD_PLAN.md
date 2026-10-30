@@ -54,7 +54,7 @@ Done when
 
 Goal: one chart goes from phone camera to a stored result on the live URL, with a single reader. Ugly is fine. Working is the point.
 
-Status (2026-10-30): tasks 1 to 4 and 6 are done. The API shipped in PRs #15 and #16, and Tways built the UI (capture screen, results page, UI foundation) in PR #18. Production serves a real Muse Spark scan end to end. Still open: Preview deploys need the server variables ticked for Preview (task 5), and the real phone photo on the public URL (the first Done when line).
+Status (2026-10-30): tasks 1 to 4 and 6 are done. The API shipped in PRs #15 and #16, and Tways built the UI (capture screen, results page, UI foundation) in PR #18. Production serves a real Muse Spark scan end to end. Preview variables are ticked and a Preview deploy of `4dd117d` reaches Supabase (checked 2026-10-30; the Meta and Baseten keys on Preview are not yet exercised). Still open: the real phone photo on the public URL (the first Done when line); the steps and a result log are in `docs/phone-test.md`.
 
 Tasks
 1. A: capture screen that opens the camera or file picker and shows the photo.

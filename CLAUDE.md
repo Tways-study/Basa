@@ -43,7 +43,7 @@ Next.js 16 with `cacheComponents`: anything that reads `params`, `searchParams` 
 - `lib/client/` browser-only helpers (photo downscale before upload)
 - `lib/ui/` pure UI logic (status labels, polling backoff, field formatting), unit tested
 - `eval/` fixtures (`eval/fixtures/*.jpg` plus `*.json` ground truth), `eval/run.ts`, `eval/results.json`
-- `docs/` holds `models-notes.md`, `new-work.md` (what was built, and when), `eval-results.md`
+- `docs/` holds `models-notes.md`, `new-work.md` (what was built, and when), `phone-test.md` (the real-phone smoke test), `eval-results.md`
 
 Data model (Supabase): `scans` (id, status, image_path, created_at), `regions` (id, scan_id, kind: table | handwriting | stamp | printed | header | signature, bbox, mask_path), `readings` (id, region_id, model, structured_json, latency_ms, error), `reviews` (id, region_id, final_json, field_status, edited, reviewed_at), `recognition_event` (id, region_id, readings snapshot, human_final, created_at).
 

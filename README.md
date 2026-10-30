@@ -103,7 +103,7 @@ lib/client/             browser-only helpers (photo downscale before upload)
 lib/ui/                 pure UI logic: status, polling backoff, field formatting
 eval/                   fixtures (*.jpg + *.json ground truth), manifest.json, run.ts, results.json
 supabase/migrations/    database migrations
-docs/                   models-notes.md, new-work.md, eval-results.md
+docs/                   models-notes.md, new-work.md, phone-test.md, eval-results.md
 ```
 
 ### Data model (Supabase)
