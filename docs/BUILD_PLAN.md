@@ -54,7 +54,7 @@ Done when
 
 Goal: one chart goes from phone camera to a stored result on the live URL, with a single reader. Ugly is fine. Working is the point.
 
-Status (2026-10-30): tasks 1 to 4 and 6 are done. The API shipped in PRs #15 and #16, and Tways built the UI (capture screen, results page, UI foundation) in PR #18. Production serves a real Muse Spark scan end to end. Preview variables are ticked and a Preview deploy of `4dd117d` reaches Supabase (checked 2026-10-30; the Meta and Baseten keys on Preview are not yet exercised). Still open: the real phone photo on the public URL (the first Done when line); the steps and a result log are in `docs/phone-test.md`.
+Status (2026-10-30): tasks 1 to 6 are done. The API shipped in PRs #15 and #16, and Tways built the UI (capture screen, results page, UI foundation) in PR #18. Production has all server variables and runs the Phase 4 pipeline; Preview is verified for the Supabase variables only, not yet for the Meta and Baseten keys. The Production run (a Mac run on `basa-chi.vercel.app` reached `needs_review` in about 14 s with both readers and no errors). Still open, and it is the only thing keeping Phase 3 open: the first Done when line, a real photo taken on a **phone** on mobile data. A Mac webcam rehearsal is logged in `docs/phone-test.md` and does not count. Use the printed `eval/fixtures/smoke-chart-02.jpg`; the steps and the result log are in `docs/phone-test.md`.
 
 Tasks
 1. A: capture screen that opens the camera or file picker and shows the photo.
@@ -75,8 +75,8 @@ Done when
 
 Tasks
 1. Job states: `queued → segmenting → reading → reconciling → needs_review → done`, with `failed` reachable from any state. Each stage is idempotent: re-running it must not create duplicate rows.
-2. Add the second reader (Muse Spark Open via Baseten). Run both readers per region with `Promise.allSettled`; cap concurrency at about 4. Per `docs/models-notes.md`: read only `message.content` (never `reasoning_content`); set `reasoning_effort` (`minimal` for Muse Spark, `low` for Muse Spark Open) with `max_tokens` 1500 and fail a reading on `finish_reason: length`; parse SAM's streamed special-token output (delta events only) into Zod-validated boxes and masks. Region strategy proposed in `models-notes.md` (needs the team's OK): Muse Spark proposes padded boxes, then one SAM box-prompt request returns masks for all regions.
-3. Wire in `reconcile`: write `agreed` / `flagged` per field.
+2. Add the second reader (Muse Spark Open via Baseten). Run both readers per region with `Promise.allSettled`; cap concurrency at about 4. Per `docs/models-notes.md`: read only `message.content` (never `reasoning_content`); set `reasoning_effort` (`minimal` for Muse Spark, `low` for Muse Spark Open) with `max_tokens` 1500 and fail a reading on `finish_reason: length`; parse SAM's streamed special-token output (delta events only) into Zod-validated boxes and masks. Region strategy, built: Muse Spark proposes padded boxes, then one SAM box-prompt request returns tight boxes. **Boxes only**: the mask byte format is undocumented, so masks are parsed but not decoded (`mask_path` stays null). The readers see the stored box grown by 20% (`READ_MARGIN`), because a box that ends short of the text makes both readers drop the same words and still agree.
+3. Wire in `reconcile`: `agreed` / `flagged` per field. Built as `reconcileReadings`, derived from the stored readings on every `GET /api/scans/[id]` (a `fields` array per region), not stored; Phase 5 writes `reviews` rows when a person decides.
 4. Cost guard: enforce `MAX_MODEL_CALLS_PER_SCAN` in code.
 5. Timeouts and bounded retries on every model call.
 6. Table read prompt: skip the chart's own header row (`TEST`, `VALUE`, `UNIT`). Today it comes back as `row1` (observed 2026-10-30).
@@ -86,28 +86,42 @@ Done when
 - Killing the process mid-scan and re-running the stage completes the scan without duplicates.
 - The call-count guard stops a scan that exceeds the cap.
 
-**Scope freeze at the 8 PM check-in on Oct 30.** After that, only bug fixes and the out-of-scope list is binding.
+**Scope freeze at the 8 PM check-in on Oct 30.** After that, only bug fixes, and the out-of-scope list is binding.
+
+Scope freeze, in practice (set 2026-10-30):
+- **In scope** is the tasks written in Phases 5 to 8, plus the Phase 3 phone run. Nothing is added. A new idea goes on a list, not into the build, unless all three of us agree and something of equal size is cut.
+- **Allowed after the freeze:** those tasks, bug fixes, cuts from the cut order, and docs.
+- **Frozen contracts:** the shared field keys, the `ScanResult` shape (`lib/schemas/sync.ts`), the reconciled field shape, region kinds and job statuses. Change one only when all three agree, because Alex's screens and Adrian's eval code read them.
+- **Not allowed:** anything on the out-of-scope list in `CLAUDE.md`, and new dependencies without telling Tways why.
+- `main` must always deploy; every change goes through a PR from a `tways/`, `alex/` or `adrian/` branch; no debugging on `main` after Nov 3.
+- **State at the freeze:** Production is the PR #21 merge, READY; `basa-chi.vercel.app` answers 200 and the scan API answers its own 404 for an unknown id; typecheck, lint and 92 tests pass.
+- **Agenda for the 8 PM check-in:** (1) the phone run result; (2) the organizers' answers on the SAM mask format, Baseten `-1026` and the Startup track requirements; (3) Alex and Adrian confirm they pulled `main` and read their task lists, and name any blocker; (4) is anything behind the day-by-day gates, and does the cut order apply; (5) everyone agrees the freeze out loud.
 
 ## Phase 5 — Review UI (Oct 29 to Oct 31) · A
 
+What the API gives you now (merged, live on Production; types in `lib/schemas/sync.ts`): `GET /api/scans/[id]` returns, per region, `kind`, a fractional `bbox`, the raw `readings` from each reader (with `error` when a call failed) and `fields`, the reconciled list. Each field is `agreed` (has `value`) or `flagged` (has a `reason`, no `value`, and both readers' texts in `readings`). A flagged field has no value on purpose: never preselect one. `fields` is the same array whether a reader failed, found nothing or disagreed. Mock mode (`MOCK_MODELS=true`) returns a chart with a real mismatch (7.2 vs 1.2), an unreadable value, a spelling difference and one that agrees after normalizing (`µmol/L` vs `umol/L`), so you can build the whole screen without credentials.
+
 Tasks
-1. Review screen: source crop beside both readings per field. `agreed` fields fast-confirm; `flagged` fields need an explicit pick or edit. Never preselect a model's value for a flagged field.
-2. SAM overlay drawn from stored fractional boxes.
-3. Write `reviews` and `recognition_event` rows on confirm.
+1. Review screen: source crop beside both readings per field. `agreed` fields fast-confirm; `flagged` fields need an explicit pick or edit. Never preselect a model's value for a flagged field. Show the crop the readers saw: the stored box grown by `READ_MARGIN` from `lib/pipeline/bbox.ts` (client-safe), not the bare box.
+2. Overlay of the **SAM boxes** drawn from stored fractional boxes. There are no masks: they are undecoded (format undocumented), so do not wait for them.
+3. Write `reviews` and `recognition_event` rows on confirm (a route handler; the browser never writes to the database).
 4. 44px touch targets, keyboard operation, labels on every control, 360px layout.
-5. SAM mask reveal with GSAP and `@gsap/react`: lazy-loaded client component, off under `prefers-reduced-motion`.
+5. Optional, first thing on the cut list: a GSAP reveal of the box overlay with `@gsap/react`, lazy-loaded, off under `prefers-reduced-motion`.
+6. Show a failed reading as a failed reading (the results page already does): a flagged field caused by a reader that errored must say so, and the person decides it.
 
 Done when
 - A full scan can be reviewed end to end and a confirmed record is stored.
 - Works at 360px wide and on a real phone.
-- The mask appears without animation when reduced motion is on, and GSAP is not in the capture route's client chunks.
+- The overlay appears without animation when reduced motion is on, and GSAP is not in the capture route's client chunks (or GSAP was cut and the overlay simply appears).
+
+Note for the review copy: "agreed" means the two readers matched, not that the value is right. A box that clips the text can still produce an agreed wrong answer, so the source crop must always be visible next to the value.
 
 ## Phase 6 — Offline outbox (Oct 30 to Nov 1) · A
 
 Tasks
 1. IndexedDB queue via `idb`: capture always saves locally first, with a status badge (saved on device, syncing, synced, failed).
 2. Sync on the `online` event, on app start, and via a "Sync now" button. Retries use backoff.
-3. Idempotency: the client generates the scan id, so a repeated upload cannot create a second scan.
+3. Idempotency: the client generates the scan id, so a repeated upload cannot create a second scan. The server already treats a repeat `POST /api/sync` for a known id as a no-op (200), and resumes one that failed or went quiet for 90 s. The capture screen (`components/capture/capture-form.tsx`) already makes the id, downscales the photo below 4 MB (`lib/client/image-fit.ts`) and sends the multipart form; the outbox should store that downscaled blob and reuse the same sender.
 
 Done when
 - With the network off, a capture shows "saved on device". After the network returns, it syncs without a manual step.
@@ -115,11 +129,16 @@ Done when
 
 ## Phase 7 — Eval harness (Oct 28 to Nov 3) · D, with T
 
+What exists now: `eval/fixtures/` holds `smoke-chart-01`, `smoke-chart-02` and `hard-chart-01` (each a `.jpg` plus ground-truth `.json`; `smoke-chart-02.json` also has `_regions` boxes in pixels, `hard-chart-01.json` does not yet). The real pipeline pieces are importable, so `eval/run.ts` does not need the HTTP routes or the database: `getModelAdapters()` (Muse Spark proposes boxes, SAM refines them, both readers), `cropRegion` and `growBBox(box, READ_MARGIN, READ_MARGIN)` (the crop the readers see), `reconcileReadings`, and `normalize` from `lib/pipeline/reconcile.ts` for comparing a value with the ground truth. A scan costs about 12 model calls (one proposal, one SAM, two reads per region), so 30 charts times three conditions is well inside the free credits.
+
 Tasks
-1. Ground-truth JSON first, then the chart, then the photo. Use the shared field keys in CLAUDE.md.
-2. `eval/manifest.json`: 30 charts, 10 dev and 20 held-out test, 10 marked hard.
-3. `eval/run.ts` runs three conditions: A whole-image single read, B SAM plus one reader, C Basa (SAM, two readers, reconcile). Metrics: field accuracy, table row recall, hallucinated rows, error catch rate (headline), review burden.
+1. Ground-truth JSON first, then the chart, then the photo. Use the shared field keys in CLAUDE.md. Follow `hard-chart-01.json` (flat keys, fictional values).
+2. `eval/manifest.json`: 30 charts, 10 dev and 20 held-out test, 10 marked hard. **What makes a chart hard:** both models read blurred and even smeared digits correctly, so blur alone does not make the readers disagree (1 content disagreement in 7 real runs). Use things models actually get wrong: real handwriting (cursive, crossed-out words, ink over a stamp), digits that look alike in handwriting, low-contrast ink, a crease through a value, text close to a region edge.
+3. `eval/run.ts` runs three conditions: A whole-image single read, B SAM plus one reader, C Basa (SAM, two readers, reconcile). Metrics: field accuracy, table row recall, hallucinated rows, error catch rate (headline), review burden. Run with `MOCK_MODELS=false`; `.env.local` has it `true`, and an eval that quietly used the mock readers would be meaningless (latency 0 ms is the tell).
 4. Tune prompts on the dev set only. Run the held-out set once at the end for the final numbers.
+5. Print one synthetic chart, photograph it with a phone, and run it through the pipeline: it re-measures the 20% read margin and the SAM boxes on a real photo (the only real-photo evidence we will have).
+
+Report "agreed but wrong" separately: both readers matching a wrong value is the failure reconcile cannot catch, and the 20% read margin exists because of it. A condition C result that hides it would overstate the error catch rate.
 
 Done when
 - `pnpm eval` writes `eval/results.json` and a table in `docs/eval-results.md`.
@@ -129,7 +148,7 @@ Done when
 
 Tasks
 1. Cited summary: deterministic template first. Every line cites its source region. No advice, no inference.
-2. `/api/scans/[id]/resume` endpoint.
+2. `/api/scans/[id]/resume` endpoint. Include a retry for a failed reading in a scan that already reached `needs_review`: today a repeat sync is a no-op for finished scans, so a Baseten timeout stays failed (the error shows and every field is flagged, so it is safe, but there is no way to try again).
 3. Empty, loading and error states for every screen.
 4. One Playwright happy-path test in mock mode.
 5. Accessibility pass (contrast, focus order, reduced motion; icon-only controls labeled; contrast checked on the restyled shadcn components).

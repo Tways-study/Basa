@@ -41,6 +41,12 @@ export function iou(a: BBox, b: BBox): number {
   return inter / (a.w * a.h + b.w * b.h - inter);
 }
 
+// Readers see the stored box grown by this fraction of its own size on every side. A proposed box often
+// ends a little short of the text, and both readers then drop the same words and still agree, so
+// reconcile cannot flag it. Measured on hard-chart-01.jpg with a clipped handwriting box: 0 failed
+// both readers, 0.12 fixed one clip and half of another, 0.2 fixed both (docs/new-work.md). Client-safe on purpose: the review screen shows readers' view with the same margin.
+export const READ_MARGIN = 0.2;
+
 /**
  * Grow a box by a fraction of its own width and height, clamped to the image. Used for the crop a reader
  * sees, so a box that falls a little short of the text still includes all of it. Relative on purpose:

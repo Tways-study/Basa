@@ -12,18 +12,18 @@ Basa turns photographed paper clinic charts into human-verified digital records.
 
 ## Pipeline
 
-Capture → IndexedDB outbox → `POST /api/sync` → segment (SAM 3.1, Meta API) → read each region twice (Muse Spark via Meta API; Muse Spark Open `meta-models/muse-spark-open-1026` via Baseten) → reconcile → review UI → confirmed record and cited summary.
+Capture → IndexedDB outbox → `POST /api/sync` → segment (Muse Spark proposes padded region boxes, one SAM 3.1 box-prompt request tightens them; both Meta API) → read each region twice (Muse Spark via Meta API; Muse Spark Open `meta-models/muse-spark-open-1026` via Baseten) → reconcile → review UI → confirmed record and cited summary.
 
 Model facts that shape the code (details and sources in `docs/models-notes.md`):
 - SAM 3.1 uses `POST /responses` with a streamed, special-token text output (not JSON); read only the `response.output_text.delta` events. Noun-phrase prompts find only distinct objects (the stamp); box prompts segment any region and can carry all regions in one request. Parse the output into Zod-validated records in `lib/models/sam.ts`; count each SAM request against `MAX_MODEL_CALLS_PER_SCAN`. Decision 2026-10-30: boxes only. The mask byte format (base85 alphabet, layout) is not in any doc we may use, so masks are parsed but not decoded and `mask_path` stays null; the review overlay draws SAM boxes. Do not guess the mask format; add masks only when the organizers or a doc give it.
 - Muse Spark uses `POST /chat/completions`, with the image as a base64 data URL, and also proposes region boxes (0-1000 grid). Reasoning counts toward `max_tokens`: send `reasoning_effort: "minimal"` with `max_tokens` 1500, and treat `finish_reason: length` or empty content as a failed reading. Use Standard-mode model IDs only, never `-contributor` (that mode lets Meta train on our content).
 - Muse Spark Open on Baseten always emits `reasoning_content`. Read only `message.content`, never store the reasoning, send `reasoning_effort: "low"` with `max_tokens` 1500, and treat `finish_reason: length` as a failed reading. It cannot propose region boxes. The target model is `meta-models/muse-spark-open-1026`, which the organizers tied to Baseten hackathon credits. We did not receive credits (only some users did; partner credits are not required to compete), and `-1026` returns 404 for our current key (checked 2026-10-29), while `meta-models/muse-spark-open` returns 200. Until `-1026` works for us, develop with the unsuffixed ID via `--model` / env. Do not claim the Open Weights prize until the organizers rule on eligibility; the README and demo must say plainly how the open-weight model is used.
 
-- Readers see the stored box grown by 20% of its own size (`READ_MARGIN` in `lib/pipeline/run.ts`). A box that ends a little short of the text makes both readers drop the same words and still agree, which reconcile cannot flag. Do not remove the margin without re-measuring on `eval/fixtures/hard-chart-01.jpg`.
+- Readers see the stored box grown by 20% of its own size (`READ_MARGIN` in `lib/pipeline/bbox.ts`, client-safe so the review screen can show the same area). A box that ends a little short of the text makes both readers drop the same words and still agree, which reconcile cannot flag. Do not remove the margin without re-measuring on `eval/fixtures/hard-chart-01.jpg`.
 - Read prompts need an exact output shape. Give each region kind the JSON it must return and say any other key is wrong. A one-key schema (signature) plus the word "transcription" in the preamble made Muse Spark answer under a `transcription` key in about two runs in three (observed 2026-10-30). Keep that word out of read prompts. A reading that breaks the shared field keys is a failed reading, shown to the person, never repaired silently.
 - Each stage is idempotent and persisted, so a retry never duplicates work. Stages write to the database; the UI polls job status.
 - Never hold a whole scan in one request. Per-region work runs in parallel; every model call has a timeout and bounded retries.
-- Reconciliation: normalize both readings (trim, case, spacing, unit forms, numeric parsing), then compare field by field. Match = `agreed`. Different, or one unreadable = `flagged`.
+- Reconciliation: normalize both readings (trim, case, spacing, unit forms, numeric parsing), then compare field by field. Match = `agreed`. Different, or one unreadable = `flagged`. It is derived from the stored readings on every `GET /api/scans/[id]` (a `fields` array per region, `reconcileReadings` in `lib/pipeline/reconcile.ts`), not stored; the human decision is stored in `reviews`. A reader that failed or found nothing counts as having found nothing, so all its fields are flagged. "Agreed" means the readers matched, not that the value is right: the source crop must always be visible.
 - A human confirms everything. `agreed` fields are fast-confirm; `flagged` fields require an explicit choice or edit. Never silently pick one model's answer for a flagged field.
 
 ## Stack
@@ -36,15 +36,15 @@ Next.js 16 with `cacheComponents`: anything that reads `params`, `searchParams` 
 
 - `app/` routes: `app/page.tsx` is the capture screen, `app/scans/[id]/page.tsx` the results page, `app/api/sync/route.ts` the sync endpoint, `app/api/scans/[id]/route.ts` job status and results
 - `components/ui/` shadcn components (button, badge, dialog), restyled to the palette; `components/capture/` and `components/scan/` our own components
-- `lib/models/` one adapter per model, exposing `segment()` and `readRegion()`; each returns Zod-validated data; model IDs and base URLs come from env
-- `lib/pipeline/` stages and orchestration; `lib/pipeline/reconcile.ts` holds pure functions
+- `lib/models/` one adapter per model, each returning Zod-validated data; model IDs and base URLs come from env. `spark.ts` (region proposals and a reader), `baseten.ts` (the second reader), `sam.ts` (box refinement), `chat.ts` (shared chat-completions call, timeout and bounded retries), `reader.ts` (the shared read prompt), `mock.ts`, and `index.ts` (`getModelAdapters`)
+- `lib/pipeline/` stages and orchestration (`run.ts`); pure functions in `reconcile.ts` and `bbox.ts` (client-safe); `budget.ts` is the per-scan call cap
 - `lib/outbox/` IndexedDB queue and sync
 - `lib/schemas/` Zod schemas shared by client and server
 - `lib/server/` Supabase client, store and storage. Server only: no client file may import it, or `lib/env.ts`
 - `lib/client/` browser-only helpers (photo downscale before upload)
 - `lib/ui/` pure UI logic (status labels, polling backoff, field formatting), unit tested
-- `eval/` fixtures (`eval/fixtures/*.jpg` plus `*.json` ground truth), `eval/run.ts`, `eval/results.json`
-- `docs/` holds `models-notes.md`, `new-work.md` (what was built, and when), `phone-test.md` (the real-phone smoke test), `eval-results.md`
+- `eval/` fixtures (`eval/fixtures/*.jpg` plus `*.json` ground truth: `smoke-chart-01`, `smoke-chart-02`, `hard-chart-01`), `eval/run.ts`, `eval/results.json`
+- `docs/` holds `models-notes.md`, `new-work.md` (what was built, and when), `phone-test.md` (the real-phone smoke test and its result log), `phase-4-plan.md`, `BUILD_PLAN.md`, `eval-results.md`
 
 Data model (Supabase): `scans` (id, status, image_path, created_at), `regions` (id, scan_id, kind: table | handwriting | stamp | printed | header | signature, bbox, mask_path), `readings` (id, region_id, model, structured_json, latency_ms, error), `reviews` (id, region_id, final_json, field_status, edited, reviewed_at), `recognition_event` (id, region_id, readings snapshot, human_final, created_at).
 
@@ -66,7 +66,7 @@ The contract between model output, reconcile, the review screen, and the ground-
 
 `META_API_KEY`, `META_API_BASE_URL`, `META_SPARK_MODEL`, `META_SAM_MODEL`, `BASETEN_API_KEY`, `BASETEN_MODEL_URL`, `BASETEN_MODEL`, `SUPABASE_URL`, `SUPABASE_ANON_KEY`, `SUPABASE_SERVICE_ROLE_KEY` (all server only), `MAX_MODEL_CALLS_PER_SCAN` (cost guard; enforce it in code), `MOCK_MODELS` (`true` returns fixtures with no network; `false` in Production).
 
-Format notes: `META_API_BASE_URL` is `https://api.meta.ai/v1` (no trailing slash or period; the adapters append the path). `BASETEN_MODEL_URL` is the full chat-completions endpoint, not just the base. Check shape without printing values: `awk -F= '/_URL=/{print $1, ($2 ~ /^https?:\/\//) ? "ok" : "NOT A URL"}' .env.local`. Smoke-script errors must never echo a value.
+Format notes: `META_API_BASE_URL` is `https://api.meta.ai/v1` (no trailing slash or period; the adapters append the path). `BASETEN_MODEL_URL` is the full chat-completions endpoint, not just the base. Check shape without printing values: `awk -F= '/_URL=/{print $1, ($2 ~ /^https?:\/\//) ? "ok" : "NOT A URL"}' .env.local`. Smoke-script errors must never echo a value. `.env.local` may have `MOCK_MODELS=true`: a real-model check must run with `MOCK_MODELS=false` (a latency of 0 ms and no model calls counted is the tell that you got the mock).
 
 Vercel: names must match exactly (`SUPABASE_URL`, not `NEXT_SUPABASE_URL`), and each variable needs both Production and Preview ticked. A variable scoped to Production only makes Preview deploys fail with `missing or invalid environment variables`. Changes reach only new deployments, so redeploy after editing them.
 
