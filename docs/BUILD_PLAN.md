@@ -86,7 +86,7 @@ Done when
 - Killing the process mid-scan and re-running the stage completes the scan without duplicates.
 - The call-count guard stops a scan that exceeds the cap.
 
-**Scope freeze at the 8 PM check-in on Oct 30.** After that, only bug fixes, and the out-of-scope list is binding.
+**Scope freeze at 8 PM PHT on Oct 30.** After that, only bug fixes, and the out-of-scope list is binding.
 
 Scope freeze, in practice (set 2026-10-30):
 - **In scope** is the tasks written in Phases 5 to 8, plus the Phase 3 phone run. Nothing is added. A new idea goes on a list, not into the build, unless all three of us agree and something of equal size is cut.
@@ -95,7 +95,7 @@ Scope freeze, in practice (set 2026-10-30):
 - **Not allowed:** anything on the out-of-scope list in `CLAUDE.md`, and new dependencies without telling Tways why.
 - `main` must always deploy; every change goes through a PR from a `tways/`, `alex/` or `adrian/` branch; no debugging on `main` after Nov 3.
 - **State at the freeze:** Production is the PR #21 merge, READY; `basa-chi.vercel.app` answers 200 and the scan API answers its own 404 for an unknown id; typecheck, lint and 92 tests pass.
-- **Agenda for the 8 PM check-in:** (1) the phone run result; (2) the organizers' answers on the SAM mask format, Baseten `-1026` and the Startup track requirements; (3) Alex and Adrian confirm they pulled `main` and read their task lists, and name any blocker; (4) is anything behind the day-by-day gates, and does the cut order apply; (5) everyone agrees the freeze out loud.
+- **Freeze checklist.** Tways posts the rules above in the team chat at 8 PM, or runs the list as a short call, whichever the team already uses; the freeze holds either way. The list: (1) the phone run result, or when it will happen; (2) the organizers' answers on the SAM mask format, Baseten `-1026` and the Startup track requirements, or that they are still pending; (3) Alex and Adrian confirm they pulled `main` and read their task lists, and name any blocker; (4) is anything behind the day-by-day gates, and does the cut order apply; (5) Alex and Adrian reply that they agree to the freeze. A written reply is enough.
 
 ## Phase 5 — Review UI (Oct 29 to Oct 31) · A
 

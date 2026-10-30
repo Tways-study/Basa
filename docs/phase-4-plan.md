@@ -1,6 +1,6 @@
 # Phase 4 plan: full pipeline (2026-10-30)
 
-Source: Phase 4 in `docs/BUILD_PLAN.md`. Scope freeze at the 8 PM check-in on Oct 30; after that only bug fixes.
+Source: Phase 4 in `docs/BUILD_PLAN.md`. Scope freeze at 8 PM PHT on Oct 30; after that only bug fixes.
 
 ## Order of work
 
