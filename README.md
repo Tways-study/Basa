@@ -47,7 +47,7 @@ Capture → IndexedDB outbox → POST /api/sync → segment → read twice → r
 | 1 | Capture | Device | Saves the photo on the phone first, even with no signal |
 | 2 | Outbox | Device (IndexedDB via `idb`) | Queue that sends scans when the connection returns |
 | 3 | `POST /api/sync` | Server (Vercel) | Validates and stores the scan, starts processing |
-| 4 | Segment | SAM 3.1 (Meta API) | Finds the lab table, handwritten note, header, and stamp |
+| 4 | Segment | Muse Spark and SAM 3.1 (Meta API) | Muse Spark proposes boxes for the header, table, handwriting, stamp and signature; one SAM request tightens them. Boxes only: SAM masks are not decoded (format undocumented) |
 | 5 | Two readers | Muse Spark (Meta API) and Muse Spark Open `meta-models/muse-spark-open-1026` (Baseten) | Each reads every region independently and returns JSON |
 | 6 | Reconcile | Server, pure function | Normalizes both readings, then compares field by field |
 | 7 | Review | Device | Source crop beside both readings; a person decides every flagged field |
@@ -94,8 +94,8 @@ Server Components by default; `"use client"` only for capture, the outbox, and t
 ```
 app/                    routes: capture (/), results (/scans/[id]), /api/sync, /api/scans/[id]
 components/             shadcn components in ui/, our own in capture/ and scan/
-lib/models/             one adapter per model: segment() and readRegion(), Zod-validated
-lib/pipeline/           stages and orchestration; reconcile.ts holds pure functions
+lib/models/             one adapter per model (spark, baseten, sam), a shared chat call and read prompt, mock; Zod-validated
+lib/pipeline/           stages and orchestration; reconcile.ts and bbox.ts hold pure functions; budget.ts is the call cap
 lib/outbox/             IndexedDB queue and sync
 lib/schemas/            Zod schemas shared by client and server
 lib/server/             Supabase client, store and storage (server only)
@@ -103,7 +103,7 @@ lib/client/             browser-only helpers (photo downscale before upload)
 lib/ui/                 pure UI logic: status, polling backoff, field formatting
 eval/                   fixtures (*.jpg + *.json ground truth), manifest.json, run.ts, results.json
 supabase/migrations/    database migrations
-docs/                   models-notes.md, new-work.md, phone-test.md, eval-results.md
+docs/                   models-notes.md, new-work.md, phone-test.md, phase-4-plan.md, BUILD_PLAN.md, eval-results.md
 ```
 
 ### Data model (Supabase)
@@ -162,12 +162,14 @@ Paper-and-ink editorial, built for tired eyes in a bright clinic.
 - **Fonts:** Fraunces (display), IBM Plex Sans (body), IBM Plex Mono (extracted values)
 - **Color carries meaning only:** paper `#F4EFE6`, ink `#1B1A17`, muted line `#D9D2C3`; verified green `#2F6B4F` = models agreed, flag amber `#B7791F` = needs a human, stamp red `#C8341F` = unreadable or failed
 - **The review screen is the hero:** source crop and both readings side by side, flagged fields impossible to miss, touch targets of at least 44px, works from 360px wide up to desktop
-- **Motion** only where it explains something (SAM masks animating in, status badge changes), and it respects `prefers-reduced-motion`
+- **Motion** only where it explains something (the SAM box overlay appearing, status badge changes), and it respects `prefers-reduced-motion`
 - **Accessibility:** AA contrast, keyboard-operable review, a label on every control
 
 ## Build plan
 
 The sequence lives in [`docs/BUILD_PLAN.md`](./docs/BUILD_PLAN.md); the rules live in [`CLAUDE.md`](./CLAUDE.md). A phase is finished only when every "Done when" line is true and it is logged in `docs/new-work.md`.
+
+**Status (Oct 30):** phases 0, 1, 2 and 4 are done. Phase 3 is open on one line: a real phone photo on mobile data (see `docs/phone-test.md`). Phase 5 (review UI) is next.
 
 | Phase | Owner | When (PHT) | Done when |
 |---|---|---|---|
