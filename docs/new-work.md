@@ -215,3 +215,10 @@ Full log in `docs/eval-tuning.md`; dev summaries of each run in `eval/tuning/`.
 - **Noise:** the same code gave B 166, 167 and 169 and flags from 5 to 20 on different runs, so a held-out result is one draw from a wide spread. The report and the demo must give counts.
 - **Cost:** about 8 full dev runs and 15 partial runs, roughly 1,000 model calls in total on dev.
 - **Still to do:** freeze the prompts (record the commit hash in `docs/eval-tuning.md`), the 3 phone photos, and the one held-out run before the Nov 3 noon freeze.
+
+## 2026-11-01 (Phase 7 merged; stacked-PR slip fixed)
+
+- **What reached `main`:** PRs #37 (chart generator, 17 charts, first dev run), #35 and #36 earlier, then #40, which carries #38 (harder degradations, second dev run) and #39/#41 (one retry on a no-JSON answer, the dev tuning log and `docs/eval-tuning.md`).
+- **The slip:** #38 and #39 were stacked on #37. #37 merged first, so each later PR merged into its old base branch and its commits never reached `main`. Found by checking `origin/main` for `NoJsonError` and `docs/eval-tuning.md` (both missing), fixed by one PR from the top of the stack (#40, no conflicts). Rule added to `CLAUDE.md` (How to work with me).
+- **Branches:** the merged `tways/phase-7-charts`, `tways/phase-7-tuning` and `tways/readme-pr34-note` were deleted locally and on GitHub.
+- **Phase 7 state:** not closed. Done: harness, 20 charts, dev tuning (183 tests pass). Open: freeze the prompts and record the commit hash in `docs/eval-tuning.md`, the 3 phone photos (`gen-t02`, `gen-t08`, `gen-t10`) with the `--margin=0.1` against `0.2` check, and the one held-out run (`MOCK_MODELS=false pnpm eval --split=test --final`, Nov 3 before noon). `docs/BUILD_PLAN.md` task text now says 20 charts instead of 30.

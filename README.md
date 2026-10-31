@@ -120,7 +120,7 @@ lib/client/             browser-only helpers (photo downscale before upload)
 lib/ui/                 pure UI logic: status, polling backoff, field formatting, review ordering, printable record
 eval/                   fixtures (*.jpg + *.json ground truth), manifest.json, run.ts, results.json
 supabase/migrations/    database migrations
-docs/                   models-notes.md, new-work.md, phone-test.md, BUILD_PLAN.md, eval-results.md
+docs/                   models-notes.md, new-work.md, phone-test.md, BUILD_PLAN.md, eval-results.md, eval-tuning.md
 PRODUCT.md              users, purpose, principles and open product decisions
 ```
 
@@ -187,7 +187,7 @@ Paper-and-ink editorial, built for tired eyes in a bright clinic.
 
 The sequence lives in [`docs/BUILD_PLAN.md`](./docs/BUILD_PLAN.md); the rules live in [`CLAUDE.md`](./CLAUDE.md). A phase is finished only when every "Done when" line is true and it is logged in `docs/new-work.md`.
 
-**Status (Oct 31):** phases 0, 1, 2 and 4 are done. Phase 3 is open on one line: a real phone photo on mobile data (see `docs/phone-test.md`). Phases 5 (review UI) and 6 (offline outbox) are built and merged (PR #24) but not done: they still need a real-Supabase review run and a real phone, and an automated review found issues to fix first (see `docs/new-work.md`). Phase 7 (eval) is next to start. The audit fixes are merged (PR #26). On Oct 31 (PR #34, merged) the review screen also gained flagged-first ordering and a **Print patient copy** button (a person-confirmed record only, with unreadable fields printed as "[not legible on source]"); 136 tests pass. Both still need a real-phone check, including iOS Safari print. The first reviews have been saved against the real Supabase (Oct 31, on a computer, not a phone): a reader pick, a Can't be read decision and a typed value all stored with the right source. The steps to close Phases 3, 5 and 6 are in the phone test sheet.
+**Status (Nov 1):** Phase 7 (eval) is built and tuned on the dev set but not closed: the harness, the 20-chart set (8 dev, 12 held-out, 8 hard) and the dev tuning are merged (PRs #37 to #41), and what remains is freezing the prompts, 3 phone photos of printed charts, and the single held-out run (Nov 3, before noon). On dev, Muse Spark read nearly every field correctly, so the held-out result will rest on few errors and is reported as counts; the tuning log is in `docs/eval-tuning.md`. Everything below is the Oct 31 status, still true for Phases 0 to 6: phases 0, 1, 2 and 4 are done. Phase 3 is open on one line: a real phone photo on mobile data (see `docs/phone-test.md`). Phases 5 (review UI) and 6 (offline outbox) are built and merged (PR #24) but not done: they still need a real-Supabase review run and a real phone, and an automated review found issues to fix first (see `docs/new-work.md`). The audit fixes are merged (PR #26). On Oct 31 (PR #34, merged) the review screen also gained flagged-first ordering and a **Print patient copy** button (a person-confirmed record only, with unreadable fields printed as "[not legible on source]"); 136 tests pass. Both still need a real-phone check, including iOS Safari print. The first reviews have been saved against the real Supabase (Oct 31, on a computer, not a phone): a reader pick, a Can't be read decision and a typed value all stored with the right source. The steps to close Phases 3, 5 and 6 are in the phone test sheet.
 
 | Phase | Owner | When (PHT) | Done when |
 |---|---|---|---|
