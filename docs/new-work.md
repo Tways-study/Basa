@@ -162,3 +162,7 @@ First reviews saved against the real Supabase project, checked by reading `revie
 - **Branches:** the merged local branches (`tways/docs-review-run-results`, `tways/name-meaning`, `tways/docs-basa-meaning`) and the merged remote branches `tways/docs-review-run-results` and `tways/name-meaning` were deleted. Only `main` is left.
 - **Housekeeping checked:** `AGENTS.md` is committed; `origin/dev` no longer exists; the Playwright happy-path e2e is still not written (`pnpm test:e2e` passes with no tests, so the Phase 8 gate means nothing yet); the database holds 31 scans and 32 stored images (one orphaned image from the deleted mock scan), 10 reviews, 10 events, to clear through the Storage API before the Nov 3 demo recording, after the phone test. `docs/phase-4-plan.md` is deleted in one working tree but not committed; `CLAUDE.md` and the README still list it.
 - Docs updated by Tways with Claude: `README.md` (status), `CLAUDE.md` (the `lang="fil"` convention), `docs/BUILD_PLAN.md` (Phase 5 evidence) and the plan artifact. No code changed.
+
+## 2026-10-31 (remove the Phase 4 plan file)
+
+- `docs/phase-4-plan.md` deleted: Phase 4 is complete and confirmed, and its plan is superseded by `docs/BUILD_PLAN.md` and the Phase 4 entries in this log. The README and `CLAUDE.md` file lists no longer mention it. Older log entries still refer to it, as history. No code changed.
