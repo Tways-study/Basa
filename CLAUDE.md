@@ -25,6 +25,9 @@ Model facts that shape the code (details and sources in `docs/models-notes.md`):
 - Never hold a whole scan in one request. Per-region work runs in parallel; every model call has a timeout and bounded retries.
 - Reconciliation: normalize both readings (trim, case, spacing, unit forms, numeric parsing), then compare field by field. Match = `agreed`. Different, or one unreadable = `flagged`. It is derived from the stored readings on every `GET /api/scans/[id]` (a `fields` array per region, `reconcileReadings` in `lib/pipeline/reconcile.ts`), not stored; the human decision is stored in `reviews`. A reader that failed or found nothing counts as having found nothing, so all its fields are flagged. "Agreed" means the readers matched, not that the value is right: the source crop must always be visible.
 - A human confirms everything. `agreed` fields are fast-confirm; `flagged` fields require an explicit choice or edit. Never silently pick one model's answer for a flagged field.
+- Review save (`POST /api/scans/[id]/review`, one region per call): the server re-derives the fields from the stored readings and `resolveReview` (`lib/pipeline/review.ts`, pure) refuses a missing field, `agreed` on a flagged field, a reader value the reader did not return, and unknown or duplicate keys. It upserts `reviews` (unique on region) and adds a `recognition_event` when the final answer changed. "Can't be read" is a stored decision (`null`, never a guess). The scan becomes `done` when every region has a stored review. The browser never writes to the database.
+- Outbox: capture saves the downscaled JPEG to IndexedDB first (`lib/outbox/`), then sends through the one shared sender (`send.ts`). The scan id is made at capture, so a repeat `POST /api/sync` is a no-op on the server. Sync runs on app start, on the `online` event, from "Sync now" and on a backoff timer; one run at a time per tab.
+- Known issues in the merged review and outbox code (2026-10-31, from an automated review of PR #24; the first two spot-checked in the code, the rest not yet verified): a saved edit is not shown after a reload (`field-row.tsx` seeds its state once); `resolveReview` compares a trimmed value with an untrimmed reader value; a region with no reconciled fields counts as reviewed; the source crop can be cut off by `maxHeight`; the `recognition_event` write is not atomic with the review; the overlay turns green on any decision. Details in `docs/new-work.md`. Fix before relying on the review screen in the demo.
 
 ## Stack
 
@@ -34,17 +37,17 @@ Next.js 16 with `cacheComponents`: anything that reads `params`, `searchParams` 
 
 ## Layout
 
-- `app/` routes: `app/page.tsx` is the capture screen, `app/scans/[id]/page.tsx` the results page, `app/api/sync/route.ts` the sync endpoint, `app/api/scans/[id]/route.ts` job status and results
-- `components/ui/` shadcn components (button, badge, dialog), restyled to the palette; `components/capture/` and `components/scan/` our own components
+- `app/` routes: `app/page.tsx` is the capture screen, `app/scans/[id]/page.tsx` the results and review page, `app/review-preview/page.tsx` the review screen on sample data (404 in Production), `app/api/sync/route.ts` the sync endpoint, `app/api/scans/[id]/route.ts` job status and results, `app/api/scans/[id]/review/route.ts` saves and reads reviews
+- `components/ui/` shadcn components (button, badge, dialog), restyled to the palette; `components/capture/` (capture form, outbox list, `use-outbox`) and `components/scan/` (results, `review-workspace`, `field-row`, `source-crop`, `chart-photo`, `marks`) our own components
 - `lib/models/` one adapter per model, each returning Zod-validated data; model IDs and base URLs come from env. `spark.ts` (region proposals and a reader), `baseten.ts` (the second reader), `sam.ts` (box refinement), `chat.ts` (shared chat-completions call, timeout and bounded retries), `reader.ts` (the shared read prompt), `mock.ts`, and `index.ts` (`getModelAdapters`)
-- `lib/pipeline/` stages and orchestration (`run.ts`); pure functions in `reconcile.ts` and `bbox.ts` (client-safe); `budget.ts` is the per-scan call cap
-- `lib/outbox/` IndexedDB queue and sync
-- `lib/schemas/` Zod schemas shared by client and server
-- `lib/server/` Supabase client, store and storage. Server only: no client file may import it, or `lib/env.ts`
+- `lib/pipeline/` stages and orchestration (`run.ts`); pure functions in `reconcile.ts`, `bbox.ts` (client-safe) and `review.ts` (`resolveReview`); `budget.ts` is the per-scan call cap
+- `lib/outbox/` IndexedDB queue and sync: `client.ts` (store and in-flight run), `runner.ts` (send oldest first), `send.ts` (the shared sender), `policy.ts` (backoff, due times), `types.ts`
+- `lib/schemas/` Zod schemas shared by client and server (`review.ts` holds the review decisions)
+- `lib/server/` Supabase client, store, `review-store.ts` and storage. Server only: no client file may import it, or `lib/env.ts`
 - `lib/client/` browser-only helpers (photo downscale before upload)
-- `lib/ui/` pure UI logic (status labels, polling backoff, field formatting), unit tested
+- `lib/ui/` pure UI logic (status labels, polling backoff, field formatting, `review-state.ts`, `preview-fixture.ts`), unit tested
 - `eval/` fixtures (`eval/fixtures/*.jpg` plus `*.json` ground truth: `smoke-chart-01`, `smoke-chart-02`, `hard-chart-01`), `eval/run.ts`, `eval/results.json`
-- `docs/` holds `models-notes.md`, `new-work.md` (what was built, and when), `phone-test.md` (the real-phone smoke test and its result log), `phase-4-plan.md`, `BUILD_PLAN.md`, `eval-results.md`
+- `docs/` holds `models-notes.md`, `new-work.md` (what was built, and when), `phone-test.md` (the real-phone smoke test and its result log), `phase-4-plan.md`, `BUILD_PLAN.md`, `eval-results.md`. `PRODUCT.md` (repo root) holds users, purpose, principles and the open product decisions
 
 Data model (Supabase): `scans` (id, status, image_path, created_at), `regions` (id, scan_id, kind: table | handwriting | stamp | printed | header | signature, bbox, mask_path), `readings` (id, region_id, model, structured_json, latency_ms, error), `reviews` (id, region_id, final_json, field_status, edited, reviewed_at), `recognition_event` (id, region_id, readings snapshot, human_final, created_at).
 
