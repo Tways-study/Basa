@@ -120,7 +120,7 @@ lib/client/             browser-only helpers (photo downscale before upload)
 lib/ui/                 pure UI logic: status, polling backoff, field formatting
 eval/                   fixtures (*.jpg + *.json ground truth), manifest.json, run.ts, results.json
 supabase/migrations/    database migrations
-docs/                   models-notes.md, new-work.md, phone-test.md, phase-4-plan.md, BUILD_PLAN.md, eval-results.md
+docs/                   models-notes.md, new-work.md, phone-test.md, BUILD_PLAN.md, eval-results.md
 PRODUCT.md              users, purpose, principles and open product decisions
 ```
 
