@@ -1,8 +1,125 @@
 {
-  "note": "Charts for the eval. split: dev is for tuning prompts; test is held out and run once with --final. hard marks charts built to make readers disagree. All charts are synthetic.",
+  "note": "Charts for the eval. split: dev is for tuning prompts; test is held out and run once with --final. hard marks charts built to make readers disagree. All charts are synthetic. A phone photo replaces a generated chart by changing its file here and adding truth: eval/fixtures/<id>.json.",
   "charts": [
-    { "id": "smoke-chart-01", "file": "eval/fixtures/smoke-chart-01.jpg", "split": "dev", "hard": false },
-    { "id": "smoke-chart-02", "file": "eval/fixtures/smoke-chart-02.jpg", "split": "dev", "hard": false },
-    { "id": "hard-chart-01", "file": "eval/fixtures/hard-chart-01.jpg", "split": "dev", "hard": true }
+    {
+      "id": "smoke-chart-01",
+      "file": "eval/fixtures/smoke-chart-01.jpg",
+      "split": "dev",
+      "hard": false
+    },
+    {
+      "id": "smoke-chart-02",
+      "file": "eval/fixtures/smoke-chart-02.jpg",
+      "split": "dev",
+      "hard": false
+    },
+    {
+      "id": "hard-chart-01",
+      "file": "eval/fixtures/hard-chart-01.jpg",
+      "split": "dev",
+      "hard": true
+    },
+    {
+      "id": "gen-d01",
+      "file": "eval/fixtures/gen-d01.jpg",
+      "split": "dev",
+      "hard": false
+    },
+    {
+      "id": "gen-d02",
+      "file": "eval/fixtures/gen-d02.jpg",
+      "split": "dev",
+      "hard": false
+    },
+    {
+      "id": "gen-d03",
+      "file": "eval/fixtures/gen-d03.jpg",
+      "split": "dev",
+      "hard": false
+    },
+    {
+      "id": "gen-d04",
+      "file": "eval/fixtures/gen-d04.jpg",
+      "split": "dev",
+      "hard": true
+    },
+    {
+      "id": "gen-d05",
+      "file": "eval/fixtures/gen-d05.jpg",
+      "split": "dev",
+      "hard": true
+    },
+    {
+      "id": "gen-t01",
+      "file": "eval/fixtures/gen-t01.jpg",
+      "split": "test",
+      "hard": false
+    },
+    {
+      "id": "gen-t02",
+      "file": "eval/fixtures/gen-t02.jpg",
+      "split": "test",
+      "hard": false
+    },
+    {
+      "id": "gen-t03",
+      "file": "eval/fixtures/gen-t03.jpg",
+      "split": "test",
+      "hard": false
+    },
+    {
+      "id": "gen-t04",
+      "file": "eval/fixtures/gen-t04.jpg",
+      "split": "test",
+      "hard": false
+    },
+    {
+      "id": "gen-t05",
+      "file": "eval/fixtures/gen-t05.jpg",
+      "split": "test",
+      "hard": false
+    },
+    {
+      "id": "gen-t06",
+      "file": "eval/fixtures/gen-t06.jpg",
+      "split": "test",
+      "hard": false
+    },
+    {
+      "id": "gen-t07",
+      "file": "eval/fixtures/gen-t07.jpg",
+      "split": "test",
+      "hard": false
+    },
+    {
+      "id": "gen-t08",
+      "file": "eval/fixtures/gen-t08.jpg",
+      "split": "test",
+      "hard": true
+    },
+    {
+      "id": "gen-t09",
+      "file": "eval/fixtures/gen-t09.jpg",
+      "split": "test",
+      "hard": true
+    },
+    {
+      "id": "gen-t10",
+      "file": "eval/fixtures/gen-t10.jpg",
+      "split": "test",
+      "hard": true
+    },
+    {
+      "id": "gen-t11",
+      "file": "eval/fixtures/gen-t11.jpg",
+      "split": "test",
+      "hard": true
+    },
+    {
+      "id": "gen-t12",
+      "file": "eval/fixtures/gen-t12.jpg",
+      "split": "test",
+      "hard": true
+    }
   ]
 }
