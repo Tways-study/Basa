@@ -133,6 +133,8 @@ Done when
 
 ## Phase 7 — Eval harness (Oct 28 to Nov 3) · D, with T
 
+**Harness built (2026-10-31), charts still to make.** Decision (2026-10-31): 20 charts, not 30 (8 dev, 12 held-out, with the hard ones spread across both), to meet the deadline; Tways makes the charts and ground truth in Adrian's place. Built and tested: `eval/run.ts` (conditions A, B and C, a per-chart call cap, a mock guard, the held-out set only with `--final` and only once), `eval/score.ts` (pure scoring, 14 tests), `eval/report.ts`, `eval/whole-image.ts`, `eval/manifest.json` (the three existing fixtures, all dev). First real run on those three: conditions A and B scored 63 of 63 fields, so these charts have no headroom and C can only add review burden; harder charts are what make the comparison meaningful. Still to do: 17 more charts with ground truth, prompt tuning on dev only, the phone-photo experiment, and the one held-out run on Nov 3 before the noon freeze.
+
 What exists now: `eval/fixtures/` holds `smoke-chart-01`, `smoke-chart-02` and `hard-chart-01` (each a `.jpg` plus ground-truth `.json`; `smoke-chart-02.json` also has `_regions` boxes in pixels, `hard-chart-01.json` does not yet). The real pipeline pieces are importable, so `eval/run.ts` does not need the HTTP routes or the database: `getModelAdapters()` (Muse Spark proposes boxes, SAM refines them, both readers), `cropRegion` and `growBBox(box, READ_MARGIN, READ_MARGIN)` (the crop the readers see), `reconcileReadings`, and `normalize` from `lib/pipeline/reconcile.ts` for comparing a value with the ground truth. A scan costs about 12 model calls (one proposal, one SAM, two reads per region), so 30 charts times three conditions is well inside the free credits.
 
 Tasks

@@ -68,3 +68,6 @@ Thumbs.db
 !.vscode/extensions.json
 *.swp
 .gstack/
+
+# Eval raw run outputs (per chart, per reader). eval/results.json and docs/eval-results.md are what we commit.
+eval/runs/
