@@ -27,6 +27,7 @@ Success for the product is a confirmed record where every value was seen by a pe
 - Pipeline: segment the page into regions (Muse Spark proposes boxes, SAM 3.1 tightens them), read each region twice (Muse Spark; Muse Spark Open on Baseten), reconcile field by field, then human review. Each stage is stored, so a retry never duplicates work. A scan takes about 14 s in a Production run.
 - Review: fields the readers agreed on are quick to confirm; fields they differ on, or that one reader could not read, need an explicit choice or typed value. A flagged field never has a preselected value. "Agreed" means the readers matched, not that the value is right, so the source crop must always be visible.
 - Region kinds: table, handwriting, stamp, printed, header, signature.
+- Print (2026-10-31): once every field is confirmed and saved, the review screen offers a printed patient copy. It restates only confirmed values, prints an unreadable field as "[not legible on source]", shows the confirmed date and a blank handwritten "Reviewed by" line (there is no login, so no staff name), and says it is not medical advice. It is a copy of a record, never a prescription or report authored by Basa. The reason to print: the confirmed record can travel to people with no Basa. The need is stated by the team from the usual clinic workflow, not observed with a named clinic: test it with one real staff member before relying on it.
 
 ## Capabilities and Constraints
 
