@@ -72,10 +72,30 @@ function geometry(spec: ChartSpec): Geometry {
   };
 }
 
-function handLine(segments: Segment[], x: number, y: number, font: string, size: number, fill: string): string {
+/**
+ * Per-letter wobble for handwriting: every character gets its own height step and size, so no two
+ * letters sit alike. `dy` is relative to the previous letter, so the steps are differences of
+ * offsets and the line does not drift. Per-character tspans are used because they render reliably.
+ */
+function wobbleChars(text: string, rand: () => number, amp: number, enabled: boolean): string {
+  if (!enabled) return esc(text);
+  let previous = 0;
+  return [...text]
+    .map((ch) => {
+      const offset = (rand() - 0.5) * 2 * amp;
+      const dy = (offset - previous).toFixed(2);
+      previous = offset;
+      const scale = (0.88 + rand() * 0.26).toFixed(2);
+      return `<tspan dy="${dy}" font-size="${scale}em">${esc(ch)}</tspan>`;
+    })
+    .join("");
+}
+
+function handLine(segments: Segment[], x: number, y: number, font: string, size: number, fill: string, wobble?: { rand: () => number; amp: number }): string {
   const parts = segments
     .map((s, i) => {
-      const text = esc(s.t) + (i < segments.length - 1 ? " " : "");
+      const raw = s.t + (i < segments.length - 1 ? " " : "");
+      const text = wobbleChars(raw, wobble?.rand ?? Math.random, wobble?.amp ?? 0, Boolean(wobble));
       return s.struck
         ? `<tspan text-decoration="line-through" fill="${fill}" stroke="${fill}" stroke-width="0.4">${text}</tspan>`
         : `<tspan>${text}</tspan>`;
@@ -86,6 +106,9 @@ function handLine(segments: Segment[], x: number, y: number, font: string, size:
 
 export function pageSvg(spec: ChartSpec): string {
   const g = geometry(spec);
+  const rand = seeded(`${spec.id}:svg`);
+  const jitter = has(spec, "jitter");
+  const wob = (amp: number) => (jitter ? { rand, amp } : undefined);
   const faded = has(spec, "low-contrast");
   const print = faded ? FADED : INK;
   const hand = faded ? HAND_FADED : HAND_INK;
@@ -132,7 +155,7 @@ export function pageSvg(spec: ChartSpec): string {
     out.push(`<text x="${testX}" y="${y}" font-family="${pf}" font-size="28" fill="${print}">${esc(r.test)}</text>`);
     out.push(
       handValues
-        ? `<text x="${valueX}" y="${y + 2}" font-family="${spec.handFont}" font-size="40" fill="${hand}">${esc(r.value)}</text>`
+        ? `<text x="${valueX}" y="${y + 2}" xml:space="preserve" font-family="${spec.handFont}" font-size="40" fill="${hand}">${wobbleChars(r.value, rand, 4, jitter)}</text>`
         : `<text x="${valueX}" y="${y}" font-family="${pf}" font-size="28" fill="${print}">${esc(r.value)}</text>`,
     );
     out.push(
@@ -145,8 +168,8 @@ export function pageSvg(spec: ChartSpec): string {
 
   // Handwritten notes.
   out.push(`<text x="${g.noteX}" y="${g.notesY}" font-family="${pf}" font-size="17" fill="${print}">NOTES</text>`);
-  out.push(handLine(spec.lines[0], g.noteX, g.line1Y, spec.handFont, 38, hand));
-  out.push(handLine(spec.lines[1], g.noteX, g.line2Y, spec.handFont, 38, hand));
+  out.push(handLine(spec.lines[0], g.noteX, g.line1Y, spec.handFont, 38, hand, wob(4)));
+  out.push(handLine(spec.lines[1], g.noteX, g.line2Y, spec.handFont, 38, hand, wob(4)));
 
   // Rubber stamp, rotated a little, drawn under the handwriting only for ink-over-stamp.
   const stamp = `<g transform="translate(${g.stamp.x} ${g.stamp.y}) rotate(-5)" opacity="0.88">
@@ -162,7 +185,7 @@ export function pageSvg(spec: ChartSpec): string {
 
   // Signature: a handwritten name above a line.
   out.push(
-    `<text x="190" y="1236" font-family="${spec.handFont}" font-size="56" fill="${hand}">${esc(spec.signer)}</text>`,
+    `<text x="190" y="1236" xml:space="preserve" font-family="${spec.handFont}" font-size="56" fill="${hand}">${wobbleChars(spec.signer, rand, 5, jitter)}</text>`,
     `<line x1="150" x2="520" y1="1254" y2="1254" stroke="${print}" stroke-width="1.5"/>`,
     `<text x="150" y="1290" font-family="${pf}" font-size="17" fill="${print}">Technician signature</text>`,
   );
@@ -217,6 +240,12 @@ export async function renderChart(spec: ChartSpec): Promise<Buffer> {
     page = await sharp(page).composite([{ input: blurred, left: region.left, top: region.top }]).png().toBuffer();
   }
 
+  if (has(spec, "smudge")) {
+    // Ink bleed: a blurred copy darkened over the original spreads every stroke a little.
+    const bled = await sharp(page).blur(1.5).toBuffer();
+    page = await sharp(page).composite([{ input: bled, blend: "darken" }]).png().toBuffer();
+  }
+
   let image: Buffer;
   if (has(spec, "tilt")) {
     // Shrink the page, turn it, and lay it on a desk with a soft shadow.
@@ -247,6 +276,11 @@ export async function renderChart(spec: ChartSpec): Promise<Buffer> {
   if (has(spec, "noise")) {
     layers.push({ input: noiseBuffer(rand), raw: { width: PAGE_W, height: PAGE_H, channels: 3 }, blend: "overlay" });
   }
-  const final = layers.length ? sharp(image).composite(layers) : sharp(image);
-  return final.jpeg({ quality: 86 }).toBuffer();
+  const composed = layers.length ? await sharp(image).composite(layers).png().toBuffer() : image;
+  if (has(spec, "lowres")) {
+    // A poor phone photo: shrunk, stretched back up and compressed hard.
+    const small = await sharp(composed).resize(Math.round(PAGE_W * 0.28)).toBuffer();
+    return sharp(small).resize(PAGE_W, PAGE_H, { kernel: "cubic" }).jpeg({ quality: 22 }).toBuffer();
+  }
+  return sharp(composed).jpeg({ quality: 86 }).toBuffer();
 }

@@ -15,7 +15,10 @@ export type Feature =
   | "ink-over-stamp" // a handwritten line runs across the stamp
   | "edge-text" //      text sits a few pixels from cell and page edges
   | "hand-values" //    table values are handwritten, with look-alike digits
-  | "crossed-out"; //   a word in the notes is struck through
+  | "crossed-out" //    a word in the notes is struck through
+  | "jitter" //         every handwritten letter wobbles in height and angle
+  | "smudge" //         ink bleeds and spreads
+  | "lowres"; //        low resolution and heavy JPEG compression, like a poor phone photo
 
 export type PrintFont = "Courier New" | "American Typewriter" | "Menlo";
 export type HandFont = "Bradley Hand" | "Noteworthy" | "Snell Roundhand" | "Marker Felt" | "Chalkboard SE";
@@ -116,8 +119,8 @@ export const SPECS: ChartSpec[] = [
     patientName: "Luis M. Bautista", chartNo: "CH-071171", date: "2026-06-17",
     rows: [row("Hemoglobin", "11.7", "g/dL"), row("Potassium", "4.1", "mmol/L"), row("Sodium", "137", "mmol/L"), row("Creatinine", "106", "umol/L"), row("Glucose, random", "6.8", "mmol/L")],
     lines: [plain("Sample taken 10:17, fasting."), plain("Lab B ext. 1771.")],
-    stampLine: "LAB DEPT 17 JUN", signer: "P. Cruz", features: ["hand-values", "tilt", "shadow"],
-    note: "Handwritten values and times with look-alike digits (1 and 7, 6 and 8, 3 and 8). Hard.",
+    stampLine: "LAB DEPT 17 JUN", signer: "P. Cruz", features: ["hand-values", "tilt", "shadow", "jitter", "smudge", "lowres"],
+    note: "Handwritten values and times with look-alike digits (1 and 7, 6 and 8, 3 and 8), wobbly letters, bled ink and low resolution. Hard.",
   },
   {
     id: "gen-d05", split: "dev", hard: true,
@@ -125,8 +128,8 @@ export const SPECS: ChartSpec[] = [
     patientName: "Rosa A. Camacho", chartNo: "CH-009860", date: "2026-06-03",
     rows: [row("Hemoglobin", "10.9", "g/dL"), row("Potassium", "3.9", "mmol/L"), row("Glucose, fasting", "5.6", "mmol/L"), row("Creatinine", "97", "umol/L")],
     lines: [plain("Sample taken 06:50."), plain("Form copied for records.")],
-    stampLine: "LAB DEPT 03 JUN", signer: "T. Gomez", features: ["crease", "low-contrast", "tilt"], creaseRow: 3,
-    note: "A fold runs through the Glucose row and the printed ink is faded. Hard.",
+    stampLine: "LAB DEPT 03 JUN", signer: "T. Gomez", features: ["crease", "low-contrast", "tilt", "smudge", "lowres"], creaseRow: 3,
+    note: "A fold runs through the Glucose row, the printed ink is faded and bled, and the photo is low resolution. Hard.",
   },
   // ---- test: 7 easy ----
   {
@@ -199,8 +202,8 @@ export const SPECS: ChartSpec[] = [
     patientName: "Lorna D. Evangelista", chartNo: "CH-017117", date: "2026-07-17",
     rows: [row("Hemoglobin", "11.7", "g/dL"), row("Potassium", "4.7", "mmol/L"), row("Sodium", "136", "mmol/L"), row("Glucose, random", "6.5", "mmol/L"), row("Creatinine", "71", "umol/L")],
     lines: [plain("Sample taken 10:17."), plain("Lab B ext. 7611.")],
-    stampLine: "LAB DEPT 17 JUL", signer: "N. Pascual", features: ["hand-values", "tilt", "noise"],
-    note: "Handwritten values with look-alike digits. Hard. Planned as a phone photo of a printed copy.",
+    stampLine: "LAB DEPT 17 JUL", signer: "N. Pascual", features: ["hand-values", "tilt", "noise", "jitter", "lowres"],
+    note: "Handwritten values with look-alike digits, wobbly letters and low resolution. Hard. Planned as a phone photo of a printed copy.",
   },
   {
     id: "gen-t09", split: "test", hard: true,
@@ -208,8 +211,8 @@ export const SPECS: ChartSpec[] = [
     patientName: "Ramon B. Castillo", chartNo: "CH-014790", date: "2026-07-20",
     rows: [row("Hemoglobin", "13.3", "g/dL"), row("Potassium", "4.2", "mmol/L"), row("Glucose, fasting", "5.8", "mmol/L"), row("Creatinine", "90", "umol/L")],
     lines: [plain("Sample taken 08:30, fasting."), plain("Checked by front desk.")],
-    stampLine: "LAB DEPT 20 JUL", signer: "H. Salazar", features: ["ink-over-stamp", "tilt"],
-    note: "The second handwritten line runs across the stamp. Hard.",
+    stampLine: "LAB DEPT 20 JUL", signer: "H. Salazar", features: ["ink-over-stamp", "tilt", "smudge"],
+    note: "The second handwritten line runs across the stamp, and the ink has bled. Hard.",
   },
   {
     id: "gen-t10", split: "test", hard: true,
@@ -217,8 +220,8 @@ export const SPECS: ChartSpec[] = [
     patientName: "Josefina M. Cruz", chartNo: "CH-015233", date: "2026-07-22",
     rows: [row("Sodium", "139", "mmol/L"), row("Potassium", "3.8", "mmol/L"), row("Urea", "5.2", "mmol/L"), row("Hematocrit", "39", "%"), row("Platelets", "262", "x10^9/L")],
     lines: [plain("Specimen label checked and signed at desk."), plain("Sample taken 07:20.")],
-    stampLine: "LAB DEPT 22 JUL", signer: "B. Flores", features: ["edge-text", "tilt"],
-    note: "Text a few pixels from the cell and page edges. Hard. Planned as a phone photo of a printed copy.",
+    stampLine: "LAB DEPT 22 JUL", signer: "B. Flores", features: ["edge-text", "tilt", "lowres"],
+    note: "Text a few pixels from the cell and page edges, at low resolution. Hard. Planned as a phone photo of a printed copy.",
   },
   {
     id: "gen-t11", split: "test", hard: true,
@@ -226,8 +229,8 @@ export const SPECS: ChartSpec[] = [
     patientName: "Pablo N. Reyes", chartNo: "CH-015690", date: "2026-07-24",
     rows: [row("Hemoglobin", "14.0", "g/dL"), row("Glucose, fasting", "5.5", "mmol/L"), row("Creatinine", "85", "umol/L"), row("Sodium", "140", "mmol/L")],
     lines: [[seg("Sample taken"), seg("08:10", true), seg("07:40, fasting.")], plain("Sent to lab C.")],
-    stampLine: "LAB DEPT 24 JUL", signer: "G. Ramos", features: ["crossed-out", "shadow"],
-    note: `Cursive notes with a corrected time. ${STRIKE_NOTE} Hard.`,
+    stampLine: "LAB DEPT 24 JUL", signer: "G. Ramos", features: ["crossed-out", "shadow", "jitter", "smudge"],
+    note: `Wobbly cursive notes with a corrected time and bled ink. ${STRIKE_NOTE} Hard.`,
   },
   {
     id: "gen-t12", split: "test", hard: true,
@@ -235,8 +238,8 @@ export const SPECS: ChartSpec[] = [
     patientName: "Ana Beatriz Lopez", chartNo: "CH-016128", date: "2026-07-27",
     rows: [row("Potassium", "4.6", "mmol/L"), row("Sodium", "143", "mmol/L"), row("Creatinine", "99", "umol/L"), row("Hemoglobin", "12.8", "g/dL")],
     lines: [[seg("Form"), seg("copied", true), seg("filed at front desk.")], plain("Sample taken 06:40.")],
-    stampLine: "LAB DEPT 27 JUL", signer: "F. Medina", features: ["crease", "low-contrast", "crossed-out", "noise"], creaseRow: 2,
-    note: `A fold through the Sodium row, faded ink, grain and a struck word. ${STRIKE_NOTE} Hard.`,
+    stampLine: "LAB DEPT 27 JUL", signer: "F. Medina", features: ["crease", "low-contrast", "crossed-out", "noise", "smudge", "lowres"], creaseRow: 2,
+    note: `A fold through the Sodium row, faded and bled ink, grain, low resolution and a struck word. ${STRIKE_NOTE} Hard.`,
   },
 ];
 
