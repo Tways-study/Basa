@@ -102,3 +102,17 @@ Everything in this repo is new work written during the hackathon (Oct 27 to Nov 
   - Outbox: the status poll throws on the first non-OK scan and a 404 is never final; `syncOutbox` joins a run already in flight, so a new photo or Retry can be swallowed; the start-of-run reset of `syncing` items can race a second tab.
   - Priority: fix the first four review items and the empty-region completion check before relying on the review screen; the outbox items can follow. None of these is fixed yet.
 - Docs updated by Tways with Claude: `CLAUDE.md` (layout, review and outbox facts, known issues), `docs/BUILD_PLAN.md` (Phase 5 and 6 status), `README.md` (status, layout) and the plan artifact. No code changed.
+
+## 2026-10-31 (fixes from the PR #24 audit, branch `tways/review-fixes`)
+
+- Audit of PR #24 against `BUILD_PLAN.md` and `CLAUDE.md`: design and rules held (nothing preselected, server re-derives fields, no `NEXT_PUBLIC_`, no client import of server code, no GSAP, no new dependencies, frozen contracts untouched). Defects fixed here:
+  - `isScanComplete` (`lib/pipeline/review.ts`): a region with no fields no longer completes the scan when a reader failed or is missing, so a scan cannot reach `done` with a region nobody saw. The region's alert now says nothing can be decided until it is read again; there is no retry yet (Phase 8).
+  - `SourceCrop`: removed `maxHeight: 16rem`, which cut the bottom off tall regions.
+  - `FieldRow`: no longer copies a stored decision into state on mount, so a typed value reappears after a reload.
+  - Overlay: green only when every field was `agreed` and confirmed; amber while a flagged field is open; ink otherwise.
+  - `resolveReview` compares against trimmed reader values (the schema trims what the person sends).
+  - `saveReview`: writes the `recognition_event` first and compares with the last event, so a failed review write is retried without losing or doubling the event. No migration needed; two truly simultaneous saves can still double an event.
+  - Confirm names the failing region and skips regions already saved.
+  - Outbox: `syncOutbox` waits for a running pass and then runs its own; the status poll handles each scan separately and marks a 404 as failed.
+- Tests: 127 pass (4 new, in `lib/pipeline/review.test.ts`). `pnpm typecheck`, `pnpm lint`, `pnpm test` and `pnpm build` pass. Not tested: the route, the store, `FieldRow` and the outbox queue (no jsdom or fake IndexedDB); not run in a browser or against the real Supabase.
+- Not fixed: the crop-beside-readings layout, `field_status` holding the decision source, outbox sync on app start only on the capture page, and the two-tab stale `syncing` race.

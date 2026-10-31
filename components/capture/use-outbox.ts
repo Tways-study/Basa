@@ -75,19 +75,26 @@ export function useOutbox() {
     let timer: ReturnType<typeof setTimeout> | undefined;
 
     async function poll() {
-      try {
-        for (const id of followed.split(",")) {
+      let failed = false;
+      // Each scan on its own, so one bad scan cannot stall the rest.
+      for (const id of followed.split(",")) {
+        try {
           const res = await fetch(`/api/scans/${id}`, { signal: controller.signal, cache: "no-store" });
+          if (res.status === 404) {
+            // The server does not know this scan (removed, or never stored). Say so instead of waiting forever.
+            await setServerStatus(id, "failed");
+            continue;
+          }
           if (!res.ok) throw new Error(`The server answered ${res.status}`);
           const parsed = StatusOnlySchema.safeParse(await res.json());
           if (parsed.success) await setServerStatus(id, parsed.data.status);
+        } catch (err) {
+          if (controller.signal.aborted) return;
+          console.error("status poll failed:", err instanceof Error ? err.message : "unknown error");
+          failed = true;
         }
-        failures = 0;
-      } catch (err) {
-        if (controller.signal.aborted) return;
-        console.error("status poll failed:", err instanceof Error ? err.message : "unknown error");
-        failures += 1;
       }
+      failures = failed ? failures + 1 : 0;
       timer = setTimeout(poll, nextPollDelay(failures));
     }
     timer = setTimeout(poll, nextPollDelay(0));

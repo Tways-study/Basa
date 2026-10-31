@@ -36,8 +36,13 @@ export function FieldRow({
   choice: Choice | undefined;
   onChoose: (choice: Choice | undefined) => void;
 }) {
-  const [editing, setEditing] = useState(choice?.source === "edited");
-  const [draft, setDraft] = useState(choice?.source === "edited" ? (choice.value ?? "") : "");
+  // Earlier decisions load after this row mounts, so nothing is copied from `choice` into state once.
+  // `editing` is only the person's intent to type; a stored edit also counts, and the text shown is
+  // what they typed here, or else the stored value.
+  const [editingNow, setEditing] = useState(false);
+  const [typed, setTyped] = useState<string | null>(null);
+  const editing = editingNow || choice?.source === "edited";
+  const draft = typed ?? (choice?.source === "edited" ? (choice.value ?? "") : "");
   const label = labelForKey(field.key);
   const options = optionsFor(field);
   const picked = editing ? "edited" : choice?.source;
@@ -114,7 +119,7 @@ export function FieldRow({
           value={draft}
           maxLength={500}
           onChange={(e) => {
-            setDraft(e.target.value);
+            setTyped(e.target.value);
             const text = e.target.value.trim();
             onChoose(text ? { key: field.key, source: "edited", value: text } : undefined);
           }}

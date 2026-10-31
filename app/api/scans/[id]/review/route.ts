@@ -1,5 +1,5 @@
 import { reconcileReadings } from "@/lib/pipeline/reconcile";
-import { resolveReview } from "@/lib/pipeline/review";
+import { isScanComplete, resolveReview } from "@/lib/pipeline/review";
 import { ReviewSubmissionSchema, ScanIdSchema, type ReviewsResponse } from "@/lib/schemas";
 import { createReviewStore } from "@/lib/server/review-store";
 import { createSupabaseStore } from "@/lib/server/store";
@@ -59,10 +59,12 @@ export async function POST(request: Request, ctx: { params: Promise<{ id: string
       readings: own.map(({ model, fields, error }) => ({ model, fields, error })),
     });
 
-    // The scan is done once every region that has fields has a stored review.
+    // The scan is done once every region has been seen by a person (see isScanComplete).
     const saved = new Set((await reviews.getReviews(id.data)).map((r) => r.regionId));
-    const complete = regions.every(
-      (r) => reconcileReadings(readings.filter((x) => x.regionId === r.id)).length === 0 || saved.has(r.id),
+    const complete = isScanComplete(
+      regions.map((r) => r.id),
+      readings,
+      saved,
     );
     if (complete && scan.status !== "done") await scans.setStatus(id.data, "done");
 

@@ -6,7 +6,7 @@ export interface ReviewStore {
   getReviews(scanId: string): Promise<SavedReview[]>;
   /**
    * One review per region (unique on region_id), so saving twice replaces it. A recognition_event is
-   * added only when the person's final answer changed, so a retried request does not duplicate it.
+   * added only when the person's final answer differs from the last event, so a retried request does not duplicate it.
    */
   saveReview(input: {
     regionId: string;
@@ -46,12 +46,26 @@ export function createReviewStore(): ReviewStore {
     },
 
     async saveReview({ regionId, finalJson, fieldStatus, edited, readings }) {
-      const { data: existing, error: readError } = await db
-        .from("reviews")
-        .select("final_json")
+      // Event first, then the review. If the second write fails, a retry finds the event already
+      // written (its human_final equals this answer) and only repeats the review, so the audit trail
+      // is never lost. Comparing with the latest event, not the review row, is what makes that work.
+      const { data: latest, error: readError } = await db
+        .from("recognition_event")
+        .select("human_final")
         .eq("region_id", regionId)
+        .order("created_at", { ascending: false })
+        .limit(1)
         .maybeSingle();
       if (readError) fail("read", readError);
+
+      // Key order from jsonb is not stable, so compare as sorted entries.
+      const sorted = (o: unknown) => JSON.stringify(Object.entries(o as object).sort(([a], [b]) => a.localeCompare(b)));
+      if (!latest || sorted(latest.human_final) !== sorted(finalJson)) {
+        const { error: eventError } = await db
+          .from("recognition_event")
+          .insert({ region_id: regionId, readings, human_final: finalJson });
+        if (eventError) fail("insert", eventError);
+      }
 
       const { error } = await db.from("reviews").upsert(
         {
@@ -64,15 +78,6 @@ export function createReviewStore(): ReviewStore {
         { onConflict: "region_id" },
       );
       if (error) fail("upsert", error);
-
-      // Key order from jsonb is not stable, so compare as sorted entries.
-      const sorted = (o: unknown) => JSON.stringify(Object.entries(o as object).sort(([a], [b]) => a.localeCompare(b)));
-      if (existing && sorted(existing.final_json) === sorted(finalJson)) return;
-
-      const { error: eventError } = await db
-        .from("recognition_event")
-        .insert({ region_id: regionId, readings, human_final: finalJson });
-      if (eventError) fail("insert", eventError);
     },
   };
 }

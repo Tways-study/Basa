@@ -58,14 +58,18 @@ export async function addToOutbox(scanId: string, blob: Blob): Promise<void> {
 export const listOutbox = () => store.list();
 export const removeFromOutbox = (scanId: string) => store.remove(scanId);
 
-// One run at a time in this tab. A second request while one is running joins it instead of sending twice.
+// One run at a time in this tab. A request made while one is running waits for it and then runs its
+// own pass, because the running pass may already have gone by the item just added or reset. Passes
+// are cheap and idempotent: an item the server already has is not sent again.
 let running: Promise<Map<string, SendResult>> | null = null;
 
 export function syncOutbox(force = false): Promise<Map<string, SendResult>> {
-  running ??= runOutbox(store, (id, blob) => sendScan(id, blob), { force }).finally(() => {
+  if (running) return running.then(() => syncOutbox(force));
+  const pass = runOutbox(store, (id, blob) => sendScan(id, blob), { force }).finally(() => {
     running = null;
   });
-  return running;
+  running = pass;
+  return pass;
 }
 
 /** A failed photo gets a fresh set of attempts when the person asks for one. */

@@ -32,7 +32,9 @@ export function SourceCrop({
       role="img"
       aria-label={label}
       className="relative w-full overflow-hidden rounded-md border bg-card"
-      style={{ aspectRatio: `${g.w * size.width} / ${g.h * size.height}`, maxHeight: "16rem" }}
+      // No max height: it would cut the bottom off a tall region while the image scale stays width-based,
+      // and the lower rows are the ones a short box would have clipped.
+      style={{ aspectRatio: `${g.w * size.width} / ${g.h * size.height}` }}
     >
       {/* The whole photo, scaled and shifted so only the grown box shows. Percentages keep it exact at any width. */}
       {/* eslint-disable-next-line @next/next/no-img-element */}
