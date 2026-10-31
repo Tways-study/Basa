@@ -99,6 +99,8 @@ Scope freeze, in practice (set 2026-10-30):
 
 ## Phase 5 — Review UI (Oct 29 to Oct 31) · A
 
+**Built and merged (PR #24, 2026-10-31); not complete.** Tasks 1 to 4 and 6 are built: the review screen with the source crop (box grown by `READ_MARGIN`), numbered SAM boxes on the photo, nothing preselected for a flagged field, `POST` and `GET /api/scans/[id]/review` (re-derives the fields, writes `reviews` and `recognition_event`, moves the scan to `done`), and `/review-preview` on sample data. Task 5 (GSAP) is not built and stays on the cut list; the overlay appears with no animation. 123 tests pass. Open "Done when" lines: a full scan reviewed end to end on the real Supabase (one mock scan on the Preview deploy), 360px and a real phone, and the reduced-motion line (no animation exists, so it holds). An automated review of the merged code found issues to fix before the demo (see `docs/new-work.md`, 2026-10-31): a saved edit is not shown after a reload, a trimmed value is compared with an untrimmed reader value, a region with no reconciled fields counts as reviewed, the crop can be cut off by `maxHeight`, the `recognition_event` write is not atomic, and the overlay turns green on any decision. The review screen is also long on mobile; flagged-first grouping is the next change.
+
 What the API gives you now (merged, live on Production; types in `lib/schemas/sync.ts`): `GET /api/scans/[id]` returns, per region, `kind`, a fractional `bbox`, the raw `readings` from each reader (with `error` when a call failed) and `fields`, the reconciled list. Each field is `agreed` (has `value`) or `flagged` (has a `reason`, no `value`, and both readers' texts in `readings`). A flagged field has no value on purpose: never preselect one. `fields` is the same array whether a reader failed, found nothing or disagreed. Mock mode (`MOCK_MODELS=true`) returns a chart with a real mismatch (7.2 vs 1.2), an unreadable value, a spelling difference and one that agrees after normalizing (`µmol/L` vs `umol/L`), so you can build the whole screen without credentials.
 
 Tasks
@@ -117,6 +119,8 @@ Done when
 Note for the review copy: "agreed" means the two readers matched, not that the value is right. A box that clips the text can still produce an agreed wrong answer, so the source crop must always be visible next to the value.
 
 ## Phase 6 — Offline outbox (Oct 30 to Nov 1) · A
+
+**Built and merged (PR #24, 2026-10-31); not complete.** Tasks 1 to 3 are built: the IndexedDB queue (`lib/outbox/`), the status badge (saved on device, waiting, reading, failed), sync on app start, on the `online` event, from "Sync now" and on a backoff timer, and the client-made scan id reused through the capture screen's shared sender. Checked in Edge at 360px with `/api/sync` intercepted: offline capture shows "Saved on device", it syncs after reconnect, is accepted once, and a reload does not resend. Not checked: a real phone, iOS Safari IndexedDB, and a run against the real server. Review findings to fix: a status poll that stalls on one bad scan, a Send or Retry that joins a run already in flight, and a stale `syncing` reset that two tabs can race (see `docs/new-work.md`, 2026-10-31).
 
 Tasks
 1. IndexedDB queue via `idb`: capture always saves locally first, with a status badge (saved on device, syncing, synced, failed).

@@ -92,11 +92,11 @@ Server Components by default; `"use client"` only for capture, the outbox, and t
 ## Project layout
 
 ```
-app/                    routes: capture (/), results (/scans/[id]), /api/sync, /api/scans/[id]
-components/             shadcn components in ui/, our own in capture/ and scan/
+app/                    routes: capture (/), results and review (/scans/[id]), /review-preview (sample data, 404 in Production), /api/sync, /api/scans/[id], /api/scans/[id]/review
+components/             shadcn components in ui/, our own in capture/ (form, outbox list) and scan/ (results, review screen)
 lib/models/             one adapter per model (spark, baseten, sam), a shared chat call and read prompt, mock; Zod-validated
 lib/pipeline/           stages and orchestration; reconcile.ts and bbox.ts hold pure functions; budget.ts is the call cap
-lib/outbox/             IndexedDB queue and sync
+lib/outbox/             IndexedDB queue, backoff and the shared sender
 lib/schemas/            Zod schemas shared by client and server
 lib/server/             Supabase client, store and storage (server only)
 lib/client/             browser-only helpers (photo downscale before upload)
@@ -104,6 +104,7 @@ lib/ui/                 pure UI logic: status, polling backoff, field formatting
 eval/                   fixtures (*.jpg + *.json ground truth), manifest.json, run.ts, results.json
 supabase/migrations/    database migrations
 docs/                   models-notes.md, new-work.md, phone-test.md, phase-4-plan.md, BUILD_PLAN.md, eval-results.md
+PRODUCT.md              users, purpose, principles and open product decisions
 ```
 
 ### Data model (Supabase)
@@ -169,7 +170,7 @@ Paper-and-ink editorial, built for tired eyes in a bright clinic.
 
 The sequence lives in [`docs/BUILD_PLAN.md`](./docs/BUILD_PLAN.md); the rules live in [`CLAUDE.md`](./CLAUDE.md). A phase is finished only when every "Done when" line is true and it is logged in `docs/new-work.md`.
 
-**Status (Oct 30):** phases 0, 1, 2 and 4 are done. Phase 3 is open on one line: a real phone photo on mobile data (see `docs/phone-test.md`). Phase 5 (review UI) is next.
+**Status (Oct 31):** phases 0, 1, 2 and 4 are done. Phase 3 is open on one line: a real phone photo on mobile data (see `docs/phone-test.md`). Phases 5 (review UI) and 6 (offline outbox) are built and merged (PR #24) but not done: they still need a real-Supabase review run and a real phone, and an automated review found issues to fix first (see `docs/new-work.md`). Phase 7 (eval) is next to start. 123 tests pass.
 
 | Phase | Owner | When (PHT) | Done when |
 |---|---|---|---|
