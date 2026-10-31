@@ -177,7 +177,7 @@ Tick **Preview** as well as Production on every variable, with exactly these nam
 | Variable | Exposed to browser? |
 |---|---|
 | `META_API_KEY`, `META_API_BASE_URL` (`https://api.meta.ai/v1`, no trailing slash or period), `META_SPARK_MODEL` (`muse-spark-1.3`), `META_SAM_MODEL` (`sam-3.1`) | No |
-| `BASETEN_API_KEY`, `BASETEN_MODEL_URL` (the full chat-completions endpoint), `BASETEN_MODEL` (`meta-models/muse-spark-open`, or `-1026` if we get access) | No |
+| `BASETEN_API_KEY`, `BASETEN_MODEL_URL` (the full chat-completions endpoint), `BASETEN_MODEL` (`meta-models/muse-spark-open`; the organizers confirmed this unsuffixed ID counts for the Open Weights requirement, 2026-10-31) | No |
 | `SUPABASE_SERVICE_ROLE_KEY` | **No, never** |
 | `SUPABASE_URL`, `SUPABASE_ANON_KEY` | No (server only) |
 | `MAX_MODEL_CALLS_PER_SCAN` | No |
@@ -191,7 +191,7 @@ Tick **Preview** as well as Production on every variable, with exactly these nam
 5. Check function duration. Model calls are slow, so do not run a whole scan in one request. Process per region, and look up your Vercel plan's function time limit and set `maxDuration` on the route within it. Do not assume a limit.
 6. Merge to `main` for the **Production** deploy.
 7. Smoke test on a real phone, logged out, on mobile data: capture, sync, process, review, confirm.
-8. Confirm Baseten and Meta dashboards show your calls (Baseten logs are your proof for the Open Weights prize).
+8. Confirm Baseten and Meta dashboards show your calls (Baseten logs are your proof for the Open Weights prize). Save the Baseten run logs, screen captures and sample outputs as provenance, and make sure the README and demo explain how and where Muse Spark Open is used.
 9. Check spend alerts and remaining credits.
 10. Repo hygiene: README states "new codebase, nothing reused, synthetic data only"; `docs/new-work.md` is complete; no `.env*` committed; rotate any key that ever touched git.
 11. Open the repo and demo video links in a logged-out browser window.
