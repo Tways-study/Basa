@@ -1,0 +1,8 @@
+{
+  "note": "Charts for the eval. split: dev is for tuning prompts; test is held out and run once with --final. hard marks charts built to make readers disagree. All charts are synthetic.",
+  "charts": [
+    { "id": "smoke-chart-01", "file": "eval/fixtures/smoke-chart-01.jpg", "split": "dev", "hard": false },
+    { "id": "smoke-chart-02", "file": "eval/fixtures/smoke-chart-02.jpg", "split": "dev", "hard": false },
+    { "id": "hard-chart-01", "file": "eval/fixtures/hard-chart-01.jpg", "split": "dev", "hard": true }
+  ]
+}

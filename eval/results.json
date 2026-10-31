@@ -1,0 +1,357 @@
+{
+  "schema": 1,
+  "dev": {
+    "generatedAt": "2026-10-31T10:33:51.790Z",
+    "split": "dev",
+    "margin": 0.2,
+    "final": false,
+    "models": {
+      "spark": "muse-spark-1.3",
+      "open": "meta-models/muse-spark-open",
+      "sam": "sam-3.1"
+    },
+    "totals": {
+      "all": {
+        "charts": 3,
+        "calls": 39,
+        "a": {
+          "fields": 63,
+          "correct": 63,
+          "rows": 13,
+          "rowsRecalled": 13,
+          "hallucinatedRows": 0
+        },
+        "b": {
+          "fields": 63,
+          "correct": 63,
+          "rows": 13,
+          "rowsRecalled": 13,
+          "hallucinatedRows": 0
+        },
+        "c": {
+          "fields": 63,
+          "sparkCorrect": 63,
+          "sparkWrong": 0,
+          "caught": 0,
+          "falseFlags": 17,
+          "openCorrect": 46,
+          "agreed": 46,
+          "agreedCorrect": 46,
+          "agreedButWrong": 0,
+          "flagged": 17,
+          "missedByBoth": 0,
+          "rows": 13,
+          "rowsRecalled": 13,
+          "hallucinatedRows": 0
+        }
+      },
+      "hard": {
+        "charts": 1,
+        "calls": 13,
+        "a": {
+          "fields": 23,
+          "correct": 23,
+          "rows": 5,
+          "rowsRecalled": 5,
+          "hallucinatedRows": 0
+        },
+        "b": {
+          "fields": 23,
+          "correct": 23,
+          "rows": 5,
+          "rowsRecalled": 5,
+          "hallucinatedRows": 0
+        },
+        "c": {
+          "fields": 23,
+          "sparkCorrect": 23,
+          "sparkWrong": 0,
+          "caught": 0,
+          "falseFlags": 15,
+          "openCorrect": 8,
+          "agreed": 8,
+          "agreedCorrect": 8,
+          "agreedButWrong": 0,
+          "flagged": 15,
+          "missedByBoth": 0,
+          "rows": 5,
+          "rowsRecalled": 5,
+          "hallucinatedRows": 0
+        }
+      },
+      "easy": {
+        "charts": 2,
+        "calls": 26,
+        "a": {
+          "fields": 40,
+          "correct": 40,
+          "rows": 8,
+          "rowsRecalled": 8,
+          "hallucinatedRows": 0
+        },
+        "b": {
+          "fields": 40,
+          "correct": 40,
+          "rows": 8,
+          "rowsRecalled": 8,
+          "hallucinatedRows": 0
+        },
+        "c": {
+          "fields": 40,
+          "sparkCorrect": 40,
+          "sparkWrong": 0,
+          "caught": 0,
+          "falseFlags": 2,
+          "openCorrect": 38,
+          "agreed": 38,
+          "agreedCorrect": 38,
+          "agreedButWrong": 0,
+          "flagged": 2,
+          "missedByBoth": 0,
+          "rows": 8,
+          "rowsRecalled": 8,
+          "hallucinatedRows": 0
+        }
+      }
+    },
+    "charts": [
+      {
+        "id": "smoke-chart-01",
+        "hard": false,
+        "calls": 13,
+        "errors": [],
+        "a": {
+          "fields": 20,
+          "correct": 20,
+          "rows": 4,
+          "rowsRecalled": 4,
+          "hallucinatedRows": 0
+        },
+        "b": {
+          "fields": 20,
+          "correct": 20,
+          "rows": 4,
+          "rowsRecalled": 4,
+          "hallucinatedRows": 0
+        },
+        "c": {
+          "fields": 20,
+          "sparkCorrect": 20,
+          "sparkWrong": 0,
+          "caught": 0,
+          "falseFlags": 1,
+          "openCorrect": 19,
+          "agreed": 19,
+          "agreedCorrect": 19,
+          "agreedButWrong": 0,
+          "flagged": 1,
+          "missedByBoth": 0,
+          "rows": 4,
+          "rowsRecalled": 4,
+          "hallucinatedRows": 0
+        },
+        "examples": [
+          {
+            "key": "row1.test",
+            "truth": "Hemoglobin",
+            "spark": "Hemoglobin",
+            "open": "Hememoglobin",
+            "status": "flagged",
+            "agreedCorrect": null
+          }
+        ]
+      },
+      {
+        "id": "smoke-chart-02",
+        "hard": false,
+        "calls": 13,
+        "errors": [],
+        "a": {
+          "fields": 20,
+          "correct": 20,
+          "rows": 4,
+          "rowsRecalled": 4,
+          "hallucinatedRows": 0
+        },
+        "b": {
+          "fields": 20,
+          "correct": 20,
+          "rows": 4,
+          "rowsRecalled": 4,
+          "hallucinatedRows": 0
+        },
+        "c": {
+          "fields": 20,
+          "sparkCorrect": 20,
+          "sparkWrong": 0,
+          "caught": 0,
+          "falseFlags": 1,
+          "openCorrect": 19,
+          "agreed": 19,
+          "agreedCorrect": 19,
+          "agreedButWrong": 0,
+          "flagged": 1,
+          "missedByBoth": 0,
+          "rows": 4,
+          "rowsRecalled": 4,
+          "hallucinatedRows": 0
+        },
+        "examples": [
+          {
+            "key": "header.patient_name",
+            "truth": "Maria L. Dela Vega",
+            "spark": "Maria L. Dela Vega",
+            "open": "Maria I. Dela Vega",
+            "status": "flagged",
+            "agreedCorrect": null
+          }
+        ]
+      },
+      {
+        "id": "hard-chart-01",
+        "hard": true,
+        "calls": 13,
+        "errors": [
+          "table muse_spark_open: The model's answer contained no JSON"
+        ],
+        "a": {
+          "fields": 23,
+          "correct": 23,
+          "rows": 5,
+          "rowsRecalled": 5,
+          "hallucinatedRows": 0
+        },
+        "b": {
+          "fields": 23,
+          "correct": 23,
+          "rows": 5,
+          "rowsRecalled": 5,
+          "hallucinatedRows": 0
+        },
+        "c": {
+          "fields": 23,
+          "sparkCorrect": 23,
+          "sparkWrong": 0,
+          "caught": 0,
+          "falseFlags": 15,
+          "openCorrect": 8,
+          "agreed": 8,
+          "agreedCorrect": 8,
+          "agreedButWrong": 0,
+          "flagged": 15,
+          "missedByBoth": 0,
+          "rows": 5,
+          "rowsRecalled": 5,
+          "hallucinatedRows": 0
+        },
+        "examples": [
+          {
+            "key": "row1.test",
+            "truth": "Hemoglobin",
+            "spark": "Hemoglobin",
+            "status": "flagged",
+            "agreedCorrect": null
+          },
+          {
+            "key": "row1.value",
+            "truth": "11.8",
+            "spark": "11.8",
+            "status": "flagged",
+            "agreedCorrect": null
+          },
+          {
+            "key": "row1.unit",
+            "truth": "g/dL",
+            "spark": "g/dL",
+            "status": "flagged",
+            "agreedCorrect": null
+          },
+          {
+            "key": "row2.test",
+            "truth": "Potassium",
+            "spark": "Potassium",
+            "status": "flagged",
+            "agreedCorrect": null
+          },
+          {
+            "key": "row2.value",
+            "truth": "4.1",
+            "spark": "4.1",
+            "status": "flagged",
+            "agreedCorrect": null
+          },
+          {
+            "key": "row2.unit",
+            "truth": "mmol/L",
+            "spark": "mmol/L",
+            "status": "flagged",
+            "agreedCorrect": null
+          },
+          {
+            "key": "row3.test",
+            "truth": "Glucose, random",
+            "spark": "Glucose, random",
+            "status": "flagged",
+            "agreedCorrect": null
+          },
+          {
+            "key": "row3.value",
+            "truth": "6.9",
+            "spark": "6.9",
+            "status": "flagged",
+            "agreedCorrect": null
+          },
+          {
+            "key": "row3.unit",
+            "truth": "mmol/L",
+            "spark": "mmol/L",
+            "status": "flagged",
+            "agreedCorrect": null
+          },
+          {
+            "key": "row4.test",
+            "truth": "Creatinine",
+            "spark": "Creatinine",
+            "status": "flagged",
+            "agreedCorrect": null
+          },
+          {
+            "key": "row4.value",
+            "truth": "91",
+            "spark": "91",
+            "status": "flagged",
+            "agreedCorrect": null
+          },
+          {
+            "key": "row4.unit",
+            "truth": "umol/L",
+            "spark": "umol/L",
+            "status": "flagged",
+            "agreedCorrect": null
+          },
+          {
+            "key": "row5.test",
+            "truth": "Sodium",
+            "spark": "Sodium",
+            "status": "flagged",
+            "agreedCorrect": null
+          },
+          {
+            "key": "row5.value",
+            "truth": "138",
+            "spark": "138",
+            "status": "flagged",
+            "agreedCorrect": null
+          },
+          {
+            "key": "row5.unit",
+            "truth": "mmol/L",
+            "spark": "mmol/L",
+            "status": "flagged",
+            "agreedCorrect": null
+          }
+        ]
+      }
+    ]
+  }
+}
