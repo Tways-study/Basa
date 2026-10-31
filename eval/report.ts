@@ -87,7 +87,7 @@ export function renderReport(results: Results): string {
   const parts = [
     "# Eval results",
     "",
-    "Written by `pnpm eval`; do not edit by hand. Every chart is synthetic: no real patient data and no real clinic photos, apart from the phone photo run described in the README when it exists.",
+    "Written by `pnpm eval`; do not edit by hand. The prompt tuning log is in `docs/eval-tuning.md`. Every chart is synthetic: no real patient data and no real clinic photos, apart from the phone photo run described in the README when it exists.",
     "",
     "## What the numbers mean",
     "",

@@ -78,6 +78,11 @@ Last updated: 2026-10-29 (reasoning controls, region experiments)
 | Error format | HTTP 404 with a JSON body `{"error": "<message>"}`; the message was empty for a wrong path and `please check the model you provided` for an unknown model name (observed) |
 | Fallback if it fails | Move the open-weights reader to Modal; if that fails too, the second reader becomes Muse Spark with a different prompt and the Open Weights claim is dropped |
 
+## Muse Spark Open habits found by the eval (observed 2026-10-31)
+
+- **Repeats letters or syllables** on some words (`Alccantara`, `Creatininine`, `Platelelets`, `Bautitista`, `Hemeglobin`, `Potakassium`), steadily on the same charts, about 4 to 5 fields in 169. Muse Spark was right every time. Asking for "each word once" changed nothing measurable (`docs/eval-tuning.md`).
+- **Sometimes answers in words, not JSON,** for a whole table or header: 6 observed in about a dozen dev runs, before the one retry was added. After it, 3 retries fired and all recovered.
+
 ## Read prompts: what we learned (observed 2026-10-30)
 
 - **Signature readings failed at random.** The shared read prompt said "Your job is transcription only" and the signature schema has one key (`signature.present`). Muse Spark answered under a key named `transcription` in 2 of 3 local scans and once on Production, and the field-key check rejected it. After removing the word, giving each region kind an exact example JSON and saying any other key is wrong, 9 of 9 scans (6 local, 3 on Production) read all five regions with no reading errors.
