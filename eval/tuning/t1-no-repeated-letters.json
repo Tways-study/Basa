@@ -1,0 +1,455 @@
+{
+  "generatedAt": "2026-10-31T12:53:20.944Z",
+  "split": "dev",
+  "margin": 0.2,
+  "final": false,
+  "models": {
+    "spark": "muse-spark-1.3",
+    "open": "meta-models/muse-spark-open",
+    "sam": "sam-3.1"
+  },
+  "totals": {
+    "all": {
+      "charts": 8,
+      "calls": 104,
+      "a": {
+        "fields": 169,
+        "correct": 169,
+        "rows": 35,
+        "rowsRecalled": 35,
+        "hallucinatedRows": 0
+      },
+      "b": {
+        "fields": 169,
+        "correct": 169,
+        "rows": 35,
+        "rowsRecalled": 35,
+        "hallucinatedRows": 0
+      },
+      "c": {
+        "fields": 169,
+        "sparkCorrect": 169,
+        "sparkWrong": 0,
+        "caught": 0,
+        "falseFlags": 5,
+        "openCorrect": 164,
+        "agreed": 164,
+        "agreedCorrect": 164,
+        "agreedButWrong": 0,
+        "flagged": 5,
+        "missedByBoth": 0,
+        "rows": 35,
+        "rowsRecalled": 35,
+        "hallucinatedRows": 0
+      }
+    },
+    "hard": {
+      "charts": 3,
+      "calls": 39,
+      "a": {
+        "fields": 66,
+        "correct": 66,
+        "rows": 14,
+        "rowsRecalled": 14,
+        "hallucinatedRows": 0
+      },
+      "b": {
+        "fields": 66,
+        "correct": 66,
+        "rows": 14,
+        "rowsRecalled": 14,
+        "hallucinatedRows": 0
+      },
+      "c": {
+        "fields": 66,
+        "sparkCorrect": 66,
+        "sparkWrong": 0,
+        "caught": 0,
+        "falseFlags": 0,
+        "openCorrect": 66,
+        "agreed": 66,
+        "agreedCorrect": 66,
+        "agreedButWrong": 0,
+        "flagged": 0,
+        "missedByBoth": 0,
+        "rows": 14,
+        "rowsRecalled": 14,
+        "hallucinatedRows": 0
+      }
+    },
+    "easy": {
+      "charts": 5,
+      "calls": 65,
+      "a": {
+        "fields": 103,
+        "correct": 103,
+        "rows": 21,
+        "rowsRecalled": 21,
+        "hallucinatedRows": 0
+      },
+      "b": {
+        "fields": 103,
+        "correct": 103,
+        "rows": 21,
+        "rowsRecalled": 21,
+        "hallucinatedRows": 0
+      },
+      "c": {
+        "fields": 103,
+        "sparkCorrect": 103,
+        "sparkWrong": 0,
+        "caught": 0,
+        "falseFlags": 5,
+        "openCorrect": 98,
+        "agreed": 98,
+        "agreedCorrect": 98,
+        "agreedButWrong": 0,
+        "flagged": 5,
+        "missedByBoth": 0,
+        "rows": 21,
+        "rowsRecalled": 21,
+        "hallucinatedRows": 0
+      }
+    }
+  },
+  "charts": [
+    {
+      "id": "smoke-chart-01",
+      "hard": false,
+      "calls": 13,
+      "errors": [],
+      "a": {
+        "fields": 20,
+        "correct": 20,
+        "rows": 4,
+        "rowsRecalled": 4,
+        "hallucinatedRows": 0
+      },
+      "b": {
+        "fields": 20,
+        "correct": 20,
+        "rows": 4,
+        "rowsRecalled": 4,
+        "hallucinatedRows": 0
+      },
+      "c": {
+        "fields": 20,
+        "sparkCorrect": 20,
+        "sparkWrong": 0,
+        "caught": 0,
+        "falseFlags": 0,
+        "openCorrect": 20,
+        "agreed": 20,
+        "agreedCorrect": 20,
+        "agreedButWrong": 0,
+        "flagged": 0,
+        "missedByBoth": 0,
+        "rows": 4,
+        "rowsRecalled": 4,
+        "hallucinatedRows": 0
+      },
+      "examples": []
+    },
+    {
+      "id": "smoke-chart-02",
+      "hard": false,
+      "calls": 13,
+      "errors": [],
+      "a": {
+        "fields": 20,
+        "correct": 20,
+        "rows": 4,
+        "rowsRecalled": 4,
+        "hallucinatedRows": 0
+      },
+      "b": {
+        "fields": 20,
+        "correct": 20,
+        "rows": 4,
+        "rowsRecalled": 4,
+        "hallucinatedRows": 0
+      },
+      "c": {
+        "fields": 20,
+        "sparkCorrect": 20,
+        "sparkWrong": 0,
+        "caught": 0,
+        "falseFlags": 1,
+        "openCorrect": 19,
+        "agreed": 19,
+        "agreedCorrect": 19,
+        "agreedButWrong": 0,
+        "flagged": 1,
+        "missedByBoth": 0,
+        "rows": 4,
+        "rowsRecalled": 4,
+        "hallucinatedRows": 0
+      },
+      "examples": [
+        {
+          "key": "row4.test",
+          "truth": "Creatinine",
+          "spark": "Creatinine",
+          "open": "Creatininine",
+          "status": "flagged",
+          "agreedCorrect": null
+        }
+      ]
+    },
+    {
+      "id": "hard-chart-01",
+      "hard": true,
+      "calls": 13,
+      "errors": [],
+      "a": {
+        "fields": 23,
+        "correct": 23,
+        "rows": 5,
+        "rowsRecalled": 5,
+        "hallucinatedRows": 0
+      },
+      "b": {
+        "fields": 23,
+        "correct": 23,
+        "rows": 5,
+        "rowsRecalled": 5,
+        "hallucinatedRows": 0
+      },
+      "c": {
+        "fields": 23,
+        "sparkCorrect": 23,
+        "sparkWrong": 0,
+        "caught": 0,
+        "falseFlags": 0,
+        "openCorrect": 23,
+        "agreed": 23,
+        "agreedCorrect": 23,
+        "agreedButWrong": 0,
+        "flagged": 0,
+        "missedByBoth": 0,
+        "rows": 5,
+        "rowsRecalled": 5,
+        "hallucinatedRows": 0
+      },
+      "examples": []
+    },
+    {
+      "id": "gen-d01",
+      "hard": false,
+      "calls": 13,
+      "errors": [],
+      "a": {
+        "fields": 20,
+        "correct": 20,
+        "rows": 4,
+        "rowsRecalled": 4,
+        "hallucinatedRows": 0
+      },
+      "b": {
+        "fields": 20,
+        "correct": 20,
+        "rows": 4,
+        "rowsRecalled": 4,
+        "hallucinatedRows": 0
+      },
+      "c": {
+        "fields": 20,
+        "sparkCorrect": 20,
+        "sparkWrong": 0,
+        "caught": 0,
+        "falseFlags": 0,
+        "openCorrect": 20,
+        "agreed": 20,
+        "agreedCorrect": 20,
+        "agreedButWrong": 0,
+        "flagged": 0,
+        "missedByBoth": 0,
+        "rows": 4,
+        "rowsRecalled": 4,
+        "hallucinatedRows": 0
+      },
+      "examples": []
+    },
+    {
+      "id": "gen-d02",
+      "hard": false,
+      "calls": 13,
+      "errors": [],
+      "a": {
+        "fields": 23,
+        "correct": 23,
+        "rows": 5,
+        "rowsRecalled": 5,
+        "hallucinatedRows": 0
+      },
+      "b": {
+        "fields": 23,
+        "correct": 23,
+        "rows": 5,
+        "rowsRecalled": 5,
+        "hallucinatedRows": 0
+      },
+      "c": {
+        "fields": 23,
+        "sparkCorrect": 23,
+        "sparkWrong": 0,
+        "caught": 0,
+        "falseFlags": 4,
+        "openCorrect": 19,
+        "agreed": 19,
+        "agreedCorrect": 19,
+        "agreedButWrong": 0,
+        "flagged": 4,
+        "missedByBoth": 0,
+        "rows": 5,
+        "rowsRecalled": 5,
+        "hallucinatedRows": 0
+      },
+      "examples": [
+        {
+          "key": "header.patient_name",
+          "truth": "Joseph T. Alcantara",
+          "spark": "Joseph T. Alcantara",
+          "open": "Joseph T. Alccantara",
+          "status": "flagged",
+          "agreedCorrect": null
+        },
+        {
+          "key": "row1.test",
+          "truth": "Creatinine",
+          "spark": "Creatinine",
+          "open": "Creatininine",
+          "status": "flagged",
+          "agreedCorrect": null
+        },
+        {
+          "key": "row3.test",
+          "truth": "Potassium",
+          "spark": "Potassium",
+          "open": "Potakassium",
+          "status": "flagged",
+          "agreedCorrect": null
+        },
+        {
+          "key": "row4.test",
+          "truth": "Platelets",
+          "spark": "Platelets",
+          "open": "Platelelets",
+          "status": "flagged",
+          "agreedCorrect": null
+        }
+      ]
+    },
+    {
+      "id": "gen-d03",
+      "hard": false,
+      "calls": 13,
+      "errors": [],
+      "a": {
+        "fields": 20,
+        "correct": 20,
+        "rows": 4,
+        "rowsRecalled": 4,
+        "hallucinatedRows": 0
+      },
+      "b": {
+        "fields": 20,
+        "correct": 20,
+        "rows": 4,
+        "rowsRecalled": 4,
+        "hallucinatedRows": 0
+      },
+      "c": {
+        "fields": 20,
+        "sparkCorrect": 20,
+        "sparkWrong": 0,
+        "caught": 0,
+        "falseFlags": 0,
+        "openCorrect": 20,
+        "agreed": 20,
+        "agreedCorrect": 20,
+        "agreedButWrong": 0,
+        "flagged": 0,
+        "missedByBoth": 0,
+        "rows": 4,
+        "rowsRecalled": 4,
+        "hallucinatedRows": 0
+      },
+      "examples": []
+    },
+    {
+      "id": "gen-d04",
+      "hard": true,
+      "calls": 13,
+      "errors": [],
+      "a": {
+        "fields": 23,
+        "correct": 23,
+        "rows": 5,
+        "rowsRecalled": 5,
+        "hallucinatedRows": 0
+      },
+      "b": {
+        "fields": 23,
+        "correct": 23,
+        "rows": 5,
+        "rowsRecalled": 5,
+        "hallucinatedRows": 0
+      },
+      "c": {
+        "fields": 23,
+        "sparkCorrect": 23,
+        "sparkWrong": 0,
+        "caught": 0,
+        "falseFlags": 0,
+        "openCorrect": 23,
+        "agreed": 23,
+        "agreedCorrect": 23,
+        "agreedButWrong": 0,
+        "flagged": 0,
+        "missedByBoth": 0,
+        "rows": 5,
+        "rowsRecalled": 5,
+        "hallucinatedRows": 0
+      },
+      "examples": []
+    },
+    {
+      "id": "gen-d05",
+      "hard": true,
+      "calls": 13,
+      "errors": [],
+      "a": {
+        "fields": 20,
+        "correct": 20,
+        "rows": 4,
+        "rowsRecalled": 4,
+        "hallucinatedRows": 0
+      },
+      "b": {
+        "fields": 20,
+        "correct": 20,
+        "rows": 4,
+        "rowsRecalled": 4,
+        "hallucinatedRows": 0
+      },
+      "c": {
+        "fields": 20,
+        "sparkCorrect": 20,
+        "sparkWrong": 0,
+        "caught": 0,
+        "falseFlags": 0,
+        "openCorrect": 20,
+        "agreed": 20,
+        "agreedCorrect": 20,
+        "agreedButWrong": 0,
+        "flagged": 0,
+        "missedByBoth": 0,
+        "rows": 4,
+        "rowsRecalled": 4,
+        "hallucinatedRows": 0
+      },
+      "examples": []
+    }
+  ]
+}

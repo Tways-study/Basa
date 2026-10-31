@@ -204,3 +204,14 @@ Decided by Tways in an office-hours session (goal: win the demo and have a start
 - **Run-to-run variance is real:** `hard-chart-01` was 23/23 in the first run and 21/23 in this one, with the same code and prompts, from a different box proposal and different model sampling. The held-out run is a single draw, so the report must carry the counts and say that the result varies; consider running the dev set two more times to measure the spread.
 - **Tests:** 175 pass; `pnpm typecheck` and `pnpm lint` pass. The held-out charts were re-rendered with the new features.
 - **Next:** at most three prompt changes on dev: (1) "copy each word once, never repeat letters" for the stutter, (2) one retry on a no-JSON answer, (3) only if still justified, wording that tells the reader the crop may cut a line, so it should return null for a cut-off end rather than guess. Each needs a full dev rerun (about 104 calls).
+
+## 2026-10-31 (Phase 7: prompt tuning on dev)
+
+Full log in `docs/eval-tuning.md`; dev summaries of each run in `eval/tuning/`.
+
+- **Three changes tried, one kept.** (1) "Copy each word once, never repeat letters": no measurable effect in a paired test on `gen-d02` (3 runs each way), reverted. (2) One retry when an answer has no JSON (`NoJsonError` in `lib/models/reader.ts`, the same retry for condition A): kept; it fired 3 times and recovered every time, where before a failed table read caused 12 to 15 false flags at once. (3) "A crop may cut a line off; return null for a cut-off end": reverted, too few clip events to show a benefit (clipped in 1 of 3 runs without it, 0 of 3 with it, margin 0).
+- **Tests:** 183 pass (8 new in `lib/models/reader.test.ts`: one call for a good answer, the retry and its second answer, a second no-JSON answer fails the reading, bad keys and failed calls are not retried, the call cap stops the retry, the prompt keeps its rules). `pnpm typecheck` and `pnpm lint` pass.
+- **Final-code dev run (T4):** A 169/169, B 169/169, 5 of 169 fields flagged, all false flags from Muse Spark Open's letter repeats; two retries fired and recovered.
+- **Noise:** the same code gave B 166, 167 and 169 and flags from 5 to 20 on different runs, so a held-out result is one draw from a wide spread. The report and the demo must give counts.
+- **Cost:** about 8 full dev runs and 15 partial runs, roughly 1,000 model calls in total on dev.
+- **Still to do:** freeze the prompts (record the commit hash in `docs/eval-tuning.md`), the 3 phone photos, and the one held-out run before the Nov 3 noon freeze.

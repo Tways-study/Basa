@@ -10,11 +10,19 @@ import type { ReadRegionInput, ReaderAdapter } from "./types";
 
 // Both readers get the same prompt, so a difference between them is the models', not the wording's.
 
+/** The model answered in words, not JSON. Seen on a whole table read about one run in three. */
+export class NoJsonError extends Error {
+  constructor() {
+    super("The model's answer contained no JSON");
+    this.name = "NoJsonError";
+  }
+}
+
 /** Models sometimes wrap JSON in a code fence or a sentence; take the outermost JSON value. */
 export function extractJson(text: string): unknown {
   const start = text.search(/[[{]/);
   const end = Math.max(text.lastIndexOf("}"), text.lastIndexOf("]"));
-  if (start === -1 || end <= start) throw new Error("The model's answer contained no JSON");
+  if (start === -1 || end <= start) throw new NoJsonError();
   return JSON.parse(text.slice(start, end + 1));
 }
 
@@ -78,7 +86,17 @@ export function createChatReader(
     async readRegion({ regionId, kind, image }: ReadRegionInput): Promise<Reading> {
       const started = Date.now();
       try {
-        const fields = ReadingFieldsSchema.parse(extractJson(await send(readPrompt(kind), image)));
+        const prompt = readPrompt(kind);
+        let answer: unknown;
+        try {
+          answer = extractJson(await send(prompt, image));
+        } catch (err) {
+          // One more try when the answer had no JSON in it. The retry is a real model call, so it counts
+          // against the per-scan call cap like any other. Any other failure is not retried here.
+          if (!(err instanceof NoJsonError)) throw err;
+          answer = extractJson(await send(prompt, image));
+        }
+        const fields = ReadingFieldsSchema.parse(answer);
         return { regionId, model: id, fields, latencyMs: Date.now() - started, error: null };
       } catch (err) {
         if (err instanceof BudgetExceededError) throw err;

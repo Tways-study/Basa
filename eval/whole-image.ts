@@ -1,6 +1,6 @@
 import { getMetaEnv } from "@/lib/env";
 import { chatCompletion, type ChatOptions } from "@/lib/models/chat";
-import { PREAMBLE, extractJson } from "@/lib/models/reader";
+import { NoJsonError, PREAMBLE, extractJson } from "@/lib/models/reader";
 import { ReadingFieldsSchema, type ReadingFields } from "@/lib/schemas";
 
 // Condition A: one Muse Spark read of the whole chart, with no segmentation. It uses the same chat
@@ -27,19 +27,28 @@ export async function readWholeImage(image: Uint8Array, opts: ChatOptions = {}):
   const started = Date.now();
   try {
     const env = getMetaEnv();
-    const text = await chatCompletion(
-      {
-        label: "Muse Spark",
-        endpoint: `${env.META_API_BASE_URL}/chat/completions`,
-        key: env.META_API_KEY,
-        model: env.META_SPARK_MODEL,
-        reasoningEffort: "minimal",
-      },
-      WHOLE_IMAGE_PROMPT,
-      image,
-      opts,
-    );
-    const fields = ReadingFieldsSchema.parse(extractJson(text));
+    const ask = () =>
+      chatCompletion(
+        {
+          label: "Muse Spark",
+          endpoint: `${env.META_API_BASE_URL}/chat/completions`,
+          key: env.META_API_KEY,
+          model: env.META_SPARK_MODEL,
+          reasoningEffort: "minimal",
+        },
+        WHOLE_IMAGE_PROMPT,
+        image,
+        opts,
+      );
+    // The same one retry on a no-JSON answer that the region readers get, so A is not left behind.
+    let answer: unknown;
+    try {
+      answer = extractJson(await ask());
+    } catch (err) {
+      if (!(err instanceof NoJsonError)) throw err;
+      answer = extractJson(await ask());
+    }
+    const fields = ReadingFieldsSchema.parse(answer);
     return { fields, latencyMs: Date.now() - started, error: null };
   } catch (err) {
     // The call cap must stop the chart, so it is the one failure not turned into a reading.
