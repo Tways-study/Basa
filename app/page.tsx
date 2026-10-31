@@ -28,6 +28,15 @@ export default function Home() {
       <div className="grid gap-x-14 gap-y-12 lg:grid-cols-[minmax(0,1fr)_minmax(0,22rem)] lg:items-start">
         <div className="flex flex-col gap-10">
           <div className="flex flex-col gap-5">
+            {/* lang="fil" so a screen reader says the Filipino word the Filipino way. */}
+            <p className="font-display text-xl">
+              <span lang="fil" className="font-semibold">
+                Basa
+              </span>
+              <span aria-hidden="true"> · </span>
+              <span className="sr-only"> means </span>
+              read, in Filipino
+            </p>
             <h1 className="text-5xl leading-[1.02] font-semibold tracking-tight sm:text-6xl">Photograph a chart</h1>
             <p className="max-w-[44ch] text-lg">
               Basa turns a paper chart into a digital record. A person checks every value against the photo before it is
@@ -51,6 +60,11 @@ export default function Home() {
               </li>
             ))}
           </ol>
+
+          <p className="max-w-[52ch] text-muted-foreground">
+            We are Filipino developers in the Philippines. <span lang="fil">Basa</span> is the Filipino word for
+            &ldquo;read&rdquo;: two readers go through the chart, then a person reads it against the photo and confirms.
+          </p>
 
           <p className="text-sm text-muted-foreground">Demo build. Use sample charts only, never real patient records.</p>
         </div>

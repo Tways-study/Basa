@@ -26,7 +26,8 @@ const plexMono = IBM_Plex_Mono({
 
 export const metadata: Metadata = {
   title: "Basa",
-  description: "Photographed paper clinic charts, verified by a person.",
+  description:
+    "Basa is Filipino for “read”. Photographed paper clinic charts, read twice by AI and confirmed by a person. Built in the Philippines.",
 };
 
 export const viewport: Viewport = {
