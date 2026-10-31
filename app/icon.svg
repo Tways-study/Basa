@@ -1,0 +1,19 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
+  <!-- Basa mark: a "b" inside crop corners, the region box the review screen draws around text.
+       Ink and paper only: green, amber and red carry meaning in Basa, so the mark never uses them.
+       Dark tabs get the inverse so the mark stays visible. -->
+  <style>
+    .tile { fill: #F4EFE6; }
+    .ink-fill { fill: #1B1A17; }
+    .ink-line { fill: none; stroke: #1B1A17; }
+    @media (prefers-color-scheme: dark) {
+      .tile { fill: #1B1A17; }
+      .ink-fill { fill: #F4EFE6; }
+      .ink-line { stroke: #F4EFE6; }
+    }
+  </style>
+  <rect class="tile" width="32" height="32" rx="6" />
+  <path class="ink-line" stroke-width="2.25" d="M3.5 10V3.5H10M22 3.5H28.5V10M28.5 22V28.5H22M10 28.5H3.5V22" />
+  <path class="ink-fill" d="M8.3 7.6H13.3V24.8H9.8V9.6H8.3Z" />
+  <circle class="ink-line" stroke-width="3.2" cx="16.6" cy="19.2" r="4" />
+</svg>
