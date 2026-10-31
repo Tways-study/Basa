@@ -3,18 +3,12 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { CircleX, WifiOff } from "lucide-react";
+import { ChartPhoto } from "@/components/scan/chart-photo";
 import { RegionBlock } from "@/components/scan/region-block";
+import { ReviewWorkspace } from "@/components/scan/review-workspace";
 import { ScanSkeleton } from "@/components/scan/scan-skeleton";
 import { StatusBadge } from "@/components/scan/status-badge";
 import { Button } from "@/components/ui/button";
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-} from "@/components/ui/dialog";
 import { type ScanResult, ScanResultSchema } from "@/lib/schemas";
 import { describeStatus, isTerminal, nextPollDelay } from "@/lib/ui/scan-status";
 
@@ -80,6 +74,11 @@ export function ScanResults({ scanId }: { scanId: string }) {
     };
   }, [scanId, attempt]);
 
+  // Re-reads the scan without the loading screen, so a saved review updates the status badge in place.
+  function refresh() {
+    setAttempt((n) => n + 1);
+  }
+
   function retry() {
     setState({ kind: "loading" });
     setOffline(false);
@@ -135,34 +134,17 @@ export function ScanResults({ scanId }: { scanId: string }) {
         {offline ? <ConnectionNote /> : null}
       </header>
 
+      {scan.status === "needs_review" || scan.status === "done" ? (
+        <ReviewWorkspace
+          scan={scan}
+          photoUrl={photoUrl}
+          onPhotoError={() => setPhotoUrl(scan.imageUrl)}
+          onSaved={refresh}
+        />
+      ) : (
       <div className="grid items-start gap-6 lg:grid-cols-[minmax(0,2fr)_minmax(0,3fr)]">
         {photoUrl ? (
-          <Dialog>
-            <DialogTrigger asChild>
-              <button
-                type="button"
-                aria-label="Enlarge the chart photo"
-                className="block w-full rounded-md border bg-card p-2 text-left outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background lg:sticky lg:top-4"
-              >
-                {/* A signed storage URL that changes per request, so next/image cannot optimise it. */}
-                {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img
-                  src={photoUrl}
-                  alt="The chart photo you sent"
-                  className="max-h-[70dvh] w-full object-contain"
-                  onError={() => setPhotoUrl(scan.imageUrl)}
-                />
-              </button>
-            </DialogTrigger>
-            <DialogContent>
-              <DialogHeader>
-                <DialogTitle>Chart photo</DialogTitle>
-                <DialogDescription>Press Escape or the close button to go back.</DialogDescription>
-              </DialogHeader>
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img src={photoUrl} alt="The chart photo you sent, enlarged" className="max-h-[75dvh] w-full object-contain" />
-            </DialogContent>
-          </Dialog>
+          <ChartPhoto url={photoUrl} onError={() => setPhotoUrl(scan.imageUrl)} />
         ) : (
           <p className="rounded-md border bg-muted p-3 text-muted-foreground">The photo could not be loaded.</p>
         )}
@@ -177,6 +159,7 @@ export function ScanResults({ scanId }: { scanId: string }) {
           )}
         </div>
       </div>
+      )}
 
       {scan.status !== "done" ? (
         <p className="max-w-[60ch] border-t pt-4 text-sm text-muted-foreground">
