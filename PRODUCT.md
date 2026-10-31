@@ -34,7 +34,7 @@ Success for the product is a confirmed record where every value was seen by a pe
 - New work only, written Oct 27 to Nov 4. Synthetic data only: no real patient data in fixtures, prompts, logs or screenshots.
 - Secrets stay server-side. Supabase (Postgres and Storage, RLS on every table), Next.js 16, Vercel.
 - SAM masks are not decoded, so the review overlay draws boxes only.
-- The open-weight reader is Muse Spark Open on Baseten. The `-1026` model returns 404 for our key, so development uses the unsuffixed ID. Do not claim the Open Weights prize until the organizers rule on eligibility.
+- The open-weight reader is Muse Spark Open on Baseten. The unsuffixed `meta-models/muse-spark-open` is the model of record: the organizers confirmed on 2026-10-31 that it counts for the Open Weights requirement through our own Baseten account. The README and demo must explain how and where it is used, with provenance (Baseten run logs, screen captures, outputs).
 - Out of scope: auth and roles, multi-clinic tenancy, patient management, scheduling, billing, prescribing, e-signing, native apps, model training, real patient data.
 - **Open decision:** where Basa must run for the demo (live on a phone and judges' own devices, a recorded video only, or both with a pilot story) is not settled. The Phase 3 real phone run on mobile data has not happened.
 

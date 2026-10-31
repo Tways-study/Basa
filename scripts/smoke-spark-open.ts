@@ -11,7 +11,7 @@ import { requireEnv, runSmoke } from "./smoke-lib";
 //   pnpm smoke:spark-open --auth=api-key
 //   pnpm smoke:spark-open chart.jpg --effort=low --max-tokens=1500
 // Model name precedence: --model flag, then BASETEN_MODEL from .env.local, then this default (the slug in Baseten's
-// public docs, which works with our own key). The hackathon target is meta-models/muse-spark-open-1026.
+// public docs, which works with our own key). The organizers confirmed this unsuffixed model counts for the Open Weights requirement (2026-10-31).
 const DEFAULT_MODEL = "meta-models/muse-spark-open";
 
 runSmoke("spark-open", (image, flags) => {

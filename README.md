@@ -48,7 +48,7 @@ Capture → IndexedDB outbox → POST /api/sync → segment → read twice → r
 | 2 | Outbox | Device (IndexedDB via `idb`) | Queue that sends scans when the connection returns |
 | 3 | `POST /api/sync` | Server (Vercel) | Validates and stores the scan, starts processing |
 | 4 | Segment | Muse Spark and SAM 3.1 (Meta API) | Muse Spark proposes boxes for the header, table, handwriting, stamp and signature; one SAM request tightens them. Boxes only: SAM masks are not decoded (format undocumented) |
-| 5 | Two readers | Muse Spark (Meta API) and Muse Spark Open `meta-models/muse-spark-open-1026` (Baseten) | Each reads every region independently and returns JSON |
+| 5 | Two readers | Muse Spark (Meta API) and Muse Spark Open `meta-models/muse-spark-open` (Baseten) | Each reads every region independently and returns JSON |
 | 6 | Reconcile | Server, pure function | Normalizes both readings, then compares field by field |
 | 7 | Review | Device | Source crop beside both readings; a person decides every flagged field |
 | 8 | Record | Supabase | Confirmed values with provenance, and a summary that cites its source region |
@@ -56,6 +56,17 @@ Capture → IndexedDB outbox → POST /api/sync → segment → read twice → r
 **Reconciliation rules.** Both readings are normalized (trim, case, spacing, unit forms, numeric parsing). A match is `agreed`. A difference, or a field one reader could not read, is `flagged`. `agreed` fields are fast-confirm. `flagged` fields require an explicit choice or edit, and Basa never silently picks one model's answer.
 
 **Reliability.** Each stage is idempotent and persisted, so a retry never duplicates work. A whole scan is never held in one request: per-region work runs in parallel, every model call has a timeout and bounded retries, and `MAX_MODEL_CALLS_PER_SCAN` caps cost per scan. The UI polls job status.
+
+### How and where Muse Spark Open is used
+
+Muse Spark Open (`meta-models/muse-spark-open`, an open-weight model) is the **second, independent reader** in Basa. It runs on Baseten, through our own Baseten account and key (server side only), and the organizers confirmed on 2026-10-31 that this unsuffixed model counts for the Open Weights requirement.
+
+- **What it does:** for every region of every chart (header, table, handwriting, stamp, signature) it reads the cropped region and returns JSON in the shared field keys. It runs in parallel with Muse Spark (Meta API) on the same crop.
+- **What it does not do:** it does not propose region boxes (Muse Spark does that, and SAM 3.1 tightens the boxes), and it never writes the record. Its answer is compared with Muse Spark's by the reconcile step. Where the two differ, the field is flagged and a person decides.
+- **How it is called:** `POST` to the Baseten chat-completions endpoint with the image as a base64 data URL, `reasoning_effort: "low"`, `max_tokens` 1500. Only `message.content` is read; its reasoning text is never stored or shown.
+- **Why it matters to the product:** the error-catch idea depends on two independent readers. Without the open-weight reader there is nothing to disagree with.
+
+**Provenance (to add before submission):** Baseten run logs for our calls, screen captures of the Baseten dashboard and of the review screen showing both readers, and sample outputs (the stored readings for a scan). These are not in the repo yet.
 
 Job states: `queued → segmenting → reading → reconciling → needs_review → done`, with `failed` reachable from any state.
 
