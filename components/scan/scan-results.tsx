@@ -119,7 +119,7 @@ export function ScanResults({ scanId }: { scanId: string }) {
 
   return (
     <div className="flex flex-col gap-6">
-      <header className="flex flex-col gap-3">
+      <header className="flex flex-col gap-3 print:hidden">
         <h1 className="text-4xl font-semibold tracking-tight">Scan results</h1>
         <div role="status" className="flex flex-wrap items-center gap-x-3 gap-y-2">
           <StatusBadge status={scan.status} />
@@ -162,7 +162,7 @@ export function ScanResults({ scanId }: { scanId: string }) {
       )}
 
       {scan.status !== "done" ? (
-        <p className="max-w-[60ch] border-t pt-4 text-sm text-muted-foreground">
+        <p className="max-w-[60ch] border-t pt-4 text-sm text-muted-foreground print:hidden">
           These readings are unverified. Nothing is confirmed until a person reviews it.
         </p>
       ) : null}

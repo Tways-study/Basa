@@ -10,7 +10,7 @@ export default function ReviewPreview() {
   return (
     <main className="mx-auto w-full max-w-5xl px-4 pt-6 pb-12 sm:px-6 sm:pt-10">
       <div className="flex flex-col gap-6">
-        <header className="flex flex-col gap-2">
+        <header className="flex flex-col gap-2 print:hidden">
           <h1 className="text-4xl font-semibold tracking-tight">Review the scan</h1>
           <p className="max-w-[60ch] text-muted-foreground">
             Design preview with sample data. Nothing here is sent or saved.

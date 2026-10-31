@@ -67,3 +67,25 @@ export function labelForKey(key: string): string {
   const [group, name] = key.split(".");
   return name ? `${group[0].toUpperCase()}${group.slice(1)}, ${name.replace("_", " ")}` : key;
 }
+
+/**
+ * Flagged fields first, then agreed ones, each group keeping its original order. The order depends only on
+ * the readers' status and never on the person's answers, so a field does not jump away while they answer it.
+ */
+export function orderFields(fields: ReconciledField[]): ReconciledField[] {
+  return [...fields.filter((f) => f.status === "flagged"), ...fields.filter((f) => f.status !== "flagged")];
+}
+
+type RegionLike = { fields: ReconciledField[]; readings: { error?: string | null }[] };
+
+/**
+ * Regions that need a person (a flagged field, or a reader that failed) come before the rest. The caller keeps
+ * each region's number from reading order, because the photo marks use those numbers. Stable: ties keep their order.
+ */
+export function attentionFirst<T>(items: T[], region: (item: T) => RegionLike): T[] {
+  const needsPerson = (item: T) => {
+    const r = region(item);
+    return r.fields.some((f) => f.status === "flagged") || r.readings.some((x) => Boolean(x.error));
+  };
+  return [...items.filter(needsPerson), ...items.filter((i) => !needsPerson(i))];
+}
