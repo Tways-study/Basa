@@ -4,6 +4,12 @@ Photograph a paper clinic chart. Two Meta models read it. A person settles every
 
 Basa turns photographed paper clinic charts into human-verified digital records. It is our entry for the **Meta Global AI Developer Hackathon** (Build for Your World).
 
+## What the name means
+
+**Basa** is Filipino for **"read."**
+
+We are Filipino developers working from the Philippines, and the name is the whole idea in one word. A paper chart has to be read before it can be trusted: two Meta models each read every region, and then a person reads the original ink beside both readings and confirms what it says. Basa does not replace that last reading. It makes it faster and harder to get wrong.
+
 > **New codebase, nothing reused, synthetic data only.**
 > Every line of code here was written during the hackathon (Oct 27 to Nov 4, 2026). No code, schemas, or assets come from any other repository. No real patient data exists anywhere in this project: every name, ID, and value in fixtures, prompts, logs, and screenshots is fictional.
 
