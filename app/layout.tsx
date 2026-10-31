@@ -47,7 +47,7 @@ export default function RootLayout({
       className={`${fraunces.variable} ${plexSans.variable} ${plexMono.variable}`}
     >
       <body>
-        <header className="mx-auto flex w-full max-w-5xl items-center px-4 pt-4 sm:px-6">
+        <header className="mx-auto flex w-full max-w-5xl items-center px-4 pt-4 sm:px-6 print:hidden">
           <Link
             href="/"
             className="-mx-2 inline-flex min-h-11 items-center gap-2 px-2 font-display text-2xl font-semibold tracking-tight"

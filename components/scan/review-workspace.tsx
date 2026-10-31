@@ -1,15 +1,17 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
-import { Check, CircleX, Loader2 } from "lucide-react";
+import { Check, CircleX, Loader2, Printer } from "lucide-react";
 import { z } from "zod";
 import { ChartPhoto, type Mark } from "@/components/scan/chart-photo";
 import { FieldRow } from "@/components/scan/field-row";
+import { RecordPrint } from "@/components/scan/record-print";
 import { SourceCrop } from "@/components/scan/source-crop";
 import { useImageSize } from "@/components/scan/use-image-size";
 import { Button } from "@/components/ui/button";
 import { type ReaderId, type RegionKind, type ScanResult, ReviewsResponseSchema } from "@/lib/schemas";
-import { type Choices, confirmAgreed, progressOf } from "@/lib/ui/review-state";
+import { buildPrintable } from "@/lib/ui/print-record";
+import { type Choices, attentionFirst, confirmAgreed, orderFields, progressOf } from "@/lib/ui/review-state";
 
 type Region = ScanResult["regions"][number];
 
@@ -56,6 +58,10 @@ export function ReviewWorkspace({
   const [choices, setChoices] = useState<Record<string, Choices>>({});
   const [save, setSave] = useState<Save>({ kind: "idle" });
   const [loadProblem, setLoadProblem] = useState<string | null>(null);
+  // True while the screen holds answers that are not stored yet. A printed copy must match what is stored.
+  const [dirty, setDirty] = useState(false);
+  // When the record was last stored, for the printed copy. Null until known.
+  const [reviewedAt, setReviewedAt] = useState<string | null>(null);
   const size = useImageSize(photoUrl);
   // What was last stored for each region, so Confirm sends only what changed and a retry after a
   // failure does not repeat regions that already saved.
@@ -77,6 +83,8 @@ export function ReviewWorkspace({
         }
         // Only fill what is still empty, so a decision made while this loaded is not overwritten.
         setChoices((current) => ({ ...next, ...current }));
+        const latest = parsed.data.reviews.map((r) => r.reviewedAt).sort().at(-1);
+        if (latest) setReviewedAt((current) => current ?? latest);
       } catch (err) {
         if (controller.signal.aborted) return;
         console.error("review load failed:", err instanceof Error ? err.message : "unknown error");
@@ -102,11 +110,13 @@ export function ReviewWorkspace({
 
   function choose(regionId: string, key: string, choice: Choices[string]) {
     setSave({ kind: "idle" });
+    setDirty(true);
     setChoices((current) => ({ ...current, [regionId]: { ...current[regionId], [key]: choice } }));
   }
 
   function bulkConfirm() {
     setSave({ kind: "idle" });
+    setDirty(true);
     setChoices((current) => {
       const next = { ...current };
       for (const r of reviewable) next[r.id] = confirmAgreed(r.fields, current[r.id] ?? {});
@@ -118,6 +128,8 @@ export function ReviewWorkspace({
     setSave({ kind: "saving" });
     if (preview) {
       setSave({ kind: "saved" });
+      setDirty(false);
+      setReviewedAt(new Date().toISOString());
       return;
     }
     try {
@@ -140,6 +152,8 @@ export function ReviewWorkspace({
         savedSignature.current[r.id] = signature;
       }
       setSave({ kind: "saved" });
+      setDirty(false);
+      setReviewedAt(new Date().toISOString());
       onSaved?.();
     } catch (err) {
       console.error("review save failed:", err instanceof Error ? err.name : "unknown error");
@@ -163,10 +177,20 @@ export function ReviewWorkspace({
     return { n: i + 1, box: r.bbox, tone };
   });
 
+  // Print only what is stored: every field decided, nothing changed since the last save.
+  const canPrint = progress.complete && !dirty && (save.kind === "saved" || scan.status === "done");
+  const confirmedOn = reviewedAt
+    ? new Date(reviewedAt).toLocaleDateString("en-PH", { year: "numeric", month: "long", day: "numeric" })
+    : null;
+  // Region numbers come from reading order (the photo marks use them); only the render order changes.
+  const numbered = regions.map((region, i) => ({ region, n: i + 1 }));
+  const shown = attentionFirst(numbered, (x) => x.region);
+
   const pct = progress.total === 0 ? 0 : Math.round((progress.decided / progress.total) * 100);
 
   return (
-    <div className="grid items-start gap-6 lg:grid-cols-[minmax(0,2fr)_minmax(0,3fr)]">
+    <>
+    <div className="grid items-start gap-6 lg:grid-cols-[minmax(0,2fr)_minmax(0,3fr)] print:hidden">
       {photoUrl ? (
         <ChartPhoto url={photoUrl} onError={onPhotoError ?? (() => {})} marks={marks} />
       ) : (
@@ -197,11 +221,11 @@ export function ReviewWorkspace({
 
         {loadProblem ? <p role="status" className="text-sm">{loadProblem}</p> : null}
 
-        {regions.map((region, i) => (
+        {shown.map(({ region, n }) => (
           <RegionReview
             key={region.id}
             region={region}
-            n={i + 1}
+            n={n}
             photoUrl={photoUrl}
             size={size}
             choices={choices[region.id] ?? {}}
@@ -223,6 +247,13 @@ export function ReviewWorkspace({
           {!progress.complete && progress.total > 0 ? (
             <p className="text-sm text-muted-foreground">Decide every field to confirm the record.</p>
           ) : null}
+          <Button variant="outline" onClick={() => window.print()} disabled={!canPrint}>
+            <Printer aria-hidden="true" />
+            Print patient copy
+          </Button>
+          {!canPrint && progress.total > 0 ? (
+            <p className="text-sm text-muted-foreground">A copy can be printed once the record is confirmed and saved.</p>
+          ) : null}
           {save.kind === "saved" ? (
             <p role="status" className="flex items-start gap-2">
               <Check aria-hidden="true" className="mt-0.5 size-5 shrink-0 text-verified" />
@@ -238,6 +269,8 @@ export function ReviewWorkspace({
         </div>
       </div>
     </div>
+    <RecordPrint sections={buildPrintable(numbered, choices)} scanId={scan.scanId} confirmedOn={confirmedOn} />
+    </>
   );
 }
 
@@ -293,7 +326,7 @@ function RegionReview({
           {region.readings.length === 0 ? "Waiting to be read." : "Neither reader found anything in this region."}
         </p>
       ) : (
-        region.fields.map((field) => (
+        orderFields(region.fields).map((field) => (
           <FieldRow
             key={field.key}
             field={field}

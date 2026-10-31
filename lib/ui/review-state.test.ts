@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import type { ReconciledField } from "@/lib/schemas";
-import { confirmAgreed, labelForKey, optionsFor, progressOf } from "./review-state";
+import { attentionFirst, confirmAgreed, labelForKey, optionsFor, orderFields, progressOf } from "./review-state";
 
 const agreed: ReconciledField = {
   key: "row1.test",
@@ -70,5 +70,23 @@ describe("labelForKey", () => {
     expect(labelForKey("line3")).toBe("Line 3");
     expect(labelForKey("header.patient_name")).toBe("Header, patient name");
     expect(labelForKey("stamp.text")).toBe("Stamp, text");
+  });
+});
+
+describe("orderFields", () => {
+  it("puts flagged fields first and keeps the order inside each group", () => {
+    expect(orderFields([agreed, mismatch, oneFailed]).map((x) => x.key)).toEqual(["row1.value", "row1.unit", "row1.test"]);
+  });
+  it("does not depend on any answer, so a field never jumps while it is answered", () => {
+    expect(orderFields([agreed, mismatch]).map((x) => x.key)).toEqual(orderFields([agreed, mismatch]).map((x) => x.key));
+  });
+});
+
+describe("attentionFirst", () => {
+  const calm = { id: "a", fields: [agreed], readings: [{ error: null }] };
+  const flagged = { id: "b", fields: [mismatch], readings: [{ error: null }] };
+  const failed = { id: "c", fields: [], readings: [{ error: "timeout" }] };
+  it("moves regions that need a person ahead, keeping order inside each group", () => {
+    expect(attentionFirst([calm, flagged, failed], (x) => x).map((x) => x.id)).toEqual(["b", "c", "a"]);
   });
 });
