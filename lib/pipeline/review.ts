@@ -1,4 +1,5 @@
-import type { Decision, ReconciledField } from "@/lib/schemas";
+import { reconcileReadings } from "@/lib/pipeline/reconcile";
+import type { Decision, Reading, ReconciledField } from "@/lib/schemas";
 
 export type ResolvedReview =
   | { ok: true; finalJson: Record<string, string | null>; fieldStatus: Record<string, Decision["source"]>; edited: boolean }
@@ -32,11 +33,12 @@ export function resolveReview(fields: ReconciledField[], decisions: Decision[]):
     if (!d) return { ok: false, error: `The field ${field.key} has not been confirmed.` };
 
     if (d.source === "agreed") {
-      if (field.status !== "agreed" || d.value !== field.value) {
+      // The schema trims what the person sends, so compare against the trimmed stored value too.
+      if (field.status !== "agreed" || d.value !== field.value.trim()) {
         return { ok: false, error: `The readers did not agree on ${field.key}. Pick a value or type one.` };
       }
     } else if (d.source === "muse_spark" || d.source === "muse_spark_open") {
-      if (d.value !== field.readings[d.source]) {
+      if (d.value !== field.readings[d.source]?.trim()) {
         return { ok: false, error: `That value is not what the reader returned for ${field.key}.` };
       }
     } else {
@@ -48,4 +50,21 @@ export function resolveReview(fields: ReconciledField[], decisions: Decision[]):
   }
 
   return { ok: true, finalJson, fieldStatus, edited };
+}
+
+/**
+ * Whether every region has been looked at by a person. A region with fields needs a stored review.
+ * A region with no fields can only be skipped when both readers actually answered and found nothing:
+ * if a reader failed or is missing, "no fields" means "not read", and a person never saw it.
+ */
+export function isScanComplete(
+  regionIds: string[],
+  readings: Pick<Reading, "regionId" | "model" | "fields" | "error">[],
+  reviewedRegionIds: Set<string>,
+): boolean {
+  return regionIds.every((id) => {
+    const own = readings.filter((r) => r.regionId === id);
+    if (reconcileReadings(own).length > 0) return reviewedRegionIds.has(id);
+    return own.length >= 2 && own.every((r) => !r.error);
+  });
 }

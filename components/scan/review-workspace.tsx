@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { Check, CircleX, Loader2 } from "lucide-react";
 import { z } from "zod";
 import { ChartPhoto, type Mark } from "@/components/scan/chart-photo";
@@ -57,6 +57,9 @@ export function ReviewWorkspace({
   const [save, setSave] = useState<Save>({ kind: "idle" });
   const [loadProblem, setLoadProblem] = useState<string | null>(null);
   const size = useImageSize(photoUrl);
+  // What was last stored for each region, so Confirm sends only what changed and a retry after a
+  // failure does not repeat regions that already saved.
+  const savedSignature = useRef<Record<string, string>>({});
 
   // A person may come back to a scan they already reviewed: show their earlier decisions.
   useEffect(() => {
@@ -120,6 +123,9 @@ export function ReviewWorkspace({
     try {
       for (const r of reviewable) {
         const fields = r.fields.map((f) => choices[r.id]?.[f.key]).filter((c) => c !== undefined);
+        const signature = JSON.stringify(fields);
+        if (savedSignature.current[r.id] === signature) continue;
+        const n = regions.indexOf(r) + 1;
         const res = await fetch(`/api/scans/${scan.scanId}/review`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
@@ -127,9 +133,11 @@ export function ReviewWorkspace({
           signal: AbortSignal.timeout(20_000),
         });
         if (!res.ok) {
-          setSave({ kind: "error", message: await readFailure(res) });
+          // Name the region, so the person knows which part to look at.
+          setSave({ kind: "error", message: `Region ${n} (${KIND_LABEL[r.kind]}): ${await readFailure(res)}` });
           return;
         }
+        savedSignature.current[r.id] = signature;
       }
       setSave({ kind: "saved" });
       onSaved?.();
@@ -147,9 +155,11 @@ export function ReviewWorkspace({
 
   const marks: Mark[] = regions.map((r, i) => {
     const mine = choices[r.id] ?? {};
-    const left = r.fields.filter((f) => !mine[f.key]);
-    const tone: Mark["tone"] =
-      r.fields.length === 0 ? "ink" : left.some((f) => f.status === "flagged") ? "flag" : left.length === 0 ? "verified" : "ink";
+    // Green means the readers matched (and the person confirmed it). A flagged field the person settled
+    // is no longer amber, but it is not green either: the readers did not agree on it.
+    const flaggedOpen = r.fields.some((f) => f.status === "flagged" && !mine[f.key]);
+    const allAgreedAndConfirmed = r.fields.length > 0 && r.fields.every((f) => f.status === "agreed" && mine[f.key]);
+    const tone: Mark["tone"] = flaggedOpen ? "flag" : allAgreedAndConfirmed ? "verified" : "ink";
     return { n: i + 1, box: r.bbox, tone };
   });
 
@@ -269,7 +279,9 @@ function RegionReview({
           <div className="flex flex-col gap-1">
             <p>
               <span className="font-medium">{r.model === "muse_spark" ? "Muse Spark" : "Muse Spark Open"} failed on this region.</span>{" "}
-              Every field below needs your choice.
+              {region.fields.length === 0
+                ? "There is nothing to decide here, and the scan cannot be completed until this region is read again."
+                : "Every field below needs your choice."}
             </p>
             <p className="font-mono text-sm break-words text-muted-foreground">{r.error}</p>
           </div>

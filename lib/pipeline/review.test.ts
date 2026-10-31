@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import type { Decision, ReconciledField } from "@/lib/schemas";
-import { resolveReview } from "./review";
+import { isScanComplete, resolveReview } from "./review";
 
 const agreed: ReconciledField = {
   key: "row1.test",
@@ -71,5 +71,48 @@ describe("resolveReview", () => {
   it("refuses unknown and duplicate keys", () => {
     expect(resolveReview(fields, [...good, { key: "line1", source: "edited", value: "x" }]).ok).toBe(false);
     expect(resolveReview(fields, [...good, good[0]]).ok).toBe(false);
+  });
+});
+
+describe("resolveReview with padded reader text", () => {
+  it("accepts a reader's value that has stray spaces, which the schema trims", () => {
+    const padded: ReconciledField = {
+      key: "row1.value",
+      status: "flagged",
+      reason: "mismatch",
+      readings: { muse_spark: " 7.2 ", muse_spark_open: "1.2" },
+    };
+    const r = resolveReview([padded], [{ key: "row1.value", source: "muse_spark", value: "7.2" }]);
+    expect(r.ok).toBe(true);
+  });
+});
+
+describe("isScanComplete", () => {
+  const reading = (regionId: string, model: "muse_spark" | "muse_spark_open", fields: Record<string, string | null>, error: string | null = null) => ({
+    regionId,
+    model,
+    fields,
+    error,
+  });
+  const both = (id: string, fields: Record<string, string | null>) => [
+    reading(id, "muse_spark", fields),
+    reading(id, "muse_spark_open", fields),
+  ];
+
+  it("needs a stored review for every region that has fields", () => {
+    const readings = [...both("a", { line1: "x" }), ...both("b", { line1: "y" })];
+    expect(isScanComplete(["a", "b"], readings, new Set(["a"]))).toBe(false);
+    expect(isScanComplete(["a", "b"], readings, new Set(["a", "b"]))).toBe(true);
+  });
+
+  it("lets a region both readers answered with nothing count as seen", () => {
+    expect(isScanComplete(["a"], both("a", {}), new Set())).toBe(true);
+  });
+
+  it("does not complete a region with no fields because a reader failed or is missing", () => {
+    const failed = [reading("a", "muse_spark", {}, "timed out"), reading("a", "muse_spark_open", {})];
+    expect(isScanComplete(["a"], failed, new Set())).toBe(false);
+    expect(isScanComplete(["a"], [reading("a", "muse_spark", {})], new Set())).toBe(false);
+    expect(isScanComplete(["a"], [], new Set())).toBe(false);
   });
 });
