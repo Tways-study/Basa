@@ -2,25 +2,14 @@
 
 import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
-import { Camera, CircleX, Loader2, RotateCcw, Send } from "lucide-react";
-import { z } from "zod";
+import { Camera, CircleX, HardDrive, Loader2, RotateCcw, Send } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { prepareUpload } from "@/lib/client/downscale";
-import { SyncAcceptedSchema } from "@/lib/schemas";
+import { addToOutbox, syncOutbox } from "@/lib/outbox/client";
+import { sendScan } from "@/lib/outbox/send";
 
 type Photo = { file: File; previewUrl: string; scanId: string };
 type Phase = "idle" | "preparing" | "sending";
-
-const ErrorBodySchema = z.object({ error: z.string() });
-
-// The server's messages are written for people, so show them. Fall back by status when the body is not ours.
-async function readFailure(res: Response): Promise<string> {
-  const parsed = ErrorBodySchema.safeParse(await res.json().catch(() => null));
-  if (parsed.success) return parsed.data.error;
-  if (res.status === 413) return "That photo is too large to send. Take it again from a little further away.";
-  if (res.status === 415) return "That file is not a photo we can read. Take a new photo.";
-  return "The server could not accept the photo. Try again in a moment.";
-}
 
 export function CaptureForm() {
   const router = useRouter();
@@ -31,6 +20,7 @@ export function CaptureForm() {
   const [photo, setPhoto] = useState<Photo | null>(null);
   const [phase, setPhase] = useState<Phase>("idle");
   const [error, setError] = useState<string | null>(null);
+  const [savedNote, setSavedNote] = useState<string | null>(null);
 
   // Free the preview's memory when the photo changes or the page closes.
   useEffect(() => {
@@ -46,6 +36,7 @@ export function CaptureForm() {
       return;
     }
     setError(null);
+    setSavedNote(null);
     prepared.current = null;
     // The id is made once per photo, so sending the same photo twice is the same scan on the server.
     setPhoto({ file, previewUrl: URL.createObjectURL(file), scanId: crypto.randomUUID() });
@@ -71,32 +62,46 @@ export function CaptureForm() {
       }
 
       setPhase("sending");
-      const body = new FormData();
-      body.set("scanId", photo.scanId);
-      body.set("image", blob, "chart.jpg");
+      // Saved on the device first, so the photo is not lost if the send fails or the tab closes.
+      let savedOnDevice = true;
+      try {
+        await addToOutbox(photo.scanId, blob);
+      } catch (err) {
+        savedOnDevice = false;
+        console.error("outbox save failed:", err instanceof Error ? err.name : "unknown error");
+      }
 
-      const res = await fetch("/api/sync", { method: "POST", body, signal: AbortSignal.timeout(30_000) });
-      if (!res.ok) {
-        setError(await readFailure(res));
+      // No device storage (some private windows): send straight away with the same sender, and say so if it fails.
+      if (!savedOnDevice) {
+        const direct = await sendScan(photo.scanId, blob);
+        if (direct.kind === "accepted") {
+          navigating = true;
+          router.push(`/scans/${photo.scanId}`);
+        } else {
+          setError(`${direct.message} This browser cannot keep the photo, so take it again when you are connected.`);
+        }
         return;
       }
-      const accepted = SyncAcceptedSchema.safeParse(await res.json());
-      if (!accepted.success) {
-        setError("The server sent a reply we did not expect. Try again.");
+
+      const outcome = (await syncOutbox(true)).get(photo.scanId);
+      if (outcome?.kind === "accepted") {
+        // Stay disabled while the next page loads, so a second tap cannot start a second send.
+        navigating = true;
+        router.push(`/scans/${photo.scanId}`);
         return;
       }
-      // Stay disabled while the next page loads, so a second tap cannot start a second send.
-      navigating = true;
-      router.push(`/scans/${accepted.data.scanId}`);
+
+      // Not accepted yet. The photo is safe on the device and the list below shows what happens next.
+      setPhoto(null);
+      prepared.current = null;
+      setSavedNote(
+        outcome?.kind === "rejected"
+          ? "The photo was saved, but the server could not accept it. See the list below."
+          : "Saved on this device. It sends by itself when there is a connection.",
+      );
     } catch (err) {
       console.error("send failed:", err instanceof Error ? err.name : "unknown error");
-      setError(
-        err instanceof Error && err.name === "TypeError"
-          ? "Could not reach the server. Check your connection and try again."
-          : err instanceof Error
-            ? err.message
-            : "Something went wrong sending the photo.",
-      );
+      setError(err instanceof Error ? err.message : "Something went wrong saving the photo.");
     } finally {
       if (!navigating) setPhase("idle");
     }
@@ -168,6 +173,13 @@ export function CaptureForm() {
           </Button>
         </div>
       )}
+
+      {savedNote ? (
+        <p role="status" className="flex items-start gap-2 rounded-md border p-3">
+          <HardDrive aria-hidden="true" className="mt-0.5 size-5 shrink-0" />
+          <span>{savedNote}</span>
+        </p>
+      ) : null}
 
       {error ? (
         <p role="alert" className="flex items-start gap-2 rounded-md border border-stamp p-3">
