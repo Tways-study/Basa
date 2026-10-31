@@ -1,6 +1,6 @@
 # Phone test plan (Phase 3)
 
-Closes the first two "Done when" lines of Phase 3 in `docs/BUILD_PLAN.md`: a real photo taken on a phone reaches a stored result on the public URL, and no secret appears in browser network traffic. Repeat before each milestone (see Phase 9 step 7).
+A step-by-step version that also covers the Phase 5 review screen and the Phase 6 offline outbox, with a live tally per Done when line, is the phone test sheet (artifact `RXnzr3KLyETQAWQwKKSmXF`). Closes the first two "Done when" lines of Phase 3 in `docs/BUILD_PLAN.md`: a real photo taken on a phone reaches a stored result on the public URL, and no secret appears in browser network traffic. Repeat before each milestone (see Phase 9 step 7).
 
 ## What you need
 
