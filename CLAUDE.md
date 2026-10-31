@@ -104,7 +104,7 @@ Paper-and-ink editorial, built for tired eyes in a bright clinic. Not a generic 
 - One 6px radius everywhere. Buttons and badges use the variants in `components/ui/`; targets are at least 44px tall (56px for the main capture action).
 - Icons come from lucide-react only. Decorative icons get `aria-hidden`; an icon-only control gets an `aria-label`. Pair color with an icon or text (agreed = Check, flagged = TriangleAlert, unreadable = CircleX) so meaning never rests on color alone.
 - GSAP is only for the SAM overlay reveal on the review screen (SAM boxes until masks are decodable): a lazy-loaded client component, `useGSAP`, and `gsap.matchMedia()` for reduced motion. Never in capture or the outbox. Status badges use CSS transitions.
-- Accessibility: AA contrast, keyboard-operable review, a label on every control.
+- Accessibility: AA contrast, keyboard-operable review, a label on every control. The word Basa is Filipino for "read"; wherever the copy explains it, mark the word `lang="fil"` so a screen reader says it correctly (see the capture screen).
 
 ## Definition of done for a feature
 

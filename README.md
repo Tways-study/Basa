@@ -187,7 +187,7 @@ Paper-and-ink editorial, built for tired eyes in a bright clinic.
 
 The sequence lives in [`docs/BUILD_PLAN.md`](./docs/BUILD_PLAN.md); the rules live in [`CLAUDE.md`](./CLAUDE.md). A phase is finished only when every "Done when" line is true and it is logged in `docs/new-work.md`.
 
-**Status (Oct 31):** phases 0, 1, 2 and 4 are done. Phase 3 is open on one line: a real phone photo on mobile data (see `docs/phone-test.md`). Phases 5 (review UI) and 6 (offline outbox) are built and merged (PR #24) but not done: they still need a real-Supabase review run and a real phone, and an automated review found issues to fix first (see `docs/new-work.md`). Phase 7 (eval) is next to start. The audit fixes are merged (PR #26) and 127 tests pass. The steps to close Phases 3, 5 and 6 are in the phone test sheet.
+**Status (Oct 31):** phases 0, 1, 2 and 4 are done. Phase 3 is open on one line: a real phone photo on mobile data (see `docs/phone-test.md`). Phases 5 (review UI) and 6 (offline outbox) are built and merged (PR #24) but not done: they still need a real-Supabase review run and a real phone, and an automated review found issues to fix first (see `docs/new-work.md`). Phase 7 (eval) is next to start. The audit fixes are merged (PR #26) and 127 tests pass. The first reviews have been saved against the real Supabase (Oct 31, on a computer, not a phone): a reader pick, a Can't be read decision and a typed value all stored with the right source. The steps to close Phases 3, 5 and 6 are in the phone test sheet.
 
 | Phase | Owner | When (PHT) | Done when |
 |---|---|---|---|
