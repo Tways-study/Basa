@@ -1,6 +1,7 @@
 import type { Metadata, Viewport } from "next";
 import Link from "next/link";
 import { Fraunces, IBM_Plex_Mono, IBM_Plex_Sans } from "next/font/google";
+import { BasaMark } from "@/components/brand/basa-mark";
 import "./globals.css";
 
 const fraunces = Fraunces({
@@ -48,8 +49,9 @@ export default function RootLayout({
         <header className="mx-auto flex w-full max-w-5xl items-center px-4 pt-4 sm:px-6">
           <Link
             href="/"
-            className="-mx-2 inline-flex min-h-11 items-center px-2 font-display text-2xl font-semibold tracking-tight"
+            className="-mx-2 inline-flex min-h-11 items-center gap-2 px-2 font-display text-2xl font-semibold tracking-tight"
           >
+            <BasaMark className="size-7 shrink-0" />
             Basa
           </Link>
         </header>
