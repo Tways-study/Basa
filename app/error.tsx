@@ -13,7 +13,7 @@ export default function RouteError({ error, retry }: { error: unknown; retry: ()
   }, [error]);
 
   return (
-    <main className="mx-auto w-full max-w-5xl px-4 pt-6 pb-12 sm:px-6 sm:pt-10">
+    <main id="main" tabIndex={-1} className="mx-auto w-full max-w-5xl px-4 pt-6 pb-12 outline-none sm:px-6 sm:pt-10">
       <div className="flex max-w-xl flex-col items-start gap-4">
         <h1 className="text-3xl font-semibold">Something went wrong on this screen</h1>
         <p role="alert" className="flex items-start gap-2">

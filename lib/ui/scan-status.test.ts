@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { JobStatusSchema } from "@/lib/schemas";
-import { describeStatus, isTerminal, nextPollDelay, POLL_INTERVAL_MS } from "./scan-status";
+import { describeStatus, isTerminal, nextPollDelay, PIPELINE_STEPS, POLL_INTERVAL_MS } from "./scan-status";
 
 describe("describeStatus", () => {
   it("has a view for every job status", () => {
@@ -22,6 +22,20 @@ describe("describeStatus", () => {
     for (const status of JobStatusSchema.options) {
       const { label, detail } = describeStatus(status);
       expect(`${label} ${detail}`).not.toMatch(/[–—]/);
+    }
+  });
+});
+
+describe("step", () => {
+  it("counts the four machine stages in order, from 1 to PIPELINE_STEPS", () => {
+    const running = JobStatusSchema.options.filter((s) => !isTerminal(s));
+    expect(running.map((s) => describeStatus(s).step)).toEqual([1, 2, 3, 4]);
+    expect(PIPELINE_STEPS).toBe(running.length);
+  });
+
+  it("has no step once a person or a failure takes over", () => {
+    for (const status of JobStatusSchema.options.filter(isTerminal)) {
+      expect(describeStatus(status).step).toBeNull();
     }
   });
 });

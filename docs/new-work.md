@@ -250,3 +250,26 @@ Branch `tways/phase-8`, Tways with Claude Code. The cited summary and the states
 - `main` branch rules: a pull request with a required approving review. The CLI could not merge (the base branch policy blocked it); merges were done from the GitHub page. Two PRs that both append to `docs/new-work.md` conflict, so merge one and update the other.
 - Docs brought up to date: README status, `CLAUDE.md` (cited summary rule, new file names), `docs/BUILD_PLAN.md` (Phase 8 status), the plan artifact. Test count: 198 unit tests plus 1 e2e.
 - **Where the phases stand:** done 0, 1, 2, 4. Built, open on a real phone: 3, 5, 6, 8. Built and tuned, open on the held-out run: 7 (needs 3 phone photos, the margin check, the prompt freeze and the one `--final` run before the Nov 3 noon freeze). About 34 test scans and their images are still to clear through the Storage API before the Nov 3 recording.
+
+## 2026-11-01 (home page accessibility and navigation cues, branch `home-a11y`)
+
+Audit of the capture screen with the Impeccable audit checks (code-level, score 17/20 before fixes). Small fixes only, inside the scope freeze:
+
+- **Skip link** as the first focusable element (`app/layout.tsx`); `<main id="main" tabIndex={-1}>` so it moves focus, not just scroll.
+- **"Step 1 of 3: photograph the page"** label above the capture buttons, so the three steps read as a sequence. The copy is visible text, not colour.
+- **Anchor link** "What the green and amber marks mean" jumps to the key (`#what-you-will-see`, `scroll-mt-6`).
+- **Heading outline:** h1, then h2 "How it works" (sr-only) with h3 step titles, then h2 "What you will see". Previously the step titles were h2 and the key was a styled `<p>`.
+- **Sample alt text** now names the numbered boxes (1 and 2 green, 3 amber) so it matches the drawn marks.
+
+Checked in the browser at 360px and 1280px: skip link is the first tab stop, no horizontal scroll, heading outline as above, no console errors. typecheck, lint and 198 unit tests pass.
+
+**Not done, flagged:** the outbox list still disappears when empty, so a person cannot find past scans from the capture screen. That needs a decision (it may be out of scope under the freeze). The duplicate "Basa" in the eyebrow was left as is. Focus-ring contrast on the filled "Take photo" button is expected to pass from the 2px offset but was not measured on a real phone.
+
+**Second pass, same day: scans screen and the scanning state (`/scans/[id]`, `ScanResults`, `ReviewWorkspace`).**
+
+- **Fixed a regression from the first pass:** the skip link lives in the layout, but only the home page's `<main>` had `id="main"`. Now `scans/[id]`, `review-preview`, `not-found` and `error` have it too (checked in the browser on four routes: the target exists, Tab then Enter moves focus into it).
+- **Scanning state:** the status line now says "Step N of 4" (`step` and `PIPELINE_STEPS` in `lib/ui/scan-status.ts`, 2 new tests), so progress does not rest on a spinner. A "Photograph another chart" link shows while the scan is running.
+- **After the record is saved:** a "Photograph the next chart" button, shown only when nothing is unsaved (`!dirty`), so it cannot drop answers.
+- **Scrollable table** in `RegionBlock` is now a labelled, focusable region, so a keyboard user can reach cut-off columns.
+- Checks: typecheck, lint, 200 unit tests and the Playwright happy path pass. No horizontal scroll at 360px on the four routes.
+- **Not checked live:** the scanning screen itself was not rendered (it needs a real scan, and each one adds a test scan to the shared database); the step text and the two new links are covered by the unit test and by reading the code only. Page title still says "Scan results" while reading (left as is).

@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useEffect, useMemo, useRef, useState } from "react";
-import { Check, CircleX, Loader2, Printer } from "lucide-react";
+import { Camera, Check, CircleX, Loader2, Printer } from "lucide-react";
 import { z } from "zod";
 import { ChartPhoto, type Mark } from "@/components/scan/chart-photo";
 import { FieldRow } from "@/components/scan/field-row";
@@ -286,6 +286,15 @@ export function ReviewWorkspace({
               <CircleX aria-hidden="true" className="mt-0.5 size-5 shrink-0 text-stamp" />
               <span>{save.message}</span>
             </p>
+          ) : null}
+          {/* Only once everything is stored: a link away earlier would drop answers that are not saved yet. */}
+          {!dirty && (save.kind === "saved" || scan.status === "done") ? (
+            <Button asChild variant="outline">
+              <Link href="/">
+                <Camera aria-hidden="true" />
+                Photograph the next chart
+              </Link>
+            </Button>
           ) : null}
         </div>
       </div>

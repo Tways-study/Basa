@@ -30,7 +30,8 @@ async function ScanView({ params }: { params: Promise<{ id: string }> }) {
 
 export default function ScanPage({ params }: { params: Promise<{ id: string }> }) {
   return (
-    <main className="mx-auto w-full max-w-5xl px-4 pt-6 pb-12 sm:px-6 sm:pt-10">
+    // id and tabIndex are the skip link's target (app/layout.tsx), so it lands here on every screen.
+    <main id="main" tabIndex={-1} className="mx-auto w-full max-w-5xl px-4 pt-6 pb-12 outline-none sm:px-6 sm:pt-10">
       <Suspense fallback={<ScanSkeleton />}>
         <ScanView params={params} />
       </Suspense>
