@@ -32,6 +32,21 @@ export function decideStart(scan: ScanRecord | null, now = Date.now()): StartDec
   return now - scan.updatedAt.getTime() > STALE_AFTER_MS ? "resume" : "noop";
 }
 
+export type RetryDecision = "retry" | "noop";
+
+/**
+ * What a person's "Read again" should do. It re-reads only what failed, so it is only worth doing when a
+ * reading has an error or the scan itself failed (or went quiet). A finished review, a scan with nothing
+ * failed, and one that is running right now are left alone, which also makes a double tap harmless.
+ */
+export function decideRetry(scan: ScanRecord | null, readings: Pick<Reading, "error">[], now = Date.now()): RetryDecision {
+  if (!scan) return "noop";
+  if (scan.status === "failed") return "retry";
+  if (scan.status === "done") return "noop";
+  if (scan.status === "needs_review") return readings.some((r) => r.error) ? "retry" : "noop";
+  return now - scan.updatedAt.getTime() > STALE_AFTER_MS ? "retry" : "noop";
+}
+
 /** Run `items` through `worker`, at most `limit` at a time. Never rejects: workers return their own results. */
 async function pool<T, R>(items: T[], limit: number, worker: (item: T) => Promise<R>): Promise<R[]> {
   const results: R[] = new Array(items.length);
@@ -88,7 +103,7 @@ export async function runPipeline(scanId: string, deps: PipelineDeps): Promise<v
 
     let stopped: BudgetExceededError | null = null;
     // The cap on parallel tasks bounds parallel model calls, whichever reader a task belongs to.
-    const outcomes = await pool(todo, CONCURRENCY, async ({ region, reader }): Promise<Reading | null> => {
+    await pool(todo, CONCURRENCY, async ({ region, reader }): Promise<Reading | null> => {
       if (stopped) return null;
       try {
         const reading = await reader.readRegion({ regionId: region.id, kind: region.kind, image: await cropOf(region) });
@@ -113,7 +128,9 @@ export async function runPipeline(scanId: string, deps: PipelineDeps): Promise<v
     });
 
     if (stopped) throw stopped;
-    if (todo.length > 0 && outcomes.every((o) => o?.error)) {
+    // Judge by every stored reading, not only this run's: a retry that re-fails its few readings must not
+    // turn a scan that still has good readings into a failed one.
+    if (todo.length > 0 && (await store.getReadings(scanId)).every((r) => r.error)) {
       throw new Error("No region could be read. Try again, or retake the photo.");
     }
 
