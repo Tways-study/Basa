@@ -14,6 +14,7 @@ import { useImageSize } from "@/components/scan/use-image-size";
 import { Button } from "@/components/ui/button";
 import { type ReaderId, type ScanResult, ReviewsResponseSchema } from "@/lib/schemas";
 import { buildPrintable } from "@/lib/ui/print-record";
+import { clearDraft, loadDraft, saveDraft } from "@/lib/ui/review-draft";
 import { type Choices, attentionFirst, confirmAgreed, orderFields, progressOf } from "@/lib/ui/review-state";
 import { REGION_LABEL as KIND_LABEL, buildSummary } from "@/lib/ui/summary";
 
@@ -27,6 +28,15 @@ async function readFailure(res: Response): Promise<string> {
 }
 
 type Save = { kind: "idle" } | { kind: "saving" } | { kind: "saved" } | { kind: "error"; message: string };
+
+function readDraft(scanId: string) {
+  try {
+    return loadDraft(localStorage, scanId);
+  } catch (err) {
+    console.error("draft read failed:", err instanceof Error ? err.name : "unknown error");
+    return null;
+  }
+}
 
 export function ReviewWorkspace({
   scan,
@@ -53,11 +63,17 @@ export function ReviewWorkspace({
   );
   const reviewable = regions.filter((r) => r.fields.length > 0);
 
-  const [choices, setChoices] = useState<Record<string, Choices>>({});
+  // Answers picked but not confirmed yet survive a refresh on this device. Read once, before the first
+  // render, so the stored review loading below never overwrites them (it only fills what is still empty).
+  // This screen is only mounted after the scan has loaded in the browser, so there is no server render.
+  const [draft] = useState(() => (preview || typeof window === "undefined" ? null : readDraft(scan.scanId)));
+  const [choices, setChoices] = useState<Record<string, Choices>>(draft ?? {});
   const [save, setSave] = useState<Save>({ kind: "idle" });
   const [loadProblem, setLoadProblem] = useState<string | null>(null);
+  // True when answers from before a refresh were put back from this device.
+  const [restored, setRestored] = useState(draft !== null);
   // True while the screen holds answers that are not stored yet. A printed copy must match what is stored.
-  const [dirty, setDirty] = useState(false);
+  const [dirty, setDirty] = useState(draft !== null);
   // The region a summary line is pointing at (hover, focus or a tap), drawn heavier on the photo.
   const [activeRegion, setActiveRegion] = useState<string | null>(null);
   // When the record was last stored, for the printed copy. Null until known.
@@ -66,6 +82,16 @@ export function ReviewWorkspace({
   // What was last stored for each region, so Confirm sends only what changed and a retry after a
   // failure does not repeat regions that already saved.
   const savedSignature = useRef<Record<string, string>>({});
+
+  // Keep the draft in step with the screen while there is something unsaved.
+  useEffect(() => {
+    if (preview || !dirty) return;
+    try {
+      saveDraft(localStorage, scan.scanId, choices);
+    } catch (err) {
+      console.error("draft write failed:", err instanceof Error ? err.name : "unknown error");
+    }
+  }, [choices, dirty, scan.scanId, preview]);
 
   // A person may come back to a scan they already reviewed: show their earlier decisions.
   useEffect(() => {
@@ -153,6 +179,12 @@ export function ReviewWorkspace({
       }
       setSave({ kind: "saved" });
       setDirty(false);
+      setRestored(false);
+      try {
+        clearDraft(localStorage, scan.scanId);
+      } catch (err) {
+        console.error("draft clear failed:", err instanceof Error ? err.name : "unknown error");
+      }
       setReviewedAt(new Date().toISOString());
       onSaved?.();
     } catch (err) {
@@ -227,6 +259,11 @@ export function ReviewWorkspace({
         ) : null}
 
         {loadProblem ? <p role="status" className="text-sm">{loadProblem}</p> : null}
+        {restored && dirty && save.kind !== "saved" ? (
+          <p role="status" className="text-sm">
+            Your answers from before the refresh were put back. They are saved on this device only until you tap Confirm record.
+          </p>
+        ) : null}
 
         {failedReadings > 0 && !preview && onReadAgain ? (
           <div className="flex flex-col items-start gap-2 rounded-md border border-stamp p-3">
