@@ -11,7 +11,7 @@ import { ScanSkeleton } from "@/components/scan/scan-skeleton";
 import { StatusBadge } from "@/components/scan/status-badge";
 import { Button } from "@/components/ui/button";
 import { type ScanResult, ScanResultSchema } from "@/lib/schemas";
-import { describeStatus, isTerminal, nextPollDelay } from "@/lib/ui/scan-status";
+import { PIPELINE_STEPS, describeStatus, isTerminal, nextPollDelay } from "@/lib/ui/scan-status";
 
 type LoadState =
   | { kind: "loading" }
@@ -124,8 +124,18 @@ export function ScanResults({ scanId }: { scanId: string }) {
         <h1 className="text-4xl font-semibold tracking-tight">Scan results</h1>
         <div role="status" className="flex flex-wrap items-center gap-x-3 gap-y-2">
           <StatusBadge status={scan.status} />
-          <p>{view.detail}</p>
+          {/* The step is words, so the spinner is not the only sign of progress. Read out on each change. */}
+          <p>
+            {view.step ? `Step ${view.step} of ${PIPELINE_STEPS}. ` : ""}
+            {view.detail}
+          </p>
         </div>
+        {/* A person waiting has a way on, instead of only the small logo. */}
+        {!isTerminal(scan.status) ? (
+          <Link href="/" className="inline-flex min-h-11 items-center self-start underline underline-offset-4">
+            Photograph another chart
+          </Link>
+        ) : null}
         {scan.status === "failed" ? (
           <p role="alert" className="flex max-w-xl items-start gap-2 rounded-md border border-stamp p-3">
             <CircleX aria-hidden="true" className="mt-0.5 size-5 shrink-0 text-stamp" />

@@ -47,6 +47,13 @@ export default function RootLayout({
       className={`${fraunces.variable} ${plexSans.variable} ${plexMono.variable}`}
     >
       <body>
+        {/* First stop on every page, so keyboard users can skip the header. Hidden until focused. */}
+        <a
+          href="#main"
+          className="sr-only focus:not-sr-only focus:fixed focus:top-2 focus:left-2 focus:z-50 focus:inline-flex focus:min-h-11 focus:items-center focus:bg-ink focus:px-4 focus:text-paper"
+        >
+          Skip to main content
+        </a>
         <header className="mx-auto flex w-full max-w-5xl items-center px-4 pt-4 sm:px-6 print:hidden">
           <Link
             href="/"

@@ -40,7 +40,8 @@ function Fields({ reading, kind }: { reading: Reading; kind: RegionKind }) {
   return (
     <div className="flex flex-col gap-4">
       {rows.length > 0 ? (
-        <div className="overflow-x-auto">
+        // A scrollable area needs a tab stop, or a keyboard user cannot reach the cut-off columns.
+        <div className="overflow-x-auto" role="region" aria-label={`${KIND_LABEL[kind]} rows`} tabIndex={0}>
           <table className="w-full border-collapse font-mono text-sm sm:text-base">
             <caption className="sr-only">{KIND_LABEL[kind]} rows as read</caption>
             <thead>

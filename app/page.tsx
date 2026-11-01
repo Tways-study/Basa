@@ -24,7 +24,8 @@ const STEPS = [
 export default function Home() {
   return (
     // Same outer width as the header and the results page, so the wordmark and content share one left edge.
-    <main className="mx-auto w-full max-w-5xl px-4 pt-6 pb-16 sm:px-6 sm:pt-10">
+    // tabIndex -1 lets the skip link move focus here, not just scroll.
+    <main id="main" tabIndex={-1} className="mx-auto w-full max-w-5xl px-4 pt-6 pb-16 outline-none sm:px-6 sm:pt-10">
       <div className="grid gap-x-14 gap-y-12 lg:grid-cols-[minmax(0,1fr)_minmax(0,22rem)] lg:items-start">
         <div className="flex flex-col gap-10">
           <div className="flex flex-col gap-5">
@@ -44,22 +45,36 @@ export default function Home() {
             </p>
           </div>
 
-          <CaptureForm />
+          <div className="flex flex-col gap-3">
+            <p className="text-sm font-semibold tracking-wide uppercase">Step 1 of 3: photograph the page</p>
+            <CaptureForm />
+            <a
+              href="#what-you-will-see"
+              className="inline-flex min-h-11 items-center self-start underline underline-offset-4"
+            >
+              What the green and amber marks mean
+            </a>
+          </div>
           <OutboxList />
 
-          <ol className="flex flex-col border-t border-ink">
-            {STEPS.map((step, i) => (
-              <li key={step.title} className="grid grid-cols-[2.5rem_1fr] items-baseline gap-x-2 border-b py-4">
-                <span aria-hidden="true" className="font-display text-3xl leading-none font-semibold">
-                  {i + 1}
-                </span>
-                <div>
-                  <h2 className="font-sans text-lg font-semibold">{step.title}</h2>
-                  <p className="mt-0.5 max-w-[52ch] text-muted-foreground">{step.text}</p>
-                </div>
-              </li>
-            ))}
-          </ol>
+          <section aria-labelledby="how-it-works" className="flex flex-col gap-4">
+            <h2 id="how-it-works" className="sr-only">
+              How it works
+            </h2>
+            <ol className="flex flex-col border-t border-ink">
+              {STEPS.map((step, i) => (
+                <li key={step.title} className="grid grid-cols-[2.5rem_1fr] items-baseline gap-x-2 border-b py-4">
+                  <span aria-hidden="true" className="font-display text-3xl leading-none font-semibold">
+                    {i + 1}
+                  </span>
+                  <div>
+                    <h3 className="font-sans text-lg font-semibold">{step.title}</h3>
+                    <p className="mt-0.5 max-w-[52ch] text-muted-foreground">{step.text}</p>
+                  </div>
+                </li>
+              ))}
+            </ol>
+          </section>
 
           <p className="max-w-[52ch] text-muted-foreground">
             We are Filipino developers in the Philippines. <span lang="fil">Basa</span> is the Filipino word for
@@ -70,12 +85,13 @@ export default function Home() {
         </div>
 
         {/* After the steps on a phone, beside them on a wide screen: the main action always comes first. */}
-        <figure className="flex flex-col gap-4 lg:sticky lg:top-6">
+        {/* scroll-mt keeps the anchor target clear of the header when the link jumps here. */}
+        <figure id="what-you-will-see" className="flex scroll-mt-6 flex-col gap-4 lg:sticky lg:top-6">
           <div className="relative w-full rounded-md border bg-card p-2">
             <div className="relative">
               <Image
                 src="/preview-chart.jpg"
-                alt="A sample chart with three boxed areas: two outlined in green and one in amber"
+                alt="A sample chart with three numbered boxes: boxes 1 and 2 outlined in green, box 3 in amber"
                 width={W}
                 height={H}
                 sizes="(min-width: 1024px) 22rem, 90vw"
@@ -86,7 +102,7 @@ export default function Home() {
             </div>
           </div>
           <figcaption className="flex flex-col gap-3">
-            <p className="font-display text-xl font-semibold">What you will see</p>
+            <h2 className="font-display text-xl font-semibold">What you will see</h2>
             <ul className="flex flex-col gap-2">
               <li className="flex items-start gap-2">
                 <Check aria-hidden="true" className="mt-0.5 size-5 shrink-0 text-verified" />

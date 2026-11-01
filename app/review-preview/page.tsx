@@ -8,7 +8,7 @@ export default function ReviewPreview() {
 
   const scan = previewScan();
   return (
-    <main className="mx-auto w-full max-w-5xl px-4 pt-6 pb-12 sm:px-6 sm:pt-10">
+    <main id="main" tabIndex={-1} className="mx-auto w-full max-w-5xl px-4 pt-6 pb-12 outline-none sm:px-6 sm:pt-10">
       <div className="flex flex-col gap-6">
         <header className="flex flex-col gap-2 print:hidden">
           <h1 className="text-4xl font-semibold tracking-tight">Review the scan</h1>
