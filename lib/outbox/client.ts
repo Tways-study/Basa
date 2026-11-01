@@ -2,12 +2,13 @@ import { openDB, type DBSchema, type IDBPDatabase } from "idb";
 import type { JobStatus } from "@/lib/schemas";
 import { runOutbox } from "./runner";
 import { sendScan } from "./send";
-import type { OutboxItem, OutboxStore, SendResult } from "./types";
+import { fromStored, toStored, type StoredItem } from "./stored";
+import type { OutboxStore, SendResult } from "./types";
 
 // Browser only: IndexedDB and window events. The logic worth testing lives in runner.ts, policy.ts and send.ts.
 
 interface OutboxDB extends DBSchema {
-  items: { key: string; value: OutboxItem };
+  items: { key: string; value: StoredItem };
 }
 
 export const OUTBOX_CHANGED = "outbox:changed";
@@ -29,10 +30,12 @@ function db() {
 
 const store: OutboxStore = {
   async list() {
-    return (await db()).getAll("items");
+    return (await (await db()).getAll("items")).map(fromStored);
   },
   async put(item) {
-    await (await db()).put("items", item);
+    // The photo is turned into bytes before the transaction opens: awaiting inside one would close it.
+    const row = await toStored(item);
+    await (await db()).put("items", row);
     notify();
   },
   async remove(scanId) {
