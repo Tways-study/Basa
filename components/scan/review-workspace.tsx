@@ -210,18 +210,21 @@ export function ReviewWorkspace({
           <div aria-hidden="true" className="h-1.5 w-full rounded-md bg-line">
             <div className="h-full rounded-md bg-ink transition-[width] duration-200" style={{ width: `${pct}%` }} />
           </div>
-          {progress.agreedLeft > 0 ? (
-            <div className="flex flex-col items-start gap-1">
-              <Button variant="outline" onClick={bulkConfirm}>
-                <Check aria-hidden="true" />
-                Confirm {progress.agreedLeft} matching {progress.agreedLeft === 1 ? "field" : "fields"}
-              </Button>
-              <p className="text-sm text-muted-foreground">
-                Matching means the two readers agreed, not that the value is right. Check the crop first.
-              </p>
-            </div>
-          ) : null}
         </div>
+
+        {/* Out of the sticky strip: it stays on screen only for progress, and this shortcut scrolls away so the
+            fields that need a person are not pushed down by it. */}
+        {progress.agreedLeft > 0 ? (
+          <div className="flex flex-col items-start gap-1">
+            <Button variant="outline" onClick={bulkConfirm}>
+              <Check aria-hidden="true" />
+              Confirm {progress.agreedLeft} matching {progress.agreedLeft === 1 ? "field" : "fields"}
+            </Button>
+            <p className="text-sm text-muted-foreground">
+              Matching means the two readers agreed, not that the value is right. Check the crop first.
+            </p>
+          </div>
+        ) : null}
 
         {loadProblem ? <p role="status" className="text-sm">{loadProblem}</p> : null}
 

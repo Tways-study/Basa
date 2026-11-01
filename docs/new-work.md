@@ -273,3 +273,19 @@ Checked in the browser at 360px and 1280px: skip link is the first tab stop, no 
 - **Scrollable table** in `RegionBlock` is now a labelled, focusable region, so a keyboard user can reach cut-off columns.
 - Checks: typecheck, lint, 200 unit tests and the Playwright happy path pass. No horizontal scroll at 360px on the four routes.
 - **Not checked live:** the scanning screen itself was not rendered (it needs a real scan, and each one adds a test scan to the shared database); the step text and the two new links are covered by the unit test and by reading the code only. Page title still says "Scan results" while reading (left as is).
+
+## 2026-11-01 (hierarchy and balance pass, branch `home-hierarchy`)
+
+From a UX review of the home and scans screens (Impeccable critique and layout checks; the layout detector found nothing, so these are judged by eye and by the screenshots).
+
+- **Home:** the "Basa · read, in Filipino" line is now small and muted, so the h1 leads. The one safety rule ("Demo build. Use sample charts only, never real patient records.") moved from the last, smallest line to directly under the capture buttons, in full ink with an info icon. The "What the green and amber marks mean" link moved from beside the capture buttons to under step 3, so the capture group is only Take photo and Choose a photo. The step label is now "Step 1 of 3". On a phone the page now ends with the sample chart and then the team note, instead of the note sitting between the steps and the sample.
+- **Scans:** the h1 names the state through `headingFor` in `lib/ui/scan-status.ts` ("Reading your chart", "Review the scan", "Record confirmed", "Scan failed"; 2 new tests).
+- **Review:** "Confirm N matching fields" and its note moved out of the sticky strip. The strip now holds only the progress line and bar, so it takes less of a phone screen and the shortcut scrolls away instead of sitting above the fields that need a person.
+- Checks: typecheck, lint and 202 unit tests pass; browser at 360px and 1280px shows no sideways scroll and the new order.
+- **Not run:** the Playwright test (a dev server I did not start was holding the folder, so Next refused a second one). The scanning and failed headings were not rendered live, same reason as before.
+
+### Capture form reset after a send (same branch)
+
+- **Bug:** after a send the form stayed on "Sending" when the person came back with "Photograph another chart". Next 16 (`cacheComponents`) keeps the home screen's state while another page is open, and the form was left disabled for the page change on purpose (so a second tap cannot start a second send).
+- **Fix:** `CaptureForm` sets a `leftForScan` flag when it navigates to the scan, and an effect that runs when the screen is shown again clears the photo, phase, note and error. Covers both the stored-on-device path and the direct-send path.
+- Reproduced in a 390px browser on a dev server with `MOCK_MODELS=true` (second send never became available), and checked fixed the same way: two sends in a row both reached `/scans/<id>`. Typecheck, lint and 202 tests pass. Desktop Chromium only, not run on a real phone; no automated test (the e2e covers the sample review screen only).

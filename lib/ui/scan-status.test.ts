@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { JobStatusSchema } from "@/lib/schemas";
-import { describeStatus, isTerminal, nextPollDelay, PIPELINE_STEPS, POLL_INTERVAL_MS } from "./scan-status";
+import { describeStatus, headingFor, isTerminal, nextPollDelay, PIPELINE_STEPS, POLL_INTERVAL_MS } from "./scan-status";
 
 describe("describeStatus", () => {
   it("has a view for every job status", () => {
@@ -22,6 +22,22 @@ describe("describeStatus", () => {
     for (const status of JobStatusSchema.options) {
       const { label, detail } = describeStatus(status);
       expect(`${label} ${detail}`).not.toMatch(/[–—]/);
+    }
+  });
+});
+
+describe("headingFor", () => {
+  it("names the state: one heading while the machine works, then review, confirmed, failed", () => {
+    expect(headingFor("queued")).toBe(headingFor("reconciling"));
+    expect(headingFor("needs_review")).toBe("Review the scan");
+    expect(headingFor("done")).toBe("Record confirmed");
+    expect(headingFor("failed")).toBe("Scan failed");
+  });
+
+  it("has a heading for every status, with no em-dash", () => {
+    for (const status of JobStatusSchema.options) {
+      expect(headingFor(status)).toMatch(/\S/);
+      expect(headingFor(status)).not.toMatch(/[–—]/);
     }
   });
 });

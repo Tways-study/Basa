@@ -30,6 +30,20 @@ export function describeStatus(status: JobStatus): StatusView {
   return VIEWS[status];
 }
 
+// The page title for each state, so the h1 says where the scan is instead of one fixed "Scan results".
+// Plain words only: it names the state and never says anything about the chart's content.
+const HEADINGS: Record<JobStatus, string> = {
+  queued: "Reading your chart",
+  segmenting: "Reading your chart",
+  reading: "Reading your chart",
+  reconciling: "Reading your chart",
+  needs_review: "Review the scan",
+  done: "Record confirmed",
+  failed: "Scan failed",
+};
+
+export const headingFor = (status: JobStatus): string => HEADINGS[status];
+
 export const isTerminal = (status: JobStatus): boolean => VIEWS[status].terminal;
 
 export const POLL_INTERVAL_MS = 2000;

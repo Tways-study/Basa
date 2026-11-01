@@ -22,6 +22,21 @@ export function CaptureForm() {
   const [error, setError] = useState<string | null>(null);
   const [savedNote, setSavedNote] = useState<string | null>(null);
 
+  // With cacheComponents, Next keeps this screen's state alive while another page is open and shows it
+  // again, unchanged, on the way back. After a send we leave the form disabled for the page change, so
+  // coming back to it would show "Sending" for ever. Effects run again when the screen is shown, so a
+  // form that was left mid-navigation starts fresh then.
+  const leftForScan = useRef(false);
+  useEffect(() => {
+    if (!leftForScan.current) return;
+    leftForScan.current = false;
+    setPhoto(null);
+    setPhase("idle");
+    setError(null);
+    setSavedNote(null);
+    prepared.current = null;
+  }, []);
+
   // Free the preview's memory when the photo changes or the page closes.
   useEffect(() => {
     if (!photo) return;
@@ -76,6 +91,7 @@ export function CaptureForm() {
         const direct = await sendScan(photo.scanId, blob);
         if (direct.kind === "accepted") {
           navigating = true;
+          leftForScan.current = true;
           router.push(`/scans/${photo.scanId}`);
         } else {
           setError(`${direct.message} This browser cannot keep the photo, so take it again when you are connected.`);
@@ -87,6 +103,7 @@ export function CaptureForm() {
       if (outcome?.kind === "accepted") {
         // Stay disabled while the next page loads, so a second tap cannot start a second send.
         navigating = true;
+        leftForScan.current = true;
         router.push(`/scans/${photo.scanId}`);
         return;
       }
