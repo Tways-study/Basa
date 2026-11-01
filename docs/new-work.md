@@ -243,3 +243,10 @@ Branch `tways/phase-8`, Tways with Claude Code. The cited summary and the states
 - **Three real runs of the demo chart** (`smoke-chart-02`, local dev with `MOCK_MODELS=false`, real Supabase): all three reached `needs_review` in 25.6, 19.7 and 17.0 s with 5 regions, 10 readings, no failed reading and no flagged field. That is three clean scans, all of them test scans to clear before the Nov 3 recording (one of them had a reading changed by hand for the resume test).
 - **A dev-server gotcha:** running `pnpm build` and `pnpm dev` in the same folder left `next dev` in a rebuild loop (the page stuck on "Loading"); deleting `.next` fixed it.
 - **Not done:** real phone and iOS Safari; the e2e does not cover capture, the outbox or the server.
+
+## 2026-11-01 (evening: merges and branch cleanup)
+
+- PRs #42 (docs update), #43 (cited summary, states, contrast) and #44 (Phase 8: Read again, Playwright test, scans) are merged; the merged branches `tways/alex-remaining`, `tways/docs-nov1-update`, `tways/phase-8` and `tways/phase-7-harder-charts` are deleted, so only `main` is left.
+- `main` branch rules: a pull request with a required approving review. The CLI could not merge (the base branch policy blocked it); merges were done from the GitHub page. Two PRs that both append to `docs/new-work.md` conflict, so merge one and update the other.
+- Docs brought up to date: README status, `CLAUDE.md` (cited summary rule, new file names), `docs/BUILD_PLAN.md` (Phase 8 status), the plan artifact. Test count: 198 unit tests plus 1 e2e.
+- **Where the phases stand:** done 0, 1, 2, 4. Built, open on a real phone: 3, 5, 6, 8. Built and tuned, open on the held-out run: 7 (needs 3 phone photos, the margin check, the prompt freeze and the one `--final` run before the Nov 3 noon freeze). About 34 test scans and their images are still to clear through the Storage API before the Nov 3 recording.
