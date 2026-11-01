@@ -19,6 +19,8 @@ A step-by-step version that also covers the Phase 5 review screen and the Phase 
 
 Pass: the phone photo reached a stored result on the public URL.
 
+**Use a normal tab for the offline steps (Part C of the sheet).** A private tab can open the app but WebKit will not store a photo there as a Blob, so offline capture looked broken on a phone. Photos are now stored as bytes (2026-11-01), which works in a private tab too, but test in a normal tab first. Also: with the phone offline you cannot open the address in a closed tab (no app shell is cached, and a service worker is out of scope); to check that the photo outlives the tab, close the tab offline, reconnect, then open the app.
+
 ## Checking that no secret leaves the server
 
 A phone makes network inspection awkward. Use one of:
@@ -43,5 +45,6 @@ Expected traffic: one `POST /api/sync`, then repeated `GET /api/scans/<id>`. Che
 | Date | Device and browser | Network | Scan id | Reached `needs_review` | Secrets in traffic | Notes |
 |---|---|---|---|---|---|---|
 | 2026-10-30 | MacBook webcam (rehearsal, not a phone; browser not recorded) | Mac, not mobile data | `1703a77d-916a-457f-8e27-ef94b4830a7c` | Yes, in about 14 s: 5 regions, 10 readings (both readers), 0 errors, checked in the database | None seen. Tways saw only `POST /api/sync` and repeated `GET /api/scans/<id>` in the Network tab (self-reported; no key-string search recorded) | Production alias `basa-chi.vercel.app` on the Phase 4 build. Results page contents not reported. Does not close the phone line: still needs a real phone photo on mobile data of the printed chart. |
+| 2026-11-01 | Real phone (model not recorded), mobile data, tester Ilowise | Mobile data | not recorded | Yes: all 5 regions, readable values, no red alert (A1 to A5 passed) | None: the laptop Network search found nothing (A6 passed) | Phase 3 and Phase 5 (steps B1 to B22) passed on the phone. Part C failed from C2: "This browser cannot keep the photo" in a private tab; closed-tab reopen offline said "Site cannot be reached". Cause and fix in `docs/new-work.md` (photo stored as bytes). Part C to be re-run in a normal tab. |
 
 After a pass, log it in `docs/new-work.md` with the date, and clear the synthetic test scans from the database and storage before the demo.
