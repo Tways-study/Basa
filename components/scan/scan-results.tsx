@@ -131,6 +131,11 @@ export function ScanResults({ scanId }: { scanId: string }) {
             <span>{scan.error ?? "No reason was recorded. Take the photo again."}</span>
           </p>
         ) : null}
+        {scan.status === "failed" ? (
+          <Button asChild variant="outline" className="self-start">
+            <Link href="/">Photograph the chart again</Link>
+          </Button>
+        ) : null}
         {offline ? <ConnectionNote /> : null}
       </header>
 

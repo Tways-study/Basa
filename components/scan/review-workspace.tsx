@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { Check, CircleX, Loader2, Printer } from "lucide-react";
 import { z } from "zod";
@@ -230,7 +231,14 @@ export function ReviewWorkspace({
           />
         ))}
 
-        {regions.length === 0 ? <p className="border-t pt-4 text-muted-foreground">No regions were found on this page.</p> : null}
+        {regions.length === 0 ? (
+          <div className="flex flex-col items-start gap-3 border-t pt-4">
+            <p className="text-muted-foreground">No regions were found on this page. Try a clearer photo with the whole chart in view.</p>
+            <Button asChild variant="outline">
+              <Link href="/">Photograph a chart</Link>
+            </Button>
+          </div>
+        ) : null}
 
         <div className="flex flex-col items-start gap-3 border-t pt-4">
           <Button size="lg" onClick={submit} disabled={!progress.complete || save.kind === "saving"}>
