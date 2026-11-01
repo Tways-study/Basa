@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { CircleX, WifiOff } from "lucide-react";
 import { ChartPhoto } from "@/components/scan/chart-photo";
+import { ReadAgain } from "@/components/scan/read-again";
 import { RegionBlock } from "@/components/scan/region-block";
 import { ReviewWorkspace } from "@/components/scan/review-workspace";
 import { ScanSkeleton } from "@/components/scan/scan-skeleton";
@@ -132,9 +133,12 @@ export function ScanResults({ scanId }: { scanId: string }) {
           </p>
         ) : null}
         {scan.status === "failed" ? (
-          <Button asChild variant="outline" className="self-start">
-            <Link href="/">Photograph the chart again</Link>
-          </Button>
+          <div className="flex flex-wrap items-start gap-3">
+            <ReadAgain scanId={scan.scanId} label="Try reading again" onStarted={refresh} />
+            <Button asChild variant="outline">
+              <Link href="/">Photograph the chart again</Link>
+            </Button>
+          </div>
         ) : null}
         {offline ? <ConnectionNote /> : null}
       </header>
@@ -145,6 +149,7 @@ export function ScanResults({ scanId }: { scanId: string }) {
           photoUrl={photoUrl}
           onPhotoError={() => setPhotoUrl(scan.imageUrl)}
           onSaved={refresh}
+          onReadAgain={refresh}
         />
       ) : (
       <div className="grid items-start gap-6 lg:grid-cols-[minmax(0,2fr)_minmax(0,3fr)]">

@@ -6,6 +6,7 @@ import { Check, CircleX, Loader2, Printer } from "lucide-react";
 import { z } from "zod";
 import { ChartPhoto, type Mark } from "@/components/scan/chart-photo";
 import { FieldRow } from "@/components/scan/field-row";
+import { ReadAgain } from "@/components/scan/read-again";
 import { RecordPrint } from "@/components/scan/record-print";
 import { RecordSummary } from "@/components/scan/record-summary";
 import { SourceCrop } from "@/components/scan/source-crop";
@@ -32,6 +33,7 @@ export function ReviewWorkspace({
   photoUrl,
   onPhotoError,
   onSaved,
+  onReadAgain,
   preview = false,
 }: {
   scan: ScanResult;
@@ -39,6 +41,8 @@ export function ReviewWorkspace({
   onPhotoError?: () => void;
   /** Called after a successful save so the page can pick up the new scan status. */
   onSaved?: () => void;
+  /** Called after the server accepted a "Read again", so the page goes back to polling. */
+  onReadAgain?: () => void;
   /** Design preview on sample data: no request is made, and saving only pretends. */
   preview?: boolean;
 }) {
@@ -184,6 +188,8 @@ export function ReviewWorkspace({
 
   const summary = canPrint ? buildSummary(numbered, choices) : [];
 
+  const failedReadings = regions.reduce((sum, r) => sum + r.readings.filter((x) => x.error).length, 0);
+
   const pct = progress.total === 0 ? 0 : Math.round((progress.decided / progress.total) * 100);
 
   return (
@@ -218,6 +224,15 @@ export function ReviewWorkspace({
         </div>
 
         {loadProblem ? <p role="status" className="text-sm">{loadProblem}</p> : null}
+
+        {failedReadings > 0 && !preview && onReadAgain ? (
+          <div className="flex flex-col items-start gap-2 rounded-md border border-stamp p-3">
+            <p>
+              {failedReadings} {failedReadings === 1 ? "reading" : "readings"} failed. The fields they cover need your choice, or you can try them again.
+            </p>
+            <ReadAgain scanId={scan.scanId} label="Read the failed ones again" onStarted={onReadAgain} />
+          </div>
+        ) : null}
 
         {shown.map(({ region, n }) => (
           <RegionReview

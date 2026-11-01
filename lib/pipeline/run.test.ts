@@ -4,7 +4,7 @@ import type { ModelAdapters } from "@/lib/models/types";
 import type { JobStatus, Reading, Region } from "@/lib/schemas";
 import type { ScanRecord, ScanStore } from "@/lib/server/store";
 import { buildScanResult } from "@/lib/server/store";
-import { STALE_AFTER_MS, decideStart, runPipeline, type PipelineDeps } from "./run";
+import { STALE_AFTER_MS, decideRetry, decideStart, runPipeline, type PipelineDeps } from "./run";
 
 function fakeStore(scan: Partial<ScanRecord> = {}) {
   const state = {
@@ -254,5 +254,71 @@ describe("two readers", () => {
     await runPipeline("s1", deps(second.store, { createAdapters: counted, maxCalls: 8 }));
     expect(second.state.scan.status).toBe("failed");
     expect(second.state.scan.error).toMatch(/limit of 8 model calls/);
+  });
+});
+
+describe("decideRetry", () => {
+  const now = 1_000_000;
+  const scan = (status: JobStatus, ageMs = 0): ScanRecord => ({
+    id: "s1", status, imagePath: "s1.jpg", error: null, updatedAt: new Date(now - ageMs),
+  });
+  const good = [{ error: null }];
+  const bad = [{ error: null }, { error: "Baseten timed out" }];
+
+  it("retries a review that has a failed reading", () => expect(decideRetry(scan("needs_review"), bad, now)).toBe("retry"));
+  it("leaves a review with nothing failed alone", () => expect(decideRetry(scan("needs_review"), good, now)).toBe("noop"));
+  it("never reopens a finished review", () => expect(decideRetry(scan("done"), bad, now)).toBe("noop"));
+  it("retries a failed scan", () => expect(decideRetry(scan("failed"), [], now)).toBe("retry"));
+  it("ignores a second tap while the scan is running", () => expect(decideRetry(scan("reading", 5_000), bad, now)).toBe("noop"));
+  it("retries a scan that went quiet", () => expect(decideRetry(scan("reading", STALE_AFTER_MS + 1), bad, now)).toBe("retry"));
+  it("does nothing for an unknown scan", () => expect(decideRetry(null, [], now)).toBe("noop"));
+});
+
+describe("read again", () => {
+  it("re-reads only the failed reading and ends in needs_review with no failures left", async () => {
+    vi.stubEnv("MOCK_MODELS", "true");
+    const { state, store } = fakeStore();
+    const base = getModelAdapters();
+    let down = true;
+    const flaky: ModelAdapters = {
+      ...base,
+      readers: [
+        base.readers[0],
+        { id: "muse_spark_open", readRegion: async (i) => { if (down && i.kind === "table") throw new Error("Baseten timed out"); return base.readers[1].readRegion(i); } },
+      ],
+    };
+    await runPipeline("s1", deps(store, { createAdapters: () => flaky }));
+    expect([...state.readings.values()].filter((r) => r.error)).toHaveLength(1);
+
+    // What the resume route does: back to "reading", then the same pipeline.
+    down = false;
+    state.scan.status = "reading";
+    const calls: string[] = [];
+    const watched: ModelAdapters = {
+      ...base,
+      readers: [
+        { id: "muse_spark", readRegion: (i) => { calls.push(`${i.kind}:muse_spark`); return base.readers[0].readRegion(i); } },
+        { id: "muse_spark_open", readRegion: (i) => { calls.push(`${i.kind}:muse_spark_open`); return base.readers[1].readRegion(i); } },
+      ],
+    };
+    await runPipeline("s1", deps(store, { createAdapters: () => watched }));
+    expect(calls).toEqual(["table:muse_spark_open"]);
+    expect(state.scan.status).toBe("needs_review");
+    expect([...state.readings.values()].filter((r) => r.error)).toHaveLength(0);
+  });
+
+  it("a retry that fails again keeps the scan in review instead of failing it", async () => {
+    vi.stubEnv("MOCK_MODELS", "true");
+    const { state, store } = fakeStore();
+    const base = getModelAdapters();
+    const stillDown: ModelAdapters = {
+      ...base,
+      readers: [base.readers[0], { id: "muse_spark_open", readRegion: async (i) => { if (i.kind === "table") throw new Error("down"); return base.readers[1].readRegion(i); } }],
+    };
+    await runPipeline("s1", deps(store, { createAdapters: () => stillDown }));
+    state.scan.status = "reading";
+    await runPipeline("s1", deps(store, { createAdapters: () => stillDown }));
+    expect(state.scan.status).toBe("needs_review");
+    expect([...state.readings.values()].filter((r) => r.error)).toHaveLength(1);
   });
 });
