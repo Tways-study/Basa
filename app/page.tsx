@@ -1,5 +1,5 @@
 import Image from "next/image";
-import { Check, TriangleAlert } from "lucide-react";
+import { Check, Info, TriangleAlert } from "lucide-react";
 import { CaptureForm } from "@/components/capture/capture-form";
 import { OutboxList } from "@/components/capture/outbox-list";
 import { type Mark, Marks } from "@/components/scan/marks";
@@ -30,8 +30,9 @@ export default function Home() {
         <div className="flex flex-col gap-10">
           <div className="flex flex-col gap-5">
             {/* lang="fil" so a screen reader says the Filipino word the Filipino way. */}
-            <p className="font-display text-xl">
-              <span lang="fil" className="font-semibold">
+            {/* Quiet on purpose: the h1 below leads, and the header already carries the wordmark. */}
+            <p className="text-base text-muted-foreground">
+              <span lang="fil" className="font-semibold text-foreground">
                 Basa
               </span>
               <span aria-hidden="true"> · </span>
@@ -46,14 +47,13 @@ export default function Home() {
           </div>
 
           <div className="flex flex-col gap-3">
-            <p className="text-sm font-semibold tracking-wide uppercase">Step 1 of 3: photograph the page</p>
+            <p className="text-sm font-semibold tracking-wide uppercase">Step 1 of 3</p>
             <CaptureForm />
-            <a
-              href="#what-you-will-see"
-              className="inline-flex min-h-11 items-center self-start underline underline-offset-4"
-            >
-              What the green and amber marks mean
-            </a>
+            {/* The one safety rule sits where the action is, in full ink, not as a footnote. */}
+            <p className="flex items-start gap-2 text-sm">
+              <Info aria-hidden="true" className="mt-0.5 size-4 shrink-0" />
+              Demo build. Use sample charts only, never real patient records.
+            </p>
           </div>
           <OutboxList />
 
@@ -70,18 +70,20 @@ export default function Home() {
                   <div>
                     <h3 className="font-sans text-lg font-semibold">{step.title}</h3>
                     <p className="mt-0.5 max-w-[52ch] text-muted-foreground">{step.text}</p>
+                    {/* The colour key is explained under step 3, where the colours first matter. */}
+                    {i === STEPS.length - 1 ? (
+                      <a
+                        href="#what-you-will-see"
+                        className="inline-flex min-h-11 items-center underline underline-offset-4"
+                      >
+                        What the green and amber marks mean
+                      </a>
+                    ) : null}
                   </div>
                 </li>
               ))}
             </ol>
           </section>
-
-          <p className="max-w-[52ch] text-muted-foreground">
-            We are Filipino developers in the Philippines. <span lang="fil">Basa</span> is the Filipino word for
-            &ldquo;read&rdquo;: two readers go through the chart, then a person reads it against the photo and confirms.
-          </p>
-
-          <p className="text-sm text-muted-foreground">Demo build. Use sample charts only, never real patient records.</p>
         </div>
 
         {/* After the steps on a phone, beside them on a wide screen: the main action always comes first. */}
@@ -117,6 +119,12 @@ export default function Home() {
           </figcaption>
         </figure>
       </div>
+
+      {/* After the sample on a phone, so the page ends on what the person will see, not on the team note. */}
+      <p className="mt-12 max-w-[52ch] text-muted-foreground">
+        We are Filipino developers in the Philippines. <span lang="fil">Basa</span> is the Filipino word for
+        &ldquo;read&rdquo;: two readers go through the chart, then a person reads it against the photo and confirms.
+      </p>
     </main>
   );
 }

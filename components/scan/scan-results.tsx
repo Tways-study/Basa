@@ -11,7 +11,7 @@ import { ScanSkeleton } from "@/components/scan/scan-skeleton";
 import { StatusBadge } from "@/components/scan/status-badge";
 import { Button } from "@/components/ui/button";
 import { type ScanResult, ScanResultSchema } from "@/lib/schemas";
-import { PIPELINE_STEPS, describeStatus, isTerminal, nextPollDelay } from "@/lib/ui/scan-status";
+import { PIPELINE_STEPS, describeStatus, headingFor, isTerminal, nextPollDelay } from "@/lib/ui/scan-status";
 
 type LoadState =
   | { kind: "loading" }
@@ -121,7 +121,7 @@ export function ScanResults({ scanId }: { scanId: string }) {
   return (
     <div className="flex flex-col gap-6">
       <header className="flex flex-col gap-3 print:hidden">
-        <h1 className="text-4xl font-semibold tracking-tight">Scan results</h1>
+        <h1 className="text-4xl font-semibold tracking-tight">{headingFor(scan.status)}</h1>
         <div role="status" className="flex flex-wrap items-center gap-x-3 gap-y-2">
           <StatusBadge status={scan.status} />
           {/* The step is words, so the spinner is not the only sign of progress. Read out on each change. */}
