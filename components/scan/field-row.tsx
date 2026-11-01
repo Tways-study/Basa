@@ -115,7 +115,7 @@ export function FieldRow({
         <input
           type="text"
           aria-label={`Value for ${label}`}
-          className="min-h-11 rounded-md border bg-card px-3 font-mono text-base outline-none focus-visible:ring-2 focus-visible:ring-ring"
+          className="min-h-11 rounded-md border border-ink/60 bg-card px-3 font-mono text-base outline-none focus-visible:ring-2 focus-visible:ring-ring"
           value={draft}
           maxLength={500}
           onChange={(e) => {

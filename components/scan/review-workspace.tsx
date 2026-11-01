@@ -1,28 +1,22 @@
 "use client";
 
+import Link from "next/link";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { Check, CircleX, Loader2, Printer } from "lucide-react";
 import { z } from "zod";
 import { ChartPhoto, type Mark } from "@/components/scan/chart-photo";
 import { FieldRow } from "@/components/scan/field-row";
 import { RecordPrint } from "@/components/scan/record-print";
+import { RecordSummary } from "@/components/scan/record-summary";
 import { SourceCrop } from "@/components/scan/source-crop";
 import { useImageSize } from "@/components/scan/use-image-size";
 import { Button } from "@/components/ui/button";
-import { type ReaderId, type RegionKind, type ScanResult, ReviewsResponseSchema } from "@/lib/schemas";
+import { type ReaderId, type ScanResult, ReviewsResponseSchema } from "@/lib/schemas";
 import { buildPrintable } from "@/lib/ui/print-record";
 import { type Choices, attentionFirst, confirmAgreed, orderFields, progressOf } from "@/lib/ui/review-state";
+import { REGION_LABEL as KIND_LABEL, buildSummary } from "@/lib/ui/summary";
 
 type Region = ScanResult["regions"][number];
-
-const KIND_LABEL: Record<RegionKind, string> = {
-  header: "Header",
-  table: "Table",
-  handwriting: "Handwriting",
-  stamp: "Stamp",
-  printed: "Printed text",
-  signature: "Signature",
-};
 
 const ErrorBodySchema = z.object({ error: z.string() });
 
@@ -60,6 +54,8 @@ export function ReviewWorkspace({
   const [loadProblem, setLoadProblem] = useState<string | null>(null);
   // True while the screen holds answers that are not stored yet. A printed copy must match what is stored.
   const [dirty, setDirty] = useState(false);
+  // The region a summary line is pointing at (hover, focus or a tap), drawn heavier on the photo.
+  const [activeRegion, setActiveRegion] = useState<string | null>(null);
   // When the record was last stored, for the printed copy. Null until known.
   const [reviewedAt, setReviewedAt] = useState<string | null>(null);
   const size = useImageSize(photoUrl);
@@ -174,7 +170,7 @@ export function ReviewWorkspace({
     const flaggedOpen = r.fields.some((f) => f.status === "flagged" && !mine[f.key]);
     const allAgreedAndConfirmed = r.fields.length > 0 && r.fields.every((f) => f.status === "agreed" && mine[f.key]);
     const tone: Mark["tone"] = flaggedOpen ? "flag" : allAgreedAndConfirmed ? "verified" : "ink";
-    return { n: i + 1, box: r.bbox, tone };
+    return { n: i + 1, box: r.bbox, tone, active: r.id === activeRegion };
   });
 
   // Print only what is stored: every field decided, nothing changed since the last save.
@@ -185,6 +181,8 @@ export function ReviewWorkspace({
   // Region numbers come from reading order (the photo marks use them); only the render order changes.
   const numbered = regions.map((region, i) => ({ region, n: i + 1 }));
   const shown = attentionFirst(numbered, (x) => x.region);
+
+  const summary = canPrint ? buildSummary(numbered, choices) : [];
 
   const pct = progress.total === 0 ? 0 : Math.round((progress.decided / progress.total) * 100);
 
@@ -233,7 +231,14 @@ export function ReviewWorkspace({
           />
         ))}
 
-        {regions.length === 0 ? <p className="border-t pt-4 text-muted-foreground">No regions were found on this page.</p> : null}
+        {regions.length === 0 ? (
+          <div className="flex flex-col items-start gap-3 border-t pt-4">
+            <p className="text-muted-foreground">No regions were found on this page. Try a clearer photo with the whole chart in view.</p>
+            <Button asChild variant="outline">
+              <Link href="/">Photograph a chart</Link>
+            </Button>
+          </div>
+        ) : null}
 
         <div className="flex flex-col items-start gap-3 border-t pt-4">
           <Button size="lg" onClick={submit} disabled={!progress.complete || save.kind === "saving"}>
@@ -254,6 +259,7 @@ export function ReviewWorkspace({
           {!canPrint && progress.total > 0 ? (
             <p className="text-sm text-muted-foreground">A copy can be printed once the record is confirmed and saved.</p>
           ) : null}
+          {summary.length > 0 ? <RecordSummary lines={summary} onActive={setActiveRegion} /> : null}
           {save.kind === "saved" ? (
             <p role="status" className="flex items-start gap-2">
               <Check aria-hidden="true" className="mt-0.5 size-5 shrink-0 text-verified" />

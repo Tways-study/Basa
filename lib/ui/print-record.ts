@@ -12,6 +12,13 @@ export function printableValue(decision: Decision | undefined): string {
   return text === "" ? NOT_LEGIBLE : text;
 }
 
+/** The text a person reads for a field. "present" fields are stored as true or false and read as yes or no. */
+export function displayValue(key: string, decision: Decision | undefined): string {
+  const raw = printableValue(decision);
+  if (!key.endsWith(".present")) return raw;
+  return raw === "true" ? "yes" : raw === "false" ? "no" : raw;
+}
+
 export type PrintRow = { n: number; test: string; value: string; unit: string };
 export type PrintItem = { label: string; text: string };
 export type PrintSection = { n: number; kind: RegionKind; rows: PrintRow[]; items: PrintItem[] };
@@ -32,9 +39,7 @@ export function buildPrintable(regions: { region: RegionIn; n: number }[], choic
     const rowMap = new Map<number, PrintRow>();
     const items: PrintItem[] = [];
     for (const field of region.fields) {
-      const raw = printableValue(mine[field.key]);
-      // "present" fields are stored as true or false; a person reads yes or no.
-      const text = field.key.endsWith(".present") ? (raw === "true" ? "yes" : raw === "false" ? "no" : raw) : raw;
+      const text = displayValue(field.key, mine[field.key]);
       const m = ROW_KEY.exec(field.key);
       if (m) {
         const row = rowMap.get(Number(m[1])) ?? { n: Number(m[1]), test: NOT_CONFIRMED, value: NOT_CONFIRMED, unit: NOT_CONFIRMED };
