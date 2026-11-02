@@ -56,10 +56,11 @@
       "hard": false
     },
     {
-      "id": "gen-t02",
-      "file": "eval/fixtures/gen-t02.jpg",
+      "id": "screen-t02",
+      "file": "eval/fixtures/screen-t02.jpg",
       "split": "test",
-      "hard": false
+      "hard": false,
+      "truth": "eval/fixtures/gen-t02.json"
     },
     {
       "id": "gen-t03",
@@ -92,10 +93,11 @@
       "hard": false
     },
     {
-      "id": "gen-t08",
-      "file": "eval/fixtures/gen-t08.jpg",
+      "id": "screen-t08",
+      "file": "eval/fixtures/screen-t08.jpg",
       "split": "test",
-      "hard": true
+      "hard": true,
+      "truth": "eval/fixtures/gen-t08.json"
     },
     {
       "id": "gen-t09",
@@ -104,10 +106,11 @@
       "hard": true
     },
     {
-      "id": "gen-t10",
-      "file": "eval/fixtures/gen-t10.jpg",
+      "id": "screen-t10",
+      "file": "eval/fixtures/screen-t10.jpg",
       "split": "test",
-      "hard": true
+      "hard": true,
+      "truth": "eval/fixtures/gen-t10.json"
     },
     {
       "id": "gen-t11",
