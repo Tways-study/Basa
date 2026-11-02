@@ -17,6 +17,8 @@ export interface ScanRecord {
   status: JobStatus;
   imagePath: string | null;
   error: string | null;
+  /** When the scan was first stored, for the date shown on the results page. */
+  createdAt: Date;
   updatedAt: Date;
 }
 
@@ -59,6 +61,7 @@ export function createSupabaseStore(): ScanStore {
         status: JobStatusSchema.parse(data.status),
         imagePath: data.image_path,
         error: data.error,
+        createdAt: new Date(data.created_at),
         updatedAt: new Date(data.updated_at),
       };
     },
@@ -139,6 +142,7 @@ export function buildScanResult(
     scanId: scan.id,
     status: scan.status,
     error: scan.error,
+    createdAt: scan.createdAt.toISOString(),
     imageUrl,
     regions: regions.map((region) => {
       const own = readings.filter((r) => r.regionId === region.id);

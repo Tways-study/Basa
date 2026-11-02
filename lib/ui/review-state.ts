@@ -89,3 +89,13 @@ export function attentionFirst<T>(items: T[], region: (item: T) => RegionLike): 
   };
   return [...items.filter(needsPerson), ...items.filter((i) => !needsPerson(i))];
 }
+
+/**
+ * The order the review screen lists regions in: header regions first (they say whose chart this is, so
+ * a person reads them before the values), then the regions that need a person, then the rest. Like
+ * attentionFirst it depends only on reader status, so nothing jumps while a person answers.
+ */
+export function reviewOrder<T>(items: T[], region: (item: T) => RegionLike & { kind: string }): T[] {
+  const isHeader = (item: T) => region(item).kind === "header";
+  return [...items.filter(isHeader), ...attentionFirst(items.filter((i) => !isHeader(i)), region)];
+}

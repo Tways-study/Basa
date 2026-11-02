@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import { CircleX, WifiOff } from "lucide-react";
+import { Camera, CircleX, WifiOff } from "lucide-react";
 import { ChartPhoto } from "@/components/scan/chart-photo";
 import { ReadAgain } from "@/components/scan/read-again";
 import { RegionBlock } from "@/components/scan/region-block";
@@ -11,6 +11,7 @@ import { ScanSkeleton } from "@/components/scan/scan-skeleton";
 import { StatusBadge } from "@/components/scan/status-badge";
 import { Button } from "@/components/ui/button";
 import { type ScanResult, ScanResultSchema } from "@/lib/schemas";
+import { formatScanned } from "@/lib/ui/scan-date";
 import { PIPELINE_STEPS, describeStatus, headingFor, isTerminal, nextPollDelay } from "@/lib/ui/scan-status";
 
 type LoadState =
@@ -117,6 +118,7 @@ export function ScanResults({ scanId }: { scanId: string }) {
   const view = describeStatus(scan.status);
   // Reading order: top of the page first.
   const regions = [...scan.regions].sort((a, b) => a.bbox.y - b.bbox.y || a.bbox.x - b.bbox.x);
+  const scannedOn = formatScanned(scan.createdAt);
 
   return (
     <div className="flex flex-col gap-6">
@@ -130,11 +132,20 @@ export function ScanResults({ scanId }: { scanId: string }) {
             {view.detail}
           </p>
         </div>
-        {/* A person waiting has a way on, instead of only the small logo. */}
-        {!isTerminal(scan.status) ? (
-          <Link href="/" className="inline-flex min-h-11 items-center self-start underline underline-offset-4">
-            Photograph another chart
-          </Link>
+        {/* When this chart was scanned, so two scans of the same paper are not mixed up. Left out if the time is unknown. */}
+        {scannedOn ? (
+          <p className="text-muted-foreground">
+            Scanned <time dateTime={scan.createdAt}>{scannedOn}</time>
+          </p>
+        ) : null}
+        {/* A way to the next chart in every state, not only once the record is saved. Unconfirmed answers are kept on this device, so leaving mid-review loses nothing. */}
+        {scan.status !== "failed" ? (
+          <Button asChild variant="outline" className="self-start">
+            <Link href="/">
+              <Camera aria-hidden="true" />
+              Photograph another chart
+            </Link>
+          </Button>
         ) : null}
         {scan.status === "failed" ? (
           <p role="alert" className="flex max-w-xl items-start gap-2 rounded-md border border-stamp p-3">

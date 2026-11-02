@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useEffect, useMemo, useRef, useState } from "react";
-import { Camera, Check, CircleX, Loader2, Printer } from "lucide-react";
+import { Camera, Check, CircleX, Loader2, Printer, TriangleAlert } from "lucide-react";
 import { z } from "zod";
 import { ChartPhoto, type Mark } from "@/components/scan/chart-photo";
 import { FieldRow } from "@/components/scan/field-row";
@@ -15,7 +15,8 @@ import { Button } from "@/components/ui/button";
 import { type ReaderId, type ScanResult, ReviewsResponseSchema } from "@/lib/schemas";
 import { buildPrintable } from "@/lib/ui/print-record";
 import { clearDraft, loadDraft, saveDraft } from "@/lib/ui/review-draft";
-import { type Choices, attentionFirst, confirmAgreed, orderFields, progressOf } from "@/lib/ui/review-state";
+import { printWithCheck } from "@/lib/ui/print-check";
+import { type Choices, confirmAgreed, orderFields, progressOf, reviewOrder } from "@/lib/ui/review-state";
 import { REGION_LABEL as KIND_LABEL, buildSummary } from "@/lib/ui/summary";
 
 type Region = ScanResult["regions"][number];
@@ -78,6 +79,8 @@ export function ReviewWorkspace({
   const [activeRegion, setActiveRegion] = useState<string | null>(null);
   // When the record was last stored, for the printed copy. Null until known.
   const [reviewedAt, setReviewedAt] = useState<string | null>(null);
+  // True when the last tap on Print opened nothing (some phone browsers have a print that does nothing).
+  const [printMissed, setPrintMissed] = useState(false);
   const size = useImageSize(photoUrl);
   // What was last stored for each region, so Confirm sends only what changed and a retry after a
   // failure does not repeat regions that already saved.
@@ -216,7 +219,7 @@ export function ReviewWorkspace({
     : null;
   // Region numbers come from reading order (the photo marks use them); only the render order changes.
   const numbered = regions.map((region, i) => ({ region, n: i + 1 }));
-  const shown = attentionFirst(numbered, (x) => x.region);
+  const shown = reviewOrder(numbered, (x) => x.region);
 
   const summary = canPrint ? buildSummary(numbered, choices) : [];
 
@@ -307,10 +310,26 @@ export function ReviewWorkspace({
           {!progress.complete && progress.total > 0 ? (
             <p className="text-sm text-muted-foreground">Decide every field to confirm the record.</p>
           ) : null}
-          <Button variant="outline" onClick={() => window.print()} disabled={!canPrint}>
+          <Button
+            variant="outline"
+            onClick={async () => {
+              setPrintMissed(false);
+              setPrintMissed(!(await printWithCheck(window)));
+            }}
+            disabled={!canPrint}
+          >
             <Printer aria-hidden="true" />
             Print patient copy
           </Button>
+          {printMissed ? (
+            <p role="alert" className="flex items-start gap-2 rounded-md border border-flag p-3">
+              <TriangleAlert aria-hidden="true" className="mt-0.5 size-5 shrink-0" />
+              <span>
+                If no print window opened, this browser cannot print from here. Open this page in Chrome or Safari
+                and try again, or print it from a computer.
+              </span>
+            </p>
+          ) : null}
           {!canPrint && progress.total > 0 ? (
             <p className="text-sm text-muted-foreground">A copy can be printed once the record is confirmed and saved.</p>
           ) : null}
