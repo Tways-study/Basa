@@ -9,6 +9,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { describeItem } from "@/lib/outbox/policy";
 import type { OutboxItem } from "@/lib/outbox/types";
+import { formatScanned } from "@/lib/ui/scan-date";
 
 // Icon and word as well as colour, so a state never rests on colour alone.
 function ItemBadge({ item }: { item: OutboxItem }) {
@@ -29,8 +30,6 @@ function ItemBadge({ item }: { item: OutboxItem }) {
     </Badge>
   );
 }
-
-const timeOf = (at: number) => new Date(at).toLocaleTimeString([], { hour: "numeric", minute: "2-digit" });
 
 export function OutboxList() {
   const { items, online, unavailable, syncNow, retry, remove } = useOutbox();
@@ -79,7 +78,7 @@ export function OutboxList() {
               <li key={item.scanId} className="flex flex-col gap-2 border-b py-3">
                 <div className="flex flex-wrap items-center gap-x-3 gap-y-2">
                   <ItemBadge item={item} />
-                  <span className="text-sm text-muted-foreground">Photo taken {timeOf(item.createdAt)}</span>
+                  <span className="text-sm text-muted-foreground">Photo taken {formatScanned(item.createdAt)}</span>
                 </div>
                 <p>{view.detail}</p>
                 <div className="flex flex-wrap gap-2">

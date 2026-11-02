@@ -8,7 +8,7 @@ import { STALE_AFTER_MS, decideRetry, decideStart, runPipeline, type PipelineDep
 
 function fakeStore(scan: Partial<ScanRecord> = {}) {
   const state = {
-    scan: { id: "s1", status: "queued" as JobStatus, imagePath: "s1.jpg", error: null as string | null, updatedAt: new Date(), ...scan },
+    scan: { id: "s1", status: "queued" as JobStatus, imagePath: "s1.jpg", error: null as string | null, createdAt: new Date(0), updatedAt: new Date(), ...scan },
     regions: [] as Region[],
     readings: new Map<string, Reading>(),
     statuses: [] as JobStatus[],
@@ -147,7 +147,7 @@ describe("runPipeline (mock models)", () => {
 
 describe("decideStart", () => {
   const scan = (status: JobStatus, ageMs = 0): ScanRecord => ({
-    id: "s1", status, imagePath: "s1.jpg", error: null, updatedAt: new Date(1_000_000 - ageMs),
+    id: "s1", status, imagePath: "s1.jpg", error: null, createdAt: new Date(0), updatedAt: new Date(1_000_000 - ageMs),
   });
   const now = 1_000_000;
 
@@ -163,7 +163,7 @@ describe("decideStart", () => {
 
 describe("buildScanResult", () => {
   it("attaches each region's readings and drops the region id from them", () => {
-    const scan: ScanRecord = { id: "s1", status: "needs_review", imagePath: "s1.jpg", error: null, updatedAt: new Date() };
+    const scan: ScanRecord = { id: "s1", status: "needs_review", imagePath: "s1.jpg", error: null, createdAt: new Date(0), updatedAt: new Date() };
     const regions: Region[] = [{ id: "r1", scanId: "s1", kind: "stamp", bbox: { x: 0, y: 0, w: 1, h: 1 }, maskPath: null }];
     const readings: Reading[] = [{ regionId: "r1", model: "muse_spark", fields: { "stamp.present": true }, latencyMs: 5, error: null }];
     const result = buildScanResult(scan, regions, readings, "https://signed.example/x");
@@ -260,7 +260,7 @@ describe("two readers", () => {
 describe("decideRetry", () => {
   const now = 1_000_000;
   const scan = (status: JobStatus, ageMs = 0): ScanRecord => ({
-    id: "s1", status, imagePath: "s1.jpg", error: null, updatedAt: new Date(now - ageMs),
+    id: "s1", status, imagePath: "s1.jpg", error: null, createdAt: new Date(0), updatedAt: new Date(now - ageMs),
   });
   const good = [{ error: null }];
   const bad = [{ error: null }, { error: "Baseten timed out" }];

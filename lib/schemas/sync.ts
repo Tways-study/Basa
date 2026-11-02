@@ -22,6 +22,8 @@ export const ScanResultSchema = z.object({
   scanId: ScanIdSchema,
   status: JobStatusSchema,
   error: z.string().nullable(),
+  // When the scan was stored (ISO). Optional so older fixtures and replies still parse; added 2026-11-02 for the date shown on the results page.
+  createdAt: z.string().optional(),
   // Short-lived signed URL; the bucket is private.
   imageUrl: z.string().nullable(),
   regions: z.array(
