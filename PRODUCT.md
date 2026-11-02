@@ -45,10 +45,11 @@ The name is Basa. The team has committed to a paper-and-ink editorial direction,
 
 ## Evidence on Hand
 
-- Three synthetic fixtures with ground truth in `eval/fixtures/`: `smoke-chart-01`, `smoke-chart-02` (photo-like variant) and `hard-chart-01`.
+- Twenty synthetic charts with ground truth in `eval/fixtures/` (8 dev, 12 held-out, 8 hard); three held-out charts are phone photographs of a screen, not paper.
+- One held-out eval run (2026-11-02, 252 fields): the whole-image baseline left 4 wrong fields, Basa 3 after a person settles every flag, a gap inside run-to-run noise. Basa flagged 3 of the main reader's 6 errors, and 3 fields were agreed but wrong. Details in `docs/eval-results.md`.
 - Small real-model runs logged in `docs/new-work.md`: on `smoke-chart-02` both readers got 20 of 20 fields; on `hard-chart-01` the readers disagreed once in seven runs; a clipped box once made both readers agree on wrong text, which led to the 20% read margin.
 - One Production run (Mac, webcam) reached `needs_review` in about 14 s.
-- Absent, and not to be invented: a real phone photo, any held-out eval result, any user testing, any clinic, customer, pilot, testimonial or benchmark. The held-out eval (Phase 7) has not been run.
+- Absent, and not to be invented: any photo of real paper under clinic light as eval evidence (the three eval photos are of a screen), any user testing, any clinic, customer, pilot, testimonial or benchmark. The held-out eval (Phase 7) was run once and gave no clear accuracy win over the baseline; do not claim one.
 
 ## Product Principles
 
