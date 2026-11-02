@@ -39,7 +39,7 @@ Plain OCR does not solve this safely. It reads a messy chart confidently and som
 
 - **Faster review, focused attention.** Fields where both models agree are fast-confirm, so a person spends time only on the disagreements.
 - **Fewer wrong values reach the record.** The headline measure is the error catch rate: the share of wrong fields Basa flags for review. It is reported next to review burden, the share of correct fields flagged by mistake, so the gain is not bought by flagging everything.
-- **Claims backed by evidence.** Basa is scored against a single whole-image read on 20 held-out synthetic charts. The real numbers are published in `docs/eval-results.md`, including an honest result if Basa does not win.
+- **Claims backed by evidence.** Basa is scored against a single whole-image read on 12 held-out synthetic charts (3 of them phone photographs of a screen). The real numbers are published in `docs/eval-results.md`, and the honest result is that Basa did not clearly win on accuracy: it flagged half of the main reader's errors for a person, but the wrong values left after review were 3 against the baseline's 4 of 252 fields, a gap inside run-to-run noise.
 - **Built for the clinics paper still runs.** It works on a phone, at 360px wide, with unreliable connectivity, and with readable, high-contrast screens made for tired eyes in a bright clinic.
 
 ## How it works
@@ -90,7 +90,7 @@ The contract between model output, reconcile, the review screen, and the ground-
 
 ## How we prove it works
 
-Thirty synthetic charts (10 dev, 20 held-out test, 10 marked hard), scored against typed ground truth. Prompts are tuned on the dev set only; the held-out set is run once at the end for the final numbers.
+Twenty synthetic charts (8 dev, 12 held-out test, 8 marked hard), scored against typed ground truth. Prompts were tuned on the dev set only and frozen at commit `cdc18fb`; the held-out set was run once, on 2026-11-02, for the final numbers. Three held-out charts are phone photographs of a screen showing a generated chart (no printer was available), not of paper, so they say little about real paper under clinic light.
 
 | Condition | What runs |
 |---|---|
@@ -98,7 +98,7 @@ Thirty synthetic charts (10 dev, 20 held-out test, 10 marked hard), scored again
 | B. Segmented | SAM regions, one reader each |
 | C. Basa | SAM, two readers, reconcile and flag |
 
-Metrics: field accuracy, table row recall, hallucinated rows, **error catch rate** (the share of wrong fields Basa flags; the headline number), and review burden (the share of correct fields flagged by mistake). Results are written to `eval/results.json` and `docs/eval-results.md`. If condition C does not beat A, the honest result is documented.
+Metrics: field accuracy, table row recall, hallucinated rows, **error catch rate** (the share of wrong fields Basa flags; the headline number), and review burden (the share of correct fields flagged by mistake). Results are written to `eval/results.json` and `docs/eval-results.md`. If condition C does not beat A, the honest result is documented. Held-out result (one draw, 252 fields): fields right with no person involved A 248, B 246, C 239; wrong values left after a person settles every flagged field A 4, B 6, C 3; error catch rate 3 of 6; 3 fields agreed but wrong, which reconcile cannot catch. The value of Basa here is the flagging and the visible source, not higher raw accuracy.
 
 ## Stack
 
@@ -186,6 +186,8 @@ Paper-and-ink editorial, built for tired eyes in a bright clinic.
 ## Build plan
 
 The sequence lives in [`docs/BUILD_PLAN.md`](./docs/BUILD_PLAN.md); the rules live in [`CLAUDE.md`](./CLAUDE.md). A phase is finished only when every "Done when" line is true and it is logged in `docs/new-work.md`.
+
+**Status (Nov 2):** Phase 7 (eval) is closed. Prompts were frozen at `cdc18fb`, the 20% read margin was checked on three screen photos and kept, and the one held-out run was made (results in `docs/eval-results.md`, summary under How we prove it works). The Supabase test scans and images from the Nov 1 runs were cleared. Still open: the iOS Safari run for Phase 8, and the Phase 9 deploy checklist before submitting.
 
 **Status (Nov 1, night):** The phone test ran on a real phone on mobile data. Phase 3 (phone photo to a stored result, no secrets in traffic) and Phase 5 (review screen end to end, including the cited summary and printed patient copy) passed and are closed. Phase 6 (offline) failed first on the phone (saving the photo threw in a private tab, because WebKit will not store a Blob there), was fixed by storing the photo as raw bytes (PR #53), and then passed in full on the real phone: offline capture saves, sends by itself after reconnect, survives a closed tab, and the same photo sent twice makes one scan. Phases 3, 5 and 6 are closed. Reopening the address while offline fails by design (no service worker; out of scope). Also fixed: review answers not yet confirmed now survive a refresh (PR #52). 209 unit tests pass.
 

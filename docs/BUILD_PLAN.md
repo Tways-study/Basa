@@ -158,7 +158,7 @@ Done when
 
 ## Phase 8 — Hardening (Nov 1 to Nov 2) · T and A
 
-**Built (2026-11-01), real-phone and final checks open.** Done: the cited summary with photo highlight (PR #43), the resume endpoint and "Read again" buttons, error and 404 screens, one Playwright happy-path test on the sample-data review screen (option A, no database), the accessibility pass (text contrast, keyboard order, labels, dialog focus, reduced motion) and the secret scan (history, tree and the built client chunks: no key values and no secret names; no GSAP in the client chunks). The demo chart (`smoke-chart-02`) ran three times in a row against the real models and database: each reached `needs_review` in 17 to 26 s with 5 regions, 10 readings and no failed reading. Still open: the real-phone and iOS Safari runs, and Phase 7's held-out run before the Nov 3 noon freeze.
+**Built (2026-11-01), real-phone and final checks open.** Done: the cited summary with photo highlight (PR #43), the resume endpoint and "Read again" buttons, error and 404 screens, one Playwright happy-path test on the sample-data review screen (option A, no database), the accessibility pass (text contrast, keyboard order, labels, dialog focus, reduced motion) and the secret scan (history, tree and the built client chunks: no key values and no secret names; no GSAP in the client chunks). The demo chart (`smoke-chart-02`) ran three times in a row against the real models and database: each reached `needs_review` in 17 to 26 s with 5 regions, 10 readings and no failed reading. Still open: the iOS Safari run. Phase 7 closed on 2026-11-02 (see its section).
 
 Tasks
 1. Cited summary: deterministic template first. Every line cites its source region. No advice, no inference.
