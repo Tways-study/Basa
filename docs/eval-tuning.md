@@ -34,4 +34,4 @@ Three changes is the cap, so tuning stops here.
 
 ## Prompts as frozen for the held-out run
 
-Pending the freeze (before the Nov 3 noon freeze). At the time of writing the read prompt is the baseline prompt plus the one retry on a no-JSON answer. The commit hash and date go here when the freeze is made.
+Frozen on 2026-11-02. The read prompt is the baseline prompt plus the one retry on a no-JSON answer, from commit `cdc18fb` (the T4 run above). Checked on 2026-11-02 at `5bb50c5`: `git diff cdc18fb HEAD` shows no change to `lib/models/`, `eval/whole-image.ts`, `lib/pipeline/reconcile.ts`, `bbox.ts` or `crop.ts`, so the dev runs and the held-out run use the same prompts and read code. The read margin stays 0.2 (see the margin check in `docs/new-work.md`, 2026-11-02). No prompt or read-code edits after this point; the held-out run is made on the commit that carries this freeze.
