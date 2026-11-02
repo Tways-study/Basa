@@ -456,5 +456,680 @@
         ]
       }
     ]
+  },
+  "test": {
+    "generatedAt": "2026-11-02T13:41:19.366Z",
+    "split": "test",
+    "margin": 0.2,
+    "final": true,
+    "models": {
+      "spark": "muse-spark-1.3",
+      "open": "meta-models/muse-spark-open",
+      "sam": "sam-3.1"
+    },
+    "totals": {
+      "all": {
+        "charts": 12,
+        "calls": 159,
+        "a": {
+          "fields": 252,
+          "correct": 248,
+          "rows": 52,
+          "rowsRecalled": 52,
+          "hallucinatedRows": 0
+        },
+        "b": {
+          "fields": 252,
+          "correct": 246,
+          "rows": 52,
+          "rowsRecalled": 52,
+          "hallucinatedRows": 0
+        },
+        "c": {
+          "fields": 252,
+          "sparkCorrect": 246,
+          "sparkWrong": 6,
+          "caught": 3,
+          "falseFlags": 7,
+          "openCorrect": 239,
+          "agreed": 242,
+          "agreedCorrect": 239,
+          "agreedButWrong": 3,
+          "flagged": 10,
+          "missedByBoth": 0,
+          "rows": 52,
+          "rowsRecalled": 52,
+          "hallucinatedRows": 0
+        }
+      },
+      "hard": {
+        "charts": 5,
+        "calls": 68,
+        "a": {
+          "fields": 106,
+          "correct": 102,
+          "rows": 22,
+          "rowsRecalled": 22,
+          "hallucinatedRows": 0
+        },
+        "b": {
+          "fields": 106,
+          "correct": 101,
+          "rows": 22,
+          "rowsRecalled": 22,
+          "hallucinatedRows": 0
+        },
+        "c": {
+          "fields": 106,
+          "sparkCorrect": 101,
+          "sparkWrong": 5,
+          "caught": 3,
+          "falseFlags": 3,
+          "openCorrect": 98,
+          "agreed": 100,
+          "agreedCorrect": 98,
+          "agreedButWrong": 2,
+          "flagged": 6,
+          "missedByBoth": 0,
+          "rows": 22,
+          "rowsRecalled": 22,
+          "hallucinatedRows": 0
+        }
+      },
+      "easy": {
+        "charts": 7,
+        "calls": 91,
+        "a": {
+          "fields": 146,
+          "correct": 146,
+          "rows": 30,
+          "rowsRecalled": 30,
+          "hallucinatedRows": 0
+        },
+        "b": {
+          "fields": 146,
+          "correct": 145,
+          "rows": 30,
+          "rowsRecalled": 30,
+          "hallucinatedRows": 0
+        },
+        "c": {
+          "fields": 146,
+          "sparkCorrect": 145,
+          "sparkWrong": 1,
+          "caught": 0,
+          "falseFlags": 4,
+          "openCorrect": 141,
+          "agreed": 142,
+          "agreedCorrect": 141,
+          "agreedButWrong": 1,
+          "flagged": 4,
+          "missedByBoth": 0,
+          "rows": 30,
+          "rowsRecalled": 30,
+          "hallucinatedRows": 0
+        }
+      }
+    },
+    "charts": [
+      {
+        "id": "gen-t01",
+        "hard": false,
+        "calls": 13,
+        "errors": [],
+        "a": {
+          "fields": 20,
+          "correct": 20,
+          "rows": 4,
+          "rowsRecalled": 4,
+          "hallucinatedRows": 0
+        },
+        "b": {
+          "fields": 20,
+          "correct": 20,
+          "rows": 4,
+          "rowsRecalled": 4,
+          "hallucinatedRows": 0
+        },
+        "c": {
+          "fields": 20,
+          "sparkCorrect": 20,
+          "sparkWrong": 0,
+          "caught": 0,
+          "falseFlags": 1,
+          "openCorrect": 19,
+          "agreed": 19,
+          "agreedCorrect": 19,
+          "agreedButWrong": 0,
+          "flagged": 1,
+          "missedByBoth": 0,
+          "rows": 4,
+          "rowsRecalled": 4,
+          "hallucinatedRows": 0
+        },
+        "examples": [
+          {
+            "key": "row4.test",
+            "truth": "Creatinine",
+            "spark": "Creatinine",
+            "open": "Creatininine",
+            "status": "flagged",
+            "agreedCorrect": null
+          }
+        ]
+      },
+      {
+        "id": "screen-t02",
+        "hard": false,
+        "calls": 13,
+        "errors": [],
+        "a": {
+          "fields": 20,
+          "correct": 20,
+          "rows": 4,
+          "rowsRecalled": 4,
+          "hallucinatedRows": 0
+        },
+        "b": {
+          "fields": 20,
+          "correct": 20,
+          "rows": 4,
+          "rowsRecalled": 4,
+          "hallucinatedRows": 0
+        },
+        "c": {
+          "fields": 20,
+          "sparkCorrect": 20,
+          "sparkWrong": 0,
+          "caught": 0,
+          "falseFlags": 1,
+          "openCorrect": 19,
+          "agreed": 19,
+          "agreedCorrect": 19,
+          "agreedButWrong": 0,
+          "flagged": 1,
+          "missedByBoth": 0,
+          "rows": 4,
+          "rowsRecalled": 4,
+          "hallucinatedRows": 0
+        },
+        "examples": [
+          {
+            "key": "row2.test",
+            "truth": "Platelets",
+            "spark": "Platelets",
+            "open": "Platelelets",
+            "status": "flagged",
+            "agreedCorrect": null
+          }
+        ]
+      },
+      {
+        "id": "gen-t03",
+        "hard": false,
+        "calls": 13,
+        "errors": [],
+        "a": {
+          "fields": 23,
+          "correct": 23,
+          "rows": 5,
+          "rowsRecalled": 5,
+          "hallucinatedRows": 0
+        },
+        "b": {
+          "fields": 23,
+          "correct": 23,
+          "rows": 5,
+          "rowsRecalled": 5,
+          "hallucinatedRows": 0
+        },
+        "c": {
+          "fields": 23,
+          "sparkCorrect": 23,
+          "sparkWrong": 0,
+          "caught": 0,
+          "falseFlags": 1,
+          "openCorrect": 22,
+          "agreed": 22,
+          "agreedCorrect": 22,
+          "agreedButWrong": 0,
+          "flagged": 1,
+          "missedByBoth": 0,
+          "rows": 5,
+          "rowsRecalled": 5,
+          "hallucinatedRows": 0
+        },
+        "examples": [
+          {
+            "key": "row5.test",
+            "truth": "Creatinine",
+            "spark": "Creatinine",
+            "open": "Creatininine",
+            "status": "flagged",
+            "agreedCorrect": null
+          }
+        ]
+      },
+      {
+        "id": "gen-t04",
+        "hard": false,
+        "calls": 13,
+        "errors": [],
+        "a": {
+          "fields": 26,
+          "correct": 26,
+          "rows": 6,
+          "rowsRecalled": 6,
+          "hallucinatedRows": 0
+        },
+        "b": {
+          "fields": 26,
+          "correct": 25,
+          "rows": 6,
+          "rowsRecalled": 6,
+          "hallucinatedRows": 0
+        },
+        "c": {
+          "fields": 26,
+          "sparkCorrect": 25,
+          "sparkWrong": 1,
+          "caught": 0,
+          "falseFlags": 0,
+          "openCorrect": 25,
+          "agreed": 26,
+          "agreedCorrect": 25,
+          "agreedButWrong": 1,
+          "flagged": 0,
+          "missedByBoth": 0,
+          "rows": 6,
+          "rowsRecalled": 6,
+          "hallucinatedRows": 0
+        },
+        "examples": [
+          {
+            "key": "line1",
+            "truth": "Sample taken 11:40.",
+            "spark": "Sample taken 1 1:40.",
+            "open": "Sample taken 1 1:40.",
+            "status": "agreed",
+            "agreedCorrect": false
+          }
+        ]
+      },
+      {
+        "id": "gen-t05",
+        "hard": false,
+        "calls": 13,
+        "errors": [],
+        "a": {
+          "fields": 20,
+          "correct": 20,
+          "rows": 4,
+          "rowsRecalled": 4,
+          "hallucinatedRows": 0
+        },
+        "b": {
+          "fields": 20,
+          "correct": 20,
+          "rows": 4,
+          "rowsRecalled": 4,
+          "hallucinatedRows": 0
+        },
+        "c": {
+          "fields": 20,
+          "sparkCorrect": 20,
+          "sparkWrong": 0,
+          "caught": 0,
+          "falseFlags": 0,
+          "openCorrect": 20,
+          "agreed": 20,
+          "agreedCorrect": 20,
+          "agreedButWrong": 0,
+          "flagged": 0,
+          "missedByBoth": 0,
+          "rows": 4,
+          "rowsRecalled": 4,
+          "hallucinatedRows": 0
+        },
+        "examples": []
+      },
+      {
+        "id": "gen-t06",
+        "hard": false,
+        "calls": 13,
+        "errors": [],
+        "a": {
+          "fields": 20,
+          "correct": 20,
+          "rows": 4,
+          "rowsRecalled": 4,
+          "hallucinatedRows": 0
+        },
+        "b": {
+          "fields": 20,
+          "correct": 20,
+          "rows": 4,
+          "rowsRecalled": 4,
+          "hallucinatedRows": 0
+        },
+        "c": {
+          "fields": 20,
+          "sparkCorrect": 20,
+          "sparkWrong": 0,
+          "caught": 0,
+          "falseFlags": 1,
+          "openCorrect": 19,
+          "agreed": 19,
+          "agreedCorrect": 19,
+          "agreedButWrong": 0,
+          "flagged": 1,
+          "missedByBoth": 0,
+          "rows": 4,
+          "rowsRecalled": 4,
+          "hallucinatedRows": 0
+        },
+        "examples": [
+          {
+            "key": "row3.test",
+            "truth": "Creatinine",
+            "spark": "Creatinine",
+            "open": "Creatininine",
+            "status": "flagged",
+            "agreedCorrect": null
+          }
+        ]
+      },
+      {
+        "id": "gen-t07",
+        "hard": false,
+        "calls": 13,
+        "errors": [],
+        "a": {
+          "fields": 17,
+          "correct": 17,
+          "rows": 3,
+          "rowsRecalled": 3,
+          "hallucinatedRows": 0
+        },
+        "b": {
+          "fields": 17,
+          "correct": 17,
+          "rows": 3,
+          "rowsRecalled": 3,
+          "hallucinatedRows": 0
+        },
+        "c": {
+          "fields": 17,
+          "sparkCorrect": 17,
+          "sparkWrong": 0,
+          "caught": 0,
+          "falseFlags": 0,
+          "openCorrect": 17,
+          "agreed": 17,
+          "agreedCorrect": 17,
+          "agreedButWrong": 0,
+          "flagged": 0,
+          "missedByBoth": 0,
+          "rows": 3,
+          "rowsRecalled": 3,
+          "hallucinatedRows": 0
+        },
+        "examples": []
+      },
+      {
+        "id": "screen-t08",
+        "hard": true,
+        "calls": 13,
+        "errors": [],
+        "a": {
+          "fields": 23,
+          "correct": 22,
+          "rows": 5,
+          "rowsRecalled": 5,
+          "hallucinatedRows": 0
+        },
+        "b": {
+          "fields": 23,
+          "correct": 21,
+          "rows": 5,
+          "rowsRecalled": 5,
+          "hallucinatedRows": 0
+        },
+        "c": {
+          "fields": 23,
+          "sparkCorrect": 21,
+          "sparkWrong": 2,
+          "caught": 2,
+          "falseFlags": 0,
+          "openCorrect": 21,
+          "agreed": 21,
+          "agreedCorrect": 21,
+          "agreedButWrong": 0,
+          "flagged": 2,
+          "missedByBoth": 0,
+          "rows": 5,
+          "rowsRecalled": 5,
+          "hallucinatedRows": 0
+        },
+        "examples": [
+          {
+            "key": "line2",
+            "truth": "Lab B ext. 7611.",
+            "spark": "Lab r ext. 7611.",
+            "open": "Lab n ext. 7611.",
+            "status": "flagged",
+            "agreedCorrect": null
+          },
+          {
+            "key": "stamp.text",
+            "truth": "RECEIVED LAB DEPT 17 JUL",
+            "spark": null,
+            "open": null,
+            "status": "flagged",
+            "agreedCorrect": null
+          }
+        ]
+      },
+      {
+        "id": "gen-t09",
+        "hard": true,
+        "calls": 13,
+        "errors": [],
+        "a": {
+          "fields": 20,
+          "correct": 20,
+          "rows": 4,
+          "rowsRecalled": 4,
+          "hallucinatedRows": 0
+        },
+        "b": {
+          "fields": 20,
+          "correct": 20,
+          "rows": 4,
+          "rowsRecalled": 4,
+          "hallucinatedRows": 0
+        },
+        "c": {
+          "fields": 20,
+          "sparkCorrect": 20,
+          "sparkWrong": 0,
+          "caught": 0,
+          "falseFlags": 1,
+          "openCorrect": 19,
+          "agreed": 19,
+          "agreedCorrect": 19,
+          "agreedButWrong": 0,
+          "flagged": 1,
+          "missedByBoth": 0,
+          "rows": 4,
+          "rowsRecalled": 4,
+          "hallucinatedRows": 0
+        },
+        "examples": [
+          {
+            "key": "row4.test",
+            "truth": "Creatinine",
+            "spark": "Creatinine",
+            "open": "Creatininine",
+            "status": "flagged",
+            "agreedCorrect": null
+          }
+        ]
+      },
+      {
+        "id": "screen-t10",
+        "hard": true,
+        "calls": 14,
+        "errors": [],
+        "a": {
+          "fields": 23,
+          "correct": 22,
+          "rows": 5,
+          "rowsRecalled": 5,
+          "hallucinatedRows": 0
+        },
+        "b": {
+          "fields": 23,
+          "correct": 22,
+          "rows": 5,
+          "rowsRecalled": 5,
+          "hallucinatedRows": 0
+        },
+        "c": {
+          "fields": 23,
+          "sparkCorrect": 22,
+          "sparkWrong": 1,
+          "caught": 0,
+          "falseFlags": 1,
+          "openCorrect": 21,
+          "agreed": 22,
+          "agreedCorrect": 21,
+          "agreedButWrong": 1,
+          "flagged": 1,
+          "missedByBoth": 0,
+          "rows": 5,
+          "rowsRecalled": 5,
+          "hallucinatedRows": 0
+        },
+        "examples": [
+          {
+            "key": "line2",
+            "truth": "Sample taken 07:20.",
+            "spark": "Sample taken 0720.",
+            "open": "Sample taken 0720.",
+            "status": "agreed",
+            "agreedCorrect": false
+          },
+          {
+            "key": "stamp.text",
+            "truth": "RECEIVED LAB DEPT 22 JUL",
+            "spark": "RECEIVED LAB DEPT 22 JUL",
+            "open": null,
+            "status": "flagged",
+            "agreedCorrect": null
+          }
+        ]
+      },
+      {
+        "id": "gen-t11",
+        "hard": true,
+        "calls": 13,
+        "errors": [],
+        "a": {
+          "fields": 20,
+          "correct": 19,
+          "rows": 4,
+          "rowsRecalled": 4,
+          "hallucinatedRows": 0
+        },
+        "b": {
+          "fields": 20,
+          "correct": 19,
+          "rows": 4,
+          "rowsRecalled": 4,
+          "hallucinatedRows": 0
+        },
+        "c": {
+          "fields": 20,
+          "sparkCorrect": 19,
+          "sparkWrong": 1,
+          "caught": 1,
+          "falseFlags": 1,
+          "openCorrect": 18,
+          "agreed": 18,
+          "agreedCorrect": 18,
+          "agreedButWrong": 0,
+          "flagged": 2,
+          "missedByBoth": 0,
+          "rows": 4,
+          "rowsRecalled": 4,
+          "hallucinatedRows": 0
+        },
+        "examples": [
+          {
+            "key": "row3.test",
+            "truth": "Creatinine",
+            "spark": "Creatinine",
+            "open": "Creatininine",
+            "status": "flagged",
+            "agreedCorrect": null
+          },
+          {
+            "key": "line1",
+            "truth": "Sample taken 07:40, fasting.",
+            "spark": "Sample taken 08:10 07:40, fasting.",
+            "open": "Sample taken 08:10 07:40 fasting.",
+            "status": "flagged",
+            "agreedCorrect": null
+          }
+        ]
+      },
+      {
+        "id": "gen-t12",
+        "hard": true,
+        "calls": 15,
+        "errors": [],
+        "a": {
+          "fields": 20,
+          "correct": 19,
+          "rows": 4,
+          "rowsRecalled": 4,
+          "hallucinatedRows": 0
+        },
+        "b": {
+          "fields": 20,
+          "correct": 19,
+          "rows": 4,
+          "rowsRecalled": 4,
+          "hallucinatedRows": 0
+        },
+        "c": {
+          "fields": 20,
+          "sparkCorrect": 19,
+          "sparkWrong": 1,
+          "caught": 0,
+          "falseFlags": 0,
+          "openCorrect": 19,
+          "agreed": 20,
+          "agreedCorrect": 19,
+          "agreedButWrong": 1,
+          "flagged": 0,
+          "missedByBoth": 0,
+          "rows": 4,
+          "rowsRecalled": 4,
+          "hallucinatedRows": 0
+        },
+        "examples": [
+          {
+            "key": "line1",
+            "truth": "Form filed at front desk.",
+            "spark": "Form copied-filed at front desk.",
+            "open": "Form copied-filed at front desk.",
+            "status": "agreed",
+            "agreedCorrect": false
+          }
+        ]
+      }
+    ]
   }
 }
