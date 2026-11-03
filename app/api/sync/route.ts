@@ -7,8 +7,8 @@ import { MAX_UPLOAD_BYTES, ScanIdSchema, type SyncAccepted } from "@/lib/schemas
 import { createSupabaseStore } from "@/lib/server/store";
 import { downloadScanImage, imagePathFor, uploadScanImage } from "@/lib/server/storage";
 
-// Hobby allows up to 300 s. A healthy scan takes about 10-25 s, but on 2026-11-03 the Meta API was slow enough
-// (segmenting alone took over 30 s) that 60 s killed runs mid-read and left scans stuck on "reading".
+// Hobby allows up to 300 s. A healthy scan takes about 10-25 s, but on 2026-11-03 model calls hung (segmenting took
+// over 30 s, later a reading waited out a whole request timeout) and 60 s killed runs mid-read, leaving scans stuck on "reading".
 // The run gives up on its own at RUN_BUDGET_MS (100 s) and stores what is missing as failed readings.
 // A literal on purpose (Next reads it statically); keep it above RUN_BUDGET_MS and below STALE_AFTER_MS.
 export const maxDuration = 120;

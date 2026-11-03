@@ -62,6 +62,28 @@ describe("the run deadline in model calls", () => {
     expect(sleep).toHaveBeenCalledTimes(1);
   });
 
+  it("cuts off a request that hangs past its own timeout, then retries it", async () => {
+    // Make the per-request timeout 5 ms instead of 20 s; everything else is the real code path.
+    const realTimeout = AbortSignal.timeout.bind(AbortSignal);
+    const timeoutSpy = vi.spyOn(AbortSignal, "timeout").mockImplementation(() => realTimeout(5));
+    try {
+      const fetchImpl = vi
+        .fn()
+        .mockImplementationOnce(
+          (_url: unknown, init?: RequestInit) =>
+            new Promise<Response>((_, reject) => init?.signal?.addEventListener("abort", () => reject(new Error("timed out")), { once: true })),
+        )
+        .mockResolvedValueOnce(ok());
+      const sleep = vi.fn(async () => {});
+      // No run deadline here, so the timeout counts as a flaky call: it is retried and the second attempt answers.
+      await expect(chatCompletion(target, "p", image, { fetchImpl: asFetch(fetchImpl), sleep })).resolves.toBe("hello");
+      expect(fetchImpl).toHaveBeenCalledTimes(2);
+      expect(sleep).toHaveBeenCalledTimes(1);
+    } finally {
+      timeoutSpy.mockRestore();
+    }
+  });
+
   it("gives a request signal that follows the run deadline", () => {
     expect(requestSignal({}).aborted).toBe(false);
     const run = new AbortController();

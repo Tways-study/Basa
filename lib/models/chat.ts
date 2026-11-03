@@ -4,7 +4,10 @@ import { z } from "zod";
 // docs/models-notes.md ("Muse Spark (Meta API)" and "Muse Spark Open (Baseten)").
 
 const MAX_TOKENS = 1500; // reasoning counts toward this, so it needs headroom (measured 308 to 434 used)
-export const REQUEST_TIMEOUT_MS = 40_000;
+// Calls normally answer in 1 to 3 s (median 2.1 to 2.5 s, p90 under 6 s on the 2026-11-02 held-out run), but some
+// requests simply hang: on 2026-11-03 two Baseten calls each waited the whole timeout and then answered at once on
+// the retry. 20 s keeps a hung call from costing about 42 s (40 s + retry); three attempts still fit the run budget.
+export const REQUEST_TIMEOUT_MS = 20_000;
 const RETRY_DELAYS_MS = [600, 1800]; // bounded: two retries, then the reading fails
 
 export interface ChatOptions {

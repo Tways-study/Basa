@@ -35,3 +35,5 @@ Three changes is the cap, so tuning stops here.
 ## Prompts as frozen for the held-out run
 
 Frozen on 2026-11-02. The read prompt is the baseline prompt plus the one retry on a no-JSON answer, from commit `cdc18fb` (the T4 run above). Checked on 2026-11-02 at `5bb50c5`: `git diff cdc18fb HEAD` shows no change to `lib/models/`, `eval/whole-image.ts`, `lib/pipeline/reconcile.ts`, `bbox.ts` or `crop.ts`, so the dev runs and the held-out run use the same prompts and read code. The read margin stays 0.2 (see the margin check in `docs/new-work.md`, 2026-11-02). No prompt or read-code edits after this point; the held-out run is made on the commit that carries this freeze.
+
+After the held-out run (2026-11-03): only transport code changed (`lib/models/chat.ts`, `sam.ts`, `index.ts` and `lib/pipeline/run.ts`: a run deadline, one lane pool per reader, and the request timeout from 40 s to 20 s). The prompts (`reader.ts`), the readers, `reconcile.ts` and the whole-image prompt are unchanged since `cdc18fb`, so the held-out numbers still describe the same prompts and parsing. They were measured with a 40 s request timeout; a dev rerun would use 20 s.
