@@ -28,6 +28,11 @@ describe("describeStatus", () => {
     expect(describeStatus("reading").tone).toBe("progress");
   });
 
+  it("treats cancelled as final and neutral: the person's choice, not a failure", () => {
+    expect(describeStatus("cancelled").tone).toBe("progress");
+    expect(isTerminal("cancelled")).toBe(true);
+  });
+
   it("never uses an em-dash in copy", () => {
     for (const status of JobStatusSchema.options) {
       const { label, detail } = describeStatus(status);
@@ -67,9 +72,9 @@ describe("step", () => {
 });
 
 describe("isTerminal", () => {
-  it("stops polling only on needs_review, done and failed", () => {
+  it("stops polling only on needs_review, done, failed and cancelled", () => {
     const terminal = JobStatusSchema.options.filter(isTerminal);
-    expect(terminal).toEqual(["needs_review", "done", "failed"]);
+    expect(terminal).toEqual(["needs_review", "done", "failed", "cancelled"]);
   });
 });
 

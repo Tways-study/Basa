@@ -24,6 +24,8 @@ const VIEWS: Record<JobStatus, StatusView> = {
   needs_review: { label: "Needs a person", detail: "The readings are ready for someone to check.", tone: "flag", terminal: true, step: null },
   done: { label: "Done", detail: "Everything on this scan has been confirmed.", tone: "verified", terminal: true, step: null },
   failed: { label: "Failed", detail: "This scan could not be finished.", tone: "stamp", terminal: true, step: null },
+  // The person's own choice, not a fault, so it is not red. Outlined like the other states with no verdict.
+  cancelled: { label: "Cancelled", detail: "Reading was stopped. Nothing was saved to a record.", tone: "progress", terminal: true, step: null },
 };
 
 export function describeStatus(status: JobStatus): StatusView {
@@ -40,6 +42,7 @@ const HEADINGS: Record<JobStatus, string> = {
   needs_review: "Review the scan",
   done: "Record confirmed",
   failed: "Scan failed",
+  cancelled: "Scan cancelled",
 };
 
 export const headingFor = (status: JobStatus): string => HEADINGS[status];

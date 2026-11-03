@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { Camera, Check, CircleX, Loader2, Printer, TriangleAlert } from "lucide-react";
 import { z } from "zod";
+import { BackHome } from "@/components/scan/back-home";
 import { ChartPhoto, type Mark } from "@/components/scan/chart-photo";
 import { FieldRow } from "@/components/scan/field-row";
 import { ReadAgain } from "@/components/scan/read-again";
@@ -229,6 +230,10 @@ export function ReviewWorkspace({
 
   return (
     <>
+    {/* The first thing on the screen, so the way out is never 7,000px away. */}
+    <nav aria-label="Leave this scan" className="mb-6 print:hidden">
+      <BackHome dirty={dirty && save.kind !== "saved"} />
+    </nav>
     <div className="grid items-start gap-6 lg:grid-cols-[minmax(0,2fr)_minmax(0,3fr)] print:hidden">
       {photoUrl ? (
         <ChartPhoto url={photoUrl} onError={onPhotoError ?? (() => {})} marks={marks} />
@@ -346,15 +351,19 @@ export function ReviewWorkspace({
               <span>{save.message}</span>
             </p>
           ) : null}
-          {/* Only once everything is stored: a link away earlier would drop answers that are not saved yet. */}
-          {!dirty && (save.kind === "saved" || scan.status === "done") ? (
-            <Button asChild variant="outline">
-              <Link href="/">
-                <Camera aria-hidden="true" />
-                Photograph the next chart
-              </Link>
-            </Button>
-          ) : null}
+          {/* Always offered at the end. With unsaved answers "Back to home" asks first; the next-chart shortcut
+              waits until everything is stored, because a link away earlier would drop answers not saved yet. */}
+          <div className="flex flex-wrap gap-3 border-t pt-4">
+            <BackHome dirty={dirty && save.kind !== "saved"} />
+            {!dirty && (save.kind === "saved" || scan.status === "done") ? (
+              <Button asChild variant="outline">
+                <Link href="/">
+                  <Camera aria-hidden="true" />
+                  Photograph the next chart
+                </Link>
+              </Button>
+            ) : null}
+          </div>
         </div>
       </div>
     </div>

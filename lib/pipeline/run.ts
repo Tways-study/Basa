@@ -15,6 +15,9 @@ export const RUN_BUDGET_MS = 100_000;
 // A run that has not touched its scan for this long is treated as crashed and may be resumed. It must be
 // longer than maxDuration, so a run that is still alive is never resumed on top of itself.
 export const STALE_AFTER_MS = 150_000;
+// How often a running scan checks whether the person stopped it. The cancel request lands on another
+// server invocation, so the database is the only place the two meet. Model calls last seconds, so 2 s is quick enough.
+export const CANCEL_POLL_MS = 2_000;
 
 export interface PipelineDeps {
   store: ScanStore;
@@ -25,6 +28,8 @@ export interface PipelineDeps {
   maxCalls: number;
   /** Overrides RUN_BUDGET_MS. Only tests set it. */
   budgetMs?: number;
+  /** Overrides CANCEL_POLL_MS. Only tests set it. */
+  cancelPollMs?: number;
 }
 
 export type StartDecision = "start" | "resume" | "noop";
@@ -35,7 +40,7 @@ export type StartDecision = "start" | "resume" | "noop";
  */
 export function decideStart(scan: ScanRecord | null, now = Date.now()): StartDecision {
   if (!scan) return "start";
-  if (scan.status === "needs_review" || scan.status === "done") return "noop";
+  if (scan.status === "needs_review" || scan.status === "done" || scan.status === "cancelled") return "noop";
   if (scan.status === "failed") return "resume";
   return now - scan.updatedAt.getTime() > STALE_AFTER_MS ? "resume" : "noop";
 }
@@ -50,7 +55,7 @@ export type RetryDecision = "retry" | "noop";
 export function decideRetry(scan: ScanRecord | null, readings: Pick<Reading, "error">[], now = Date.now()): RetryDecision {
   if (!scan) return "noop";
   if (scan.status === "failed") return "retry";
-  if (scan.status === "done") return "noop";
+  if (scan.status === "done" || scan.status === "cancelled") return "noop";
   if (scan.status === "needs_review") return readings.some((r) => r.error) ? "retry" : "noop";
   return now - scan.updatedAt.getTime() > STALE_AFTER_MS ? "retry" : "noop";
 }
@@ -77,22 +82,37 @@ async function pool<T, R>(items: T[], limit: number, worker: (item: T) => Promis
  */
 export async function runPipeline(scanId: string, deps: PipelineDeps): Promise<void> {
   const { store } = deps;
+  let watcher: ReturnType<typeof setInterval> | undefined;
   try {
     const scan = await store.getScan(scanId);
     if (!scan) throw new Error("Scan not found");
     if (!scan.imagePath) throw new Error("Scan has no stored image");
-    if (scan.status === "needs_review" || scan.status === "done") return;
+    if (scan.status === "needs_review" || scan.status === "done" || scan.status === "cancelled") return;
 
     const budget = new CallBudget(deps.maxCalls);
     // One deadline for the whole run: every model call stops when it fires.
     const deadline = AbortSignal.timeout(deps.budgetMs ?? RUN_BUDGET_MS);
-    const adapters = deps.createAdapters(() => budget.take(), deadline);
+    // A person pressing "Cancel scanning" also cuts the in-flight calls, through the same signal.
+    const cancel = new AbortController();
+    watcher = setInterval(() => {
+      store.getScan(scanId).then(
+        (latest) => {
+          if (latest?.status === "cancelled") cancel.abort();
+        },
+        // A missed check only delays the stop by one tick, so note it and carry on.
+        (err) => console.warn("cancel check failed:", err instanceof Error ? err.message : "unknown error"),
+      );
+    }, deps.cancelPollMs ?? CANCEL_POLL_MS);
+    // The authoritative check: the flag may lag the database by one tick, so ask the database at stage edges.
+    const wasCancelled = async () => cancel.signal.aborted || (await store.getScan(scanId))?.status === "cancelled";
+    const adapters = deps.createAdapters(() => budget.take(), AbortSignal.any([deadline, cancel.signal]));
     const image = await deps.loadImage(scan.imagePath);
 
     let regions = await store.getRegions(scanId);
     if (regions.length === 0) {
       await store.setStatus(scanId, "segmenting");
       const proposed = await adapters.segmenter.segment(image);
+      if (await wasCancelled()) return;
       if (proposed.length === 0) throw new Error("No regions were found on this chart");
       regions = await store.insertRegions(scanId, proposed);
     }
@@ -115,7 +135,7 @@ export async function runPipeline(scanId: string, deps: PipelineDeps): Promise<v
 
     let stopped: BudgetExceededError | null = null;
     const readOne = async ({ region, reader }: ReadTask): Promise<Reading | null> => {
-      if (stopped) return null;
+      if (stopped || cancel.signal.aborted) return null;
       try {
         // Past the deadline nothing new starts. The gap is stored as a failed reading, so it shows on the
         // review screen and a "read again" redoes it, instead of the platform killing the run mid-way.
@@ -128,6 +148,8 @@ export async function runPipeline(scanId: string, deps: PipelineDeps): Promise<v
           stopped = err;
           return null;
         }
+        // Cut off because the person cancelled: not a failed reading, so store nothing.
+        if (cancel.signal.aborted) return null;
         // One bad region or reader must not sink the scan: keep the failure as that reading.
         const message = err instanceof Error ? err.message : "Reading failed";
         // Our own message only (it never holds a key, URL or header), so the runtime log says who stalled.
@@ -144,6 +166,7 @@ export async function runPipeline(scanId: string, deps: PipelineDeps): Promise<v
     await Promise.all(adapters.readers.map((reader) => pool(todo.filter((task) => task.reader === reader), lanes, readOne)));
     if (deadline.aborted) console.warn("run deadline reached: unfinished readings were stored as failed");
 
+    if (await wasCancelled()) return;
     if (stopped) throw stopped;
     // Judge by every stored reading, not only this run's: a retry that re-fails its few readings must not
     // turn a scan that still has good readings into a failed one.
@@ -161,6 +184,9 @@ export async function runPipeline(scanId: string, deps: PipelineDeps): Promise<v
     await store.setStatus(scanId, "needs_review");
   } catch (err) {
     const message = err instanceof Error ? err.message : "Processing failed";
+    // A cancelled scan stays cancelled (setStatus also refuses to overwrite it).
     await store.setStatus(scanId, "failed", message);
+  } finally {
+    clearInterval(watcher);
   }
 }

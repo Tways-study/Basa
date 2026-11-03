@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { Camera, CircleX, WifiOff } from "lucide-react";
+import { CancelScan } from "@/components/scan/cancel-scan";
 import { ChartPhoto } from "@/components/scan/chart-photo";
 import { ReadAgain } from "@/components/scan/read-again";
 import { RegionBlock } from "@/components/scan/region-block";
@@ -164,13 +165,28 @@ export function ScanResults({ scanId }: { scanId: string }) {
           </p>
         ) : null}
         {/* A way to the next chart in every state, not only once the record is saved. Unconfirmed answers are kept on this device, so leaving mid-review loses nothing. */}
-        {scan.status !== "failed" ? (
-          <Button asChild variant="outline" className="self-start">
-            <Link href="/">
-              <Camera aria-hidden="true" />
-              Photograph another chart
-            </Link>
-          </Button>
+        {/* While it is being read: stop it, or leave it running and go home. Once there is something to review the
+            review screen has its own Back to home, at the top and the bottom. */}
+        {!isTerminal(scan.status) ? (
+          <div className="flex flex-wrap items-start gap-3">
+            <CancelScan scanId={scan.scanId} onCancelled={refresh} />
+            <Button asChild variant="outline">
+              <Link href="/">
+                <Camera aria-hidden="true" />
+                Photograph another chart
+              </Link>
+            </Button>
+          </div>
+        ) : null}
+        {scan.status === "cancelled" ? (
+          <div className="flex flex-wrap items-start gap-3">
+            <Button asChild>
+              <Link href="/">
+                <Camera aria-hidden="true" />
+                Photograph a chart
+              </Link>
+            </Button>
+          </div>
         ) : null}
         {scan.status === "failed" ? (
           <p role="alert" className="flex max-w-xl items-start gap-2 rounded-md border border-stamp p-3">
@@ -217,7 +233,8 @@ export function ScanResults({ scanId }: { scanId: string }) {
         )}
 
         <div className="flex flex-col gap-6">
-          {regions.length > 0 ? (
+          {/* A stopped scan keeps no readings on screen: half a read would look like a result. */}
+          {scan.status === "cancelled" ? null : regions.length > 0 ? (
             regions.map((region) => <RegionBlock key={region.id} region={region} />)
           ) : (
             <p className="border-t pt-4 text-muted-foreground">
@@ -228,7 +245,7 @@ export function ScanResults({ scanId }: { scanId: string }) {
       </div>
       )}
 
-      {scan.status !== "done" ? (
+      {scan.status !== "done" && scan.status !== "cancelled" ? (
         <p className="max-w-[60ch] border-t pt-4 text-sm text-muted-foreground print:hidden">
           These readings are unverified. Nothing is confirmed until a person reviews it.
         </p>
