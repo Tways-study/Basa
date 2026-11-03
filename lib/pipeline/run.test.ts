@@ -1,5 +1,6 @@
 import { describe, expect, it, vi } from "vitest";
 import { getModelAdapters } from "@/lib/models";
+import { DeadlineError } from "@/lib/models/chat";
 import type { ModelAdapters } from "@/lib/models/types";
 import type { JobStatus, Reading, Region } from "@/lib/schemas";
 import type { ScanRecord, ScanStore } from "@/lib/server/store";
@@ -320,5 +321,86 @@ describe("read again", () => {
     await runPipeline("s1", deps(store, { createAdapters: () => stillDown }));
     expect(state.scan.status).toBe("needs_review");
     expect([...state.readings.values()].filter((r) => r.error)).toHaveLength(1);
+  });
+});
+
+describe("run deadline", () => {
+  // A reader that, like the real adapters, gives up when the run's deadline fires.
+  const hangsUntilDeadline = (id: ModelAdapters["readers"][number]["id"], signal: AbortSignal) => ({
+    id,
+    readRegion: () =>
+      new Promise<never>((_, reject) => {
+        if (signal.aborted) return reject(new DeadlineError());
+        signal.addEventListener("abort", () => reject(new DeadlineError()), { once: true });
+      }),
+  });
+
+  it("a reader that hangs cannot stop the other reader, and the scan still reaches review", async () => {
+    vi.stubEnv("MOCK_MODELS", "true");
+    const warn = vi.spyOn(console, "warn").mockImplementation(() => {});
+    const { state, store } = fakeStore();
+    const base = getModelAdapters();
+    await runPipeline(
+      "s1",
+      deps(store, {
+        budgetMs: 40,
+        createAdapters: (_onRequest, signal) => ({ ...base, readers: [hangsUntilDeadline("muse_spark", signal), base.readers[1]] }),
+      }),
+    );
+    // The 2026-11-03 production failure: Muse Spark hung, and Muse Spark Open never got to read the later regions.
+    expect(state.scan.status).toBe("needs_review");
+    const all = [...state.readings.values()];
+    const open = all.filter((r) => r.model === "muse_spark_open");
+    expect(open).toHaveLength(4); // every region, including the last ones
+    expect(open.every((r) => !r.error)).toBe(true);
+    const spark = all.filter((r) => r.model === "muse_spark");
+    expect(spark).toHaveLength(4); // none left missing: each is stored as a failed reading
+    expect(spark.every((r) => /ran out of time/i.test(r.error ?? ""))).toBe(true);
+    // The runtime log says which reader stalled, without any key or URL.
+    expect(warn).toHaveBeenCalledWith(expect.stringMatching(/^reading failed: \w+ by muse_spark: Ran out of time/));
+    warn.mockRestore();
+  });
+
+  it("work that has not started when the deadline passes is stored as failed, not left missing", async () => {
+    vi.stubEnv("MOCK_MODELS", "true");
+    const warn = vi.spyOn(console, "warn").mockImplementation(() => {});
+    const { state, store } = fakeStore();
+    const base = getModelAdapters();
+    const slowSegmenter = {
+      segment: async (image: Uint8Array) => {
+        await new Promise((resolve) => setTimeout(resolve, 30));
+        return base.segmenter.segment(image);
+      },
+    };
+    await runPipeline("s1", deps(store, { budgetMs: 1, createAdapters: () => ({ ...base, segmenter: slowSegmenter }) }));
+    expect(state.readings.size).toBe(8); // 4 regions x 2 readers, all recorded
+    expect([...state.readings.values()].every((r) => /ran out of time/i.test(r.error ?? ""))).toBe(true);
+    // Nothing could be read, so the scan fails with a clear message instead of staying on "reading".
+    expect(state.scan.status).toBe("failed");
+    expect(state.scan.error).toMatch(/No region could be read/);
+    warn.mockRestore();
+  });
+
+  it("reading again after a deadline redoes only the readings that ran out of time", async () => {
+    vi.stubEnv("MOCK_MODELS", "true");
+    const warn = vi.spyOn(console, "warn").mockImplementation(() => {});
+    const { state, store } = fakeStore();
+    const base = getModelAdapters();
+    await runPipeline(
+      "s1",
+      deps(store, {
+        budgetMs: 40,
+        createAdapters: (_onRequest, signal) => ({ ...base, readers: [hangsUntilDeadline("muse_spark", signal), base.readers[1]] }),
+      }),
+    );
+    const openBefore = [...state.readings.values()].filter((r) => r.model === "muse_spark_open");
+    state.scan.status = "reading"; // what the resume route does before it runs the pipeline again
+    await runPipeline("s1", deps(store)); // a fresh run has a fresh deadline and healthy models
+    expect(state.scan.status).toBe("needs_review");
+    expect([...state.readings.values()].filter((r) => r.error)).toHaveLength(0);
+    expect(state.readings.size).toBe(8);
+    // The good Muse Spark Open readings were kept as they were.
+    for (const before of openBefore) expect(state.readings.get(`${before.regionId}:muse_spark_open`)).toBe(before);
+    warn.mockRestore();
   });
 });

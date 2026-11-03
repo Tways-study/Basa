@@ -8,7 +8,8 @@ import { createSupabaseStore } from "@/lib/server/store";
 import { downloadScanImage } from "@/lib/server/storage";
 
 // Same limit as the sync route: the run goes on after the response and each stage is saved.
-export const maxDuration = 60;
+// A literal on purpose (Next reads it statically); keep it above RUN_BUDGET_MS and below STALE_AFTER_MS.
+export const maxDuration = 120;
 
 const json = (body: unknown, status: number) => Response.json(body, { status });
 
@@ -36,7 +37,7 @@ export async function POST(_request: Request, ctx: { params: Promise<{ id: strin
     after(() =>
       runPipeline(id.data, {
         store,
-        createAdapters: (onRequest) => getModelAdapters({ onRequest }),
+        createAdapters: (onRequest, signal) => getModelAdapters({ onRequest, signal }),
         loadImage: downloadScanImage,
         crop: cropRegion,
         maxCalls: MAX_MODEL_CALLS_PER_SCAN,

@@ -12,12 +12,15 @@ import { StatusBadge } from "@/components/scan/status-badge";
 import { Button } from "@/components/ui/button";
 import { type ScanResult, ScanResultSchema } from "@/lib/schemas";
 import { formatScanned } from "@/lib/ui/scan-date";
-import { PIPELINE_STEPS, describeStatus, headingFor, isTerminal, nextPollDelay } from "@/lib/ui/scan-status";
+import { PIPELINE_STEPS, describeStatus, headingFor, isStalled, isTerminal, nextPollDelay, progressKey } from "@/lib/ui/scan-status";
 
 type LoadState =
   | { kind: "loading" }
   | { kind: "ready"; scan: ScanResult }
   | { kind: "problem"; title: string; detail: string };
+
+// How often the page re-checks whether a scan has stopped moving. It only reads the clock; no request is made.
+const STALL_CHECK_MS = 10_000;
 
 export function ScanResults({ scanId }: { scanId: string }) {
   const [state, setState] = useState<LoadState>({ kind: "loading" });
@@ -26,6 +29,9 @@ export function ScanResults({ scanId }: { scanId: string }) {
   // every two seconds; swap it only if the image stops loading (the URL lasts an hour).
   const [photoUrl, setPhotoUrl] = useState<string | null>(null);
   const [attempt, setAttempt] = useState(0);
+  // When the scan last showed progress, so a run that died (and left the status as it was) is noticed.
+  const [progress, setProgress] = useState<{ key: string; at: number } | null>(null);
+  const [now, setNow] = useState(0);
 
   useEffect(() => {
     const controller = new AbortController();
@@ -57,6 +63,10 @@ export function ScanResults({ scanId }: { scanId: string }) {
 
         failures = 0;
         setOffline(false);
+        const key = progressKey(parsed.data);
+        const at = Date.now();
+        setProgress((prev) => (prev?.key === key ? prev : { key, at }));
+        setNow(at);
         setState({ kind: "ready", scan: parsed.data });
         setPhotoUrl((current) => current ?? parsed.data.imageUrl);
         if (isTerminal(parsed.data.status)) return;
@@ -76,9 +86,23 @@ export function ScanResults({ scanId }: { scanId: string }) {
     };
   }, [scanId, attempt]);
 
+  // While a scan is being worked on, keep the clock moving so a stall shows up even when polls change nothing.
+  const working = state.kind === "ready" && !isTerminal(state.scan.status);
+  useEffect(() => {
+    if (!working) return;
+    const id = setInterval(() => setNow(Date.now()), STALL_CHECK_MS);
+    return () => clearInterval(id);
+  }, [working]);
+
   // Re-reads the scan without the loading screen, so a saved review updates the status badge in place.
   function refresh() {
     setAttempt((n) => n + 1);
+  }
+
+  // "Try reading again" on a stalled scan: forget the old baseline so the notice goes away until it stalls again.
+  function restarted() {
+    setProgress(null);
+    refresh();
   }
 
   function retry() {
@@ -119,6 +143,7 @@ export function ScanResults({ scanId }: { scanId: string }) {
   // Reading order: top of the page first.
   const regions = [...scan.regions].sort((a, b) => a.bbox.y - b.bbox.y || a.bbox.x - b.bbox.x);
   const scannedOn = formatScanned(scan.createdAt);
+  const stalled = progress !== null && isStalled(scan.status, progress.at, now);
 
   return (
     <div className="flex flex-col gap-6">
@@ -160,6 +185,17 @@ export function ScanResults({ scanId }: { scanId: string }) {
               <Link href="/">Photograph the chart again</Link>
             </Button>
           </div>
+        ) : null}
+        {stalled ? (
+          <>
+            <p role="alert" className="flex max-w-xl items-start gap-2 rounded-md border border-stamp p-3">
+              <CircleX aria-hidden="true" className="mt-0.5 size-5 shrink-0 text-stamp" />
+              <span>This scan stopped before it finished. Nothing was lost: reading again redoes only what is missing.</span>
+            </p>
+            <div className="flex flex-wrap items-start gap-3">
+              <ReadAgain scanId={scan.scanId} label="Try reading again" onStarted={restarted} />
+            </div>
+          </>
         ) : null}
         {offline ? <ConnectionNote /> : null}
       </header>

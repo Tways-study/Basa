@@ -7,8 +7,11 @@ import { MAX_UPLOAD_BYTES, ScanIdSchema, type SyncAccepted } from "@/lib/schemas
 import { createSupabaseStore } from "@/lib/server/store";
 import { downloadScanImage, imagePathFor, uploadScanImage } from "@/lib/server/storage";
 
-// Hobby allows up to 300 s. A scan takes about 10-15 s; 60 s leaves room without letting a stuck call run for minutes.
-export const maxDuration = 60;
+// Hobby allows up to 300 s. A healthy scan takes about 10-25 s, but on 2026-11-03 the Meta API was slow enough
+// (segmenting alone took over 30 s) that 60 s killed runs mid-read and left scans stuck on "reading".
+// The run gives up on its own at RUN_BUDGET_MS (100 s) and stores what is missing as failed readings.
+// A literal on purpose (Next reads it statically); keep it above RUN_BUDGET_MS and below STALE_AFTER_MS.
+export const maxDuration = 120;
 
 const json = (body: unknown, status: number) => Response.json(body, { status });
 
@@ -55,7 +58,7 @@ export async function POST(request: Request) {
     after(() =>
       runPipeline(scanId.data, {
         store,
-        createAdapters: (onRequest) => getModelAdapters({ onRequest }),
+        createAdapters: (onRequest, signal) => getModelAdapters({ onRequest, signal }),
         loadImage: downloadScanImage,
         crop: cropRegion,
         maxCalls: MAX_MODEL_CALLS_PER_SCAN,

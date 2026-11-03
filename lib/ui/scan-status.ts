@@ -1,4 +1,4 @@
-import type { JobStatus } from "@/lib/schemas";
+import type { JobStatus, ScanResult } from "@/lib/schemas";
 
 export type StatusTone = "progress" | "verified" | "flag" | "stamp";
 
@@ -45,6 +45,26 @@ const HEADINGS: Record<JobStatus, string> = {
 export const headingFor = (status: JobStatus): string => HEADINGS[status];
 
 export const isTerminal = (status: JobStatus): boolean => VIEWS[status].terminal;
+
+// How long a scan may sit unchanged before the page offers "Try reading again". Longer than the server's
+// STALE_AFTER_MS (150 s, in lib/pipeline/run.ts, which this client file must not import), so by the time
+// the button shows, the server agrees the run is gone and a retry is accepted.
+export const STALL_AFTER_MS = 160_000;
+
+/** Changes whenever a poll shows progress: a new status, new regions, or another reading stored. */
+export function progressKey(scan: Pick<ScanResult, "status" | "regions">): string {
+  const readings = scan.regions.reduce((n, region) => n + region.readings.length, 0);
+  return `${scan.status}:${scan.regions.length}:${readings}`;
+}
+
+/**
+ * True when a scan that is still being worked on has shown no change (status or readings) for too long.
+ * A run that crashes or is killed leaves the status as it was, so without this the page spins forever.
+ */
+export function isStalled(status: JobStatus, lastChangeAt: number, now: number): boolean {
+  if (isTerminal(status)) return false;
+  return now - lastChangeAt >= STALL_AFTER_MS;
+}
 
 export const POLL_INTERVAL_MS = 2000;
 const MAX_POLL_DELAY_MS = 10_000;

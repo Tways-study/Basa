@@ -1,6 +1,16 @@
 import { describe, expect, it } from "vitest";
 import { JobStatusSchema } from "@/lib/schemas";
-import { describeStatus, headingFor, isTerminal, nextPollDelay, PIPELINE_STEPS, POLL_INTERVAL_MS } from "./scan-status";
+import {
+  describeStatus,
+  headingFor,
+  isStalled,
+  isTerminal,
+  nextPollDelay,
+  PIPELINE_STEPS,
+  POLL_INTERVAL_MS,
+  progressKey,
+  STALL_AFTER_MS,
+} from "./scan-status";
 
 describe("describeStatus", () => {
   it("has a view for every job status", () => {
@@ -73,5 +83,35 @@ describe("nextPollDelay", () => {
     expect(nextPollDelay(2)).toBe(8000);
     expect(nextPollDelay(3)).toBe(10_000);
     expect(nextPollDelay(20)).toBe(10_000);
+  });
+});
+
+describe("stalled scans", () => {
+  it("only a scan that is still being worked on can stall, and only after the delay", () => {
+    for (const status of ["queued", "segmenting", "reading", "reconciling"] as const) {
+      expect(isStalled(status, 0, STALL_AFTER_MS - 1)).toBe(false);
+      expect(isStalled(status, 0, STALL_AFTER_MS)).toBe(true);
+    }
+  });
+
+  it("a finished, reviewed or failed scan never counts as stalled", () => {
+    for (const status of ["needs_review", "done", "failed"] as const) {
+      expect(isStalled(status, 0, STALL_AFTER_MS * 10)).toBe(false);
+    }
+  });
+
+  it("waits long enough that a healthy slow run is not called stalled", () => {
+    // The run itself may take up to 100 s (RUN_BUDGET_MS in lib/pipeline/run.ts).
+    expect(STALL_AFTER_MS).toBeGreaterThan(100_000);
+  });
+
+  it("shows progress when the status, the regions or the stored readings change", () => {
+    const scan = (status: "reading" | "needs_review", readingsPerRegion: number[]) =>
+      progressKey({ status, regions: readingsPerRegion.map((n) => ({ readings: Array.from({ length: n }) })) } as unknown as Parameters<typeof progressKey>[0]);
+    const base = scan("reading", [1, 0]);
+    expect(scan("reading", [1, 0])).toBe(base);
+    expect(scan("reading", [1, 1])).not.toBe(base);
+    expect(scan("reading", [1, 0, 0])).not.toBe(base);
+    expect(scan("needs_review", [1, 0])).not.toBe(base);
   });
 });

@@ -12,6 +12,25 @@ export interface ChatOptions {
   onRequest?: () => void;
   fetchImpl?: typeof fetch;
   sleep?: (ms: number) => Promise<void>;
+  /**
+   * The run's deadline. Once it fires, in-flight requests are cut off and no retry starts, so the pipeline
+   * can record a failed reading before the platform kills the function (which would leave the scan stuck).
+   */
+  signal?: AbortSignal;
+}
+
+/** The run's deadline passed. Not retryable: another attempt would only run into the same limit. */
+export class DeadlineError extends Error {
+  constructor() {
+    super("Ran out of time before this reading finished. Read it again.");
+    this.name = "DeadlineError";
+  }
+}
+
+/** One request's timeout, cut short by the run's deadline if there is one. */
+export function requestSignal(opts: Pick<ChatOptions, "signal">): AbortSignal {
+  const timeout = AbortSignal.timeout(REQUEST_TIMEOUT_MS);
+  return opts.signal ? AbortSignal.any([timeout, opts.signal]) : timeout;
 }
 
 export interface ChatTarget {
@@ -59,11 +78,15 @@ export async function withRetries<T>(
   let lastError: Error = new Error(`${label} request failed`);
   for (let n = 0; n <= RETRY_DELAYS_MS.length; n++) {
     if (n > 0) await sleep(RETRY_DELAYS_MS[n - 1]);
+    // Checked before onRequest so an attempt that never starts is not counted against the call cap.
+    if (opts.signal?.aborted) throw new DeadlineError();
     opts.onRequest?.();
     try {
       return await attempt();
     } catch (err) {
       if (!(err instanceof RetryableError)) throw err;
+      // A timeout caused by the run's deadline is the deadline, not a flaky network: stop here.
+      if (opts.signal?.aborted) throw new DeadlineError();
       lastError = err;
     }
   }
@@ -91,19 +114,21 @@ export async function chatCompletion(
       },
     ],
   });
-  return withRetries(target.label, opts, () => attemptOnce(doFetch, target, body));
+  return withRetries(target.label, opts, () => attemptOnce(doFetch, target, body, opts));
 }
 
-async function attemptOnce(doFetch: typeof fetch, target: ChatTarget, body: string): Promise<string> {
+async function attemptOnce(doFetch: typeof fetch, target: ChatTarget, body: string, opts: ChatOptions): Promise<string> {
   let res: Response;
   try {
     res = await doFetch(target.endpoint, {
       method: "POST",
       headers: { Authorization: `Bearer ${target.key}`, "Content-Type": "application/json" },
       body,
-      signal: AbortSignal.timeout(REQUEST_TIMEOUT_MS),
+      signal: requestSignal(opts),
     });
   } catch {
+    // The run's deadline cut this request off: not worth another try.
+    if (opts.signal?.aborted) throw new DeadlineError();
     // Network error or timeout. The message never includes the request, so no header can leak.
     throw new RetryableError(`${target.label} request timed out or the network failed`);
   }
