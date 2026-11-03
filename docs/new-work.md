@@ -395,3 +395,10 @@ Issues #46 to #49 were opened by Alex while testing. Their descriptions are one 
 - **Back to home:** the review screen has "Back to home" as its first control and again at the end (always, not only after saving). With unsaved answers it asks "Leave without confirming?" and says the answers stay on this device (`review-draft.ts`). The header "Photograph another chart" now shows only while a scan is being read.
 - **Migration:** `supabase/migrations/20261103000000_scans_cancelled_status.sql` widens the `scans.status` check. **Not applied yet**: apply it before deploying, or cancelling returns a database error.
 - **Tests:** run.test.ts (cancel before and during a run, `cancelScan` rules, never restarted), scan-status.test.ts, and an e2e for Back to home at 390px. Not yet checked: a cancel against real Supabase and real models, and the cancelled page at 360px.
+
+## 2026-11-03 (the photo stays in view while checking rows)
+
+- **Problem:** the region crop sat only at the top of each region, so checking row 9 of a 12-row table meant scrolling back up. On phones the full photo scrolled away too.
+- **Pinned source dock:** the review screen now shows the crop of the region being checked at all times. Phones: a bottom dock (35% of the screen, scrollable so a tall region is never clipped) with "Hide photo / Show photo", remembered on this device. Desktop: the sticky left column holds the photo, then that region's crop. The region follows scrolling (a reading line 20 to 35% down the screen) and keyboard focus or a tap inside a region, never the person's answers, so a field does not jump while it is answered (`pickActiveRegion` in `lib/ui/active-region.ts`, `use-active-region.ts`, `source-dock.tsx`). The in-flow crop in each region stays.
+- **Not done:** a crop per row. Only region boxes are stored; guessing row heights could put the wrong strip next to a value.
+- **Tests:** `active-region.test.ts`, and two e2e tests (dock follows the region, collapses, keeps Confirm record clear; desktop panel). Checked at 360px on sample data. Not yet checked: a real phone (thumb reach, iOS safe area and browser toolbar).

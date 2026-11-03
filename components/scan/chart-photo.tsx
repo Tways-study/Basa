@@ -15,10 +15,16 @@ export function ChartPhoto({
   url,
   onError,
   marks = [],
+  stickyOnDesktop = true,
+  compact = false,
 }: {
   url: string;
   onError: () => void;
   marks?: Mark[];
+  /** False when a parent column owns the stickiness (the review screen's photo + region crop stack). */
+  stickyOnDesktop?: boolean;
+  /** A shorter photo, to leave room for the region crop under it. */
+  compact?: boolean;
 }) {
   return (
     <Dialog>
@@ -26,12 +32,12 @@ export function ChartPhoto({
         <button
           type="button"
           aria-label="Enlarge the chart photo"
-          className="block w-full rounded-md border bg-card p-2 text-left outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background lg:sticky lg:top-4"
+          className={`block w-full rounded-md border bg-card p-2 text-left outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background ${stickyOnDesktop ? "lg:sticky lg:top-4" : ""}`}
         >
           <span className="relative mx-auto block w-fit max-w-full">
             {/* A signed storage URL that changes per request, so next/image cannot optimise it. */}
             {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img src={url} alt="The chart photo you sent" className="block max-h-[70dvh] w-auto max-w-full" onError={onError} />
+            <img src={url} alt="The chart photo you sent" className={`block w-auto max-w-full ${compact ? "max-h-[70dvh] lg:max-h-[40dvh]" : "max-h-[70dvh]"}`} onError={onError} />
             <Marks marks={marks} />
           </span>
         </button>
