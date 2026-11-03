@@ -89,3 +89,51 @@ test("Back to home is at the top and the bottom, and asks before dropping unsave
   await page.getByRole("dialog").getByRole("link", { name: "Leave" }).click();
   await expect(page).toHaveURL(/\/$/);
 });
+
+test.describe("the photo stays in view while checking rows", () => {
+  test("phone: the dock follows the region, collapses, and never covers Confirm record", async ({ page }) => {
+    await page.goto("/review-preview");
+    const dock = page.getByRole("region", { name: "Photo of the region you are checking" }).first();
+    await expect(dock).toBeVisible();
+
+    // Scroll the third region to the reading line: the dock names it, and stays on screen.
+    const third = page.locator("section[aria-labelledby^='review-region-']").nth(2);
+    const label = (await third.getByRole("heading").first().textContent()) ?? "";
+    const n = label.match(/^(\d+)\./)?.[1];
+    await third.scrollIntoViewIfNeeded();
+    await page.evaluate(() => window.scrollBy(0, 200));
+    await expect(dock).toContainText(`Region ${n},`);
+    const box = await dock.boundingBox();
+    expect((box?.y ?? 0) + (box?.height ?? 0)).toBeLessThanOrEqual(844 + 1);
+
+    // Tapping into a field of another region switches the dock to that region.
+    await page.locator("section[aria-labelledby^='review-region-']").first().getByRole("radio").first().focus();
+    await expect(dock).not.toContainText(`Region ${n},`);
+
+    // Hide and show; the choice survives a reload.
+    const toggle = dock.getByRole("button", { name: "Hide photo" });
+    await toggle.click();
+    await expect(dock.getByRole("button", { name: "Show photo" })).toHaveAttribute("aria-expanded", "false");
+    await page.reload();
+    await expect(page.getByRole("button", { name: "Show photo" })).toBeVisible();
+    await page.getByRole("button", { name: "Show photo" }).click();
+
+    // At the very bottom the last control is clear of the dock.
+    await page.evaluate(() => window.scrollTo(0, document.body.scrollHeight));
+    const confirm = await page.getByRole("button", { name: "Confirm record" }).boundingBox();
+    const docked = await dock.boundingBox();
+    expect((confirm?.y ?? 0) + (confirm?.height ?? 0)).toBeLessThanOrEqual((docked?.y ?? 0) + 1);
+    expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true);
+  });
+
+  test("desktop: the side panel stays visible and shows the region in view", async ({ page }) => {
+    await page.setViewportSize({ width: 1280, height: 800 });
+    await page.goto("/review-preview");
+    const panel = page.getByRole("region", { name: "Photo of the region you are checking" }).and(page.locator(":visible"));
+    await expect(panel).toBeVisible();
+    await page.locator("section[aria-labelledby^='review-region-']").nth(2).scrollIntoViewIfNeeded();
+    await page.evaluate(() => window.scrollBy(0, 200));
+    await expect(panel).toBeInViewport();
+    await expect(panel.getByRole("heading")).toContainText("Region");
+  });
+});

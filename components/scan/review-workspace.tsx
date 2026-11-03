@@ -10,7 +10,9 @@ import { FieldRow } from "@/components/scan/field-row";
 import { ReadAgain } from "@/components/scan/read-again";
 import { RecordPrint } from "@/components/scan/record-print";
 import { RecordSummary } from "@/components/scan/record-summary";
+import { DOCK_CLOSED_PAD, DOCK_OPEN_PAD, SourceDock, SourcePanel, useDockOpen } from "@/components/scan/source-dock";
 import { SourceCrop } from "@/components/scan/source-crop";
+import { regionDomId, useActiveRegion } from "@/components/scan/use-active-region";
 import { useImageSize } from "@/components/scan/use-image-size";
 import { Button } from "@/components/ui/button";
 import { type ReaderId, type ScanResult, ReviewsResponseSchema } from "@/lib/schemas";
@@ -203,16 +205,6 @@ export function ReviewWorkspace({
     }
   }
 
-  const marks: Mark[] = regions.map((r, i) => {
-    const mine = choices[r.id] ?? {};
-    // Green means the readers matched (and the person confirmed it). A flagged field the person settled
-    // is no longer amber, but it is not green either: the readers did not agree on it.
-    const flaggedOpen = r.fields.some((f) => f.status === "flagged" && !mine[f.key]);
-    const allAgreedAndConfirmed = r.fields.length > 0 && r.fields.every((f) => f.status === "agreed" && mine[f.key]);
-    const tone: Mark["tone"] = flaggedOpen ? "flag" : allAgreedAndConfirmed ? "verified" : "ink";
-    return { n: i + 1, box: r.bbox, tone, active: r.id === activeRegion };
-  });
-
   // Print only what is stored: every field decided, nothing changed since the last save.
   const canPrint = progress.complete && !dirty && (save.kind === "saved" || scan.status === "done");
   const confirmedOn = reviewedAt
@@ -224,6 +216,22 @@ export function ReviewWorkspace({
 
   const summary = canPrint ? buildSummary(numbered, choices) : [];
 
+  // The region being checked, for the pinned photo: follows scrolling and keyboard focus.
+  const { activeId, pin } = useActiveRegion(shown.map((x) => x.region.id));
+  const [dockOpen, setDockOpen] = useDockOpen();
+  const focused = shown.find((x) => x.region.id === activeId);
+  const dockRegion = focused ? { n: focused.n, kindLabel: KIND_LABEL[focused.region.kind], box: focused.region.bbox } : null;
+
+  const marks: Mark[] = regions.map((r, i) => {
+    const mine = choices[r.id] ?? {};
+    // Green means the readers matched (and the person confirmed it). A flagged field the person settled
+    // is no longer amber, but it is not green either: the readers did not agree on it.
+    const flaggedOpen = r.fields.some((f) => f.status === "flagged" && !mine[f.key]);
+    const allAgreedAndConfirmed = r.fields.length > 0 && r.fields.every((f) => f.status === "agreed" && mine[f.key]);
+    const tone: Mark["tone"] = flaggedOpen ? "flag" : allAgreedAndConfirmed ? "verified" : "ink";
+    return { n: i + 1, box: r.bbox, tone, active: r.id === activeRegion };
+  });
+
   const failedReadings = regions.reduce((sum, r) => sum + r.readings.filter((x) => x.error).length, 0);
 
   const pct = progress.total === 0 ? 0 : Math.round((progress.decided / progress.total) * 100);
@@ -234,15 +242,20 @@ export function ReviewWorkspace({
     <nav aria-label="Leave this scan" className="mb-6 print:hidden">
       <BackHome dirty={dirty && save.kind !== "saved"} />
     </nav>
-    <div className="grid items-start gap-6 lg:grid-cols-[minmax(0,2fr)_minmax(0,3fr)] print:hidden">
-      {photoUrl ? (
-        <ChartPhoto url={photoUrl} onError={onPhotoError ?? (() => {})} marks={marks} />
-      ) : (
-        <p className="rounded-md border bg-muted p-3 text-muted-foreground">The photo could not be loaded.</p>
-      )}
+    {/* On phones the pinned photo covers the bottom of the screen, so the page keeps room under its last control. */}
+    <div className={`grid items-start gap-6 lg:grid-cols-[minmax(0,2fr)_minmax(0,3fr)] lg:pb-0 print:hidden ${dockRegion ? (dockOpen ? DOCK_OPEN_PAD : DOCK_CLOSED_PAD) : ""}`}>
+      {/* One sticky stack on desktop: the whole photo, then the crop of the region being checked. */}
+      <div className="flex flex-col gap-4 lg:sticky lg:top-4 lg:max-h-[calc(100dvh-2rem)] lg:overflow-auto">
+        {photoUrl ? (
+          <ChartPhoto url={photoUrl} onError={onPhotoError ?? (() => {})} marks={marks} stickyOnDesktop={false} compact />
+        ) : (
+          <p className="rounded-md border bg-muted p-3 text-muted-foreground">The photo could not be loaded.</p>
+        )}
+        <SourcePanel region={dockRegion} url={photoUrl} size={size} />
+      </div>
 
       <div className="flex flex-col gap-6">
-        <div className="sticky top-0 z-10 -mx-1 flex flex-col gap-2 border-b bg-background px-1 py-3">
+        <div className="sticky top-0 z-10 -mx-1 flex flex-col gap-2 border-b bg-background px-1 py-2 lg:py-3">
           <p role="status" aria-live="polite" className="font-medium">
             {progress.decided} of {progress.total} fields decided
             {progress.flaggedLeft > 0 ? `. ${progress.flaggedLeft} still need you.` : "."}
@@ -291,6 +304,7 @@ export function ReviewWorkspace({
             size={size}
             choices={choices[region.id] ?? {}}
             onChoose={(key, choice) => choose(region.id, key, choice)}
+            onActivate={() => pin(region.id)}
           />
         ))}
 
@@ -367,6 +381,7 @@ export function ReviewWorkspace({
         </div>
       </div>
     </div>
+    <SourceDock region={dockRegion} url={photoUrl} size={size} open={dockOpen} onOpenChange={setDockOpen} />
     <RecordPrint sections={buildPrintable(numbered, choices)} scanId={scan.scanId} confirmedOn={confirmedOn} />
     </>
   );
@@ -379,6 +394,7 @@ function RegionReview({
   size,
   choices,
   onChoose,
+  onActivate,
 }: {
   region: Region;
   n: number;
@@ -386,13 +402,21 @@ function RegionReview({
   size: ReturnType<typeof useImageSize>;
   choices: Choices;
   onChoose: (key: string, choice: Choices[string]) => void;
+  /** Focus or a tap inside this region makes it the one the pinned photo shows. */
+  onActivate: () => void;
 }) {
   const headingId = `review-region-${region.id}`;
   const failed = region.readings.filter((r) => r.error);
   const failedReaders: ReaderId[] = failed.map((r) => r.model);
 
   return (
-    <section aria-labelledby={headingId} className="flex flex-col gap-3 border-t pt-4">
+    <section
+      id={regionDomId(region.id)}
+      aria-labelledby={headingId}
+      onFocusCapture={onActivate}
+      onPointerDownCapture={onActivate}
+      className="flex scroll-mt-24 flex-col gap-3 border-t pt-4"
+    >
       <h2 id={headingId} className="text-2xl font-semibold">
         {n}. {KIND_LABEL[region.kind]}
       </h2>
