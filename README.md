@@ -7,6 +7,8 @@ Basa turns photographed paper clinic charts into human-verified digital records.
 **Basa** is Filipino for **"read."** A paper chart has to be read before it can be trusted. Two models each read every region of the chart, then a person reads the original ink beside both readings and confirms what it says. Basa does not replace that last reading. It makes it faster and harder to get wrong.
 
 > **New codebase, nothing reused, synthetic data only.** Every line of code was written during the hackathon (Oct 27 to Nov 4, 2026), with no code, schemas or assets from any other repository. No real patient data exists anywhere in this project: every name, ID and value in fixtures, prompts, logs and screenshots is fictional.
+>
+> The one exception, confirmed by the hackathon organizers on 2026-10-29: UI libraries used within their own licenses, namely shadcn/ui (including the component source its CLI generates), GSAP and lucide-react. They are not models the project calls at runtime.
 
 > **Not medical advice.** Basa digitizes and verifies what is on paper. It never produces treatment recommendations, dosing, diagnoses, or contraindication or drug-safety judgments. Summaries restate only what the confirmed record contains and cite their source region. Prompts sent to models ask for extraction only and forbid interpretation.
 
@@ -60,7 +62,13 @@ Muse Spark Open is the **second, independent reader**. It runs on Baseten throug
 - **How it is called:** `POST` to the Baseten chat-completions endpoint with the image as a base64 data URL, `reasoning_effort: "low"`, `max_tokens` 1500. Only `message.content` is read. Its reasoning text is never stored or shown.
 - **Why it matters:** the error-catch idea depends on two independent readers. Without the open-weight reader there is nothing to disagree with.
 
-**Provenance.** [`docs/provenance/open-weights-readings.json`](docs/provenance/open-weights-readings.json) holds every reading Muse Spark Open returned in the one held-out eval run (2026-11-02, 13:33 to 13:41 UTC; 12 synthetic charts, 60 region readings, 253 fields, no errors, latency 1.1 to 8.3 s, median 2.1 s): field keys and values, latency and any error, and nothing else. Baseten dashboard or run-log captures for our calls, and a capture of the review screen showing both readers, are still to be added.
+**Provenance.** [`docs/provenance/open-weights-readings.json`](docs/provenance/open-weights-readings.json) holds every reading Muse Spark Open returned in the one held-out eval run (2026-11-02, 13:33 to 13:41 UTC; 12 synthetic charts, 60 region readings, 253 fields, no errors, latency 1.1 to 8.3 s, median 2.1 s): field keys and values, latency and any error, and nothing else.
+
+Captures, all synthetic data, taken 2026-11-03:
+
+- [`baseten-usage-by-day-2026-11-03.png`](docs/provenance/baseten-usage-by-day-2026-11-03.png): the Baseten Model APIs usage page. One model, Muse Spark Open, with spend on 11/01, 11/02 and 11/03 (139.6K uncached input, 42.6K cached input and 57.3K output tokens in total). These are daily totals, not per-request logs; Baseten's dashboard did not give us a per-request log for the hosted Model API.
+- [`baseten-budget-2026-11-03.png`](docs/provenance/baseten-budget-2026-11-03.png): the workspace's monthly usage ($0.36) against its $5.00 budget. Billing contact details are cropped out.
+- [`review-screen-both-readers.png`](docs/provenance/review-screen-both-readers.png): the review screen on sample data (`/review-preview`), showing Muse Spark and Muse Spark Open side by side on a field where they disagree. It is a design preview, not a stored scan.
 
 ---
 
