@@ -27,7 +27,10 @@ export interface ScanStore {
   getScan(id: string): Promise<ScanRecord | null>;
   /** Insert the scan if the id is new; an existing id is left untouched (idempotent). */
   createScan(id: string, imagePath: string): Promise<void>;
+  /** Never overwrites "cancelled": a run that is still winding down must not undo the person's choice. */
   setStatus(id: string, status: JobStatus, error?: string | null): Promise<void>;
+  /** Stops a scan that is still running. True if it was stopped now; false if it was already finished or stopped. */
+  cancelScan(id: string): Promise<boolean>;
   getRegions(scanId: string): Promise<Region[]>;
   insertRegions(scanId: string, regions: SegmentedRegion[]): Promise<Region[]>;
   getReadings(scanId: string): Promise<Reading[]>;
@@ -77,8 +80,21 @@ export function createSupabaseStore(): ScanStore {
       const { error } = await db
         .from("scans")
         .update({ status, error: message, updated_at: new Date().toISOString() })
-        .eq("id", id);
+        .eq("id", id)
+        .neq("status", "cancelled");
       if (error) fail("update", error);
+    },
+
+    async cancelScan(id) {
+      // One conditional update, so two taps (or a tap racing the run's last step) cannot cancel a finished scan.
+      const { data, error } = await db
+        .from("scans")
+        .update({ status: "cancelled", error: null, updated_at: new Date().toISOString() })
+        .eq("id", id)
+        .in("status", ["queued", "segmenting", "reading", "reconciling"])
+        .select("id");
+      if (error) fail("update", error);
+      return (data ?? []).length > 0;
     },
 
     async getRegions(scanId) {

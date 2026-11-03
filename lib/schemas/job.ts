@@ -1,6 +1,7 @@
 import { z } from "zod";
 
-// queued -> segmenting -> reading -> reconciling -> needs_review -> done; failed is reachable from any state.
+// queued -> segmenting -> reading -> reconciling -> needs_review -> done; failed is reachable from any state;
+// cancelled is a person stopping a scan that is still running (queued to reconciling).
 export const JobStatusSchema = z.enum([
   "queued",
   "segmenting",
@@ -9,6 +10,7 @@ export const JobStatusSchema = z.enum([
   "needs_review",
   "done",
   "failed",
+  "cancelled",
 ]);
 export type JobStatus = z.infer<typeof JobStatusSchema>;
 

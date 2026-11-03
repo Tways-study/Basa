@@ -1,4 +1,4 @@
-import { Check, CircleX, Clock, Loader2, TriangleAlert } from "lucide-react";
+import { Ban, Check, CircleX, Clock, Loader2, TriangleAlert } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import type { JobStatus } from "@/lib/schemas";
 import { describeStatus } from "@/lib/ui/scan-status";
@@ -18,6 +18,8 @@ function StatusIcon({ status }: { status: JobStatus }) {
       return <Check aria-hidden="true" />;
     case "failed":
       return <CircleX aria-hidden="true" />;
+    case "cancelled":
+      return <Ban aria-hidden="true" />;
   }
 }
 

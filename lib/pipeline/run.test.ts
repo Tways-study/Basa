@@ -17,7 +17,14 @@ function fakeStore(scan: Partial<ScanRecord> = {}) {
   const store: ScanStore = {
     async getScan() { return { ...state.scan }; },
     async createScan() {},
-    async setStatus(_id, status, error = null) { state.scan.status = status; state.scan.error = error; state.statuses.push(status); },
+    async setStatus(_id, status, error = null) {
+      if (state.scan.status === "cancelled") return; // same rule as the real store
+      state.scan.status = status; state.scan.error = error; state.statuses.push(status);
+    },
+    async cancelScan() {
+      if (["queued", "segmenting", "reading", "reconciling"].includes(state.scan.status)) { state.scan.status = "cancelled"; return true; }
+      return false;
+    },
     async getRegions() { return [...state.regions]; },
     async insertRegions(scanId, regions) {
       const rows = regions.map((r, i) => ({ id: `r${state.regions.length + i + 1}`, scanId, ...r }));
@@ -146,6 +153,49 @@ describe("runPipeline (mock models)", () => {
   });
 });
 
+describe("cancelling a scan", () => {
+  it("a scan cancelled before the run starts is left cancelled and nothing is read", async () => {
+    vi.stubEnv("MOCK_MODELS", "true");
+    const { state, store } = fakeStore({ status: "cancelled" });
+    await runPipeline("s1", deps(store));
+    expect(state.scan.status).toBe("cancelled");
+    expect(state.readings.size).toBe(0);
+  });
+
+  it("a cancel during reading stops new reads, stores no failed readings and never ends in failed", async () => {
+    vi.stubEnv("MOCK_MODELS", "true");
+    const { state, store } = fakeStore();
+    const base = getModelAdapters();
+    let reads = 0;
+    const slow: ModelAdapters = {
+      ...base,
+      readers: base.readers.map((reader) => ({
+        id: reader.id,
+        readRegion: async (input: Parameters<typeof reader.readRegion>[0]) => {
+          reads += 1;
+          if (reads === 1) await store.cancelScan("s1"); // the person taps Cancel while the first read is in flight
+          await new Promise((r) => setTimeout(r, 30)); // longer than the watcher's tick below
+          return reader.readRegion(input);
+        },
+      })) as ModelAdapters["readers"],
+    };
+    await runPipeline("s1", deps(store, { createAdapters: () => slow, cancelPollMs: 5 }));
+    expect(state.scan.status).toBe("cancelled");
+    expect([...state.readings.values()].every((r) => !r.error)).toBe(true);
+    expect(state.statuses).not.toContain("failed");
+    expect(state.statuses).not.toContain("needs_review");
+  });
+
+  it("cancelScan only works while the scan is running", async () => {
+    const running = fakeStore({ status: "reading" });
+    expect(await running.store.cancelScan("s1")).toBe(true);
+    expect(await running.store.cancelScan("s1")).toBe(false); // second tap: already stopped
+    const finished = fakeStore({ status: "needs_review" });
+    expect(await finished.store.cancelScan("s1")).toBe(false);
+    expect(finished.state.scan.status).toBe("needs_review");
+  });
+});
+
 describe("decideStart", () => {
   const scan = (status: JobStatus, ageMs = 0): ScanRecord => ({
     id: "s1", status, imagePath: "s1.jpg", error: null, createdAt: new Date(0), updatedAt: new Date(1_000_000 - ageMs),
@@ -153,6 +203,10 @@ describe("decideStart", () => {
   const now = 1_000_000;
 
   it("starts a new scan", () => expect(decideStart(null, now)).toBe("start"));
+  it("never restarts a cancelled scan, even after it has gone quiet", () => {
+    expect(decideStart(scan("cancelled", STALE_AFTER_MS + 1), now)).toBe("noop");
+    expect(decideRetry(scan("cancelled", STALE_AFTER_MS + 1), [{ error: "x" }], now)).toBe("noop");
+  });
   it("leaves a finished scan alone", () => {
     expect(decideStart(scan("needs_review"), now)).toBe("noop");
     expect(decideStart(scan("done"), now)).toBe("noop");

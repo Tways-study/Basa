@@ -65,3 +65,27 @@ test("review happy path: decide every field, confirm, read the summary, print is
   const overflow = await page.evaluate(() => document.documentElement.scrollWidth - window.innerWidth);
   expect(overflow).toBeLessThanOrEqual(0);
 });
+
+test("Back to home is at the top and the bottom, and asks before dropping unsaved answers", async ({ page }) => {
+  await page.goto("/review-preview");
+  const back = page.getByRole("link", { name: "Back to home" });
+
+  // Clean: a plain link at the top, 44px tall, no sideways scroll at phone width.
+  await expect(back).toHaveCount(2);
+  const box = await back.first().boundingBox();
+  expect(box?.height ?? 0).toBeGreaterThanOrEqual(44);
+  expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true);
+
+  // After deciding one field the answers are unsaved: leaving asks first.
+  await page.getByRole("button", { name: /Confirm \d+ matching/ }).click();
+  await expect(page.getByRole("link", { name: "Back to home" })).toHaveCount(0);
+  await page.getByRole("button", { name: "Back to home" }).first().click();
+  const dialog = page.getByRole("dialog", { name: "Leave without confirming?" });
+  await expect(dialog).toBeVisible();
+  await dialog.getByRole("button", { name: "Stay and keep reviewing" }).click();
+  await expect(dialog).toBeHidden();
+
+  await page.getByRole("button", { name: "Back to home" }).first().click();
+  await page.getByRole("dialog").getByRole("link", { name: "Leave" }).click();
+  await expect(page).toHaveURL(/\/$/);
+});
