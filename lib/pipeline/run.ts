@@ -1,3 +1,4 @@
+import { DeadlineError } from "@/lib/models/chat";
 import type { ModelAdapters } from "@/lib/models/types";
 import { ReconciledFieldSchema, type Reading, type Region } from "@/lib/schemas";
 import type { ScanRecord, ScanStore } from "@/lib/server/store";
@@ -6,17 +7,24 @@ import { READ_MARGIN, growBBox } from "./bbox";
 import { reconcileReadings } from "./reconcile";
 
 const CONCURRENCY = 4;
-// A run that has not touched its scan for this long is treated as crashed and may be resumed.
-// maxDuration on the sync route is 60 s, so 90 s means the original function is gone.
-export const STALE_AFTER_MS = 90_000;
+// The routes that start a run have `export const maxDuration = 120` (a literal, because Next reads it
+// statically; run.test.ts checks the three numbers here and there stay in order).
+// The run gives up on its own at RUN_BUDGET_MS, 20 s before the platform would kill the function, so it can
+// store a failed reading and move the scan on. Without that, one slow model left the scan stuck on "reading".
+export const RUN_BUDGET_MS = 100_000;
+// A run that has not touched its scan for this long is treated as crashed and may be resumed. It must be
+// longer than maxDuration, so a run that is still alive is never resumed on top of itself.
+export const STALE_AFTER_MS = 150_000;
 
 export interface PipelineDeps {
   store: ScanStore;
-  /** Built per run so the adapters can report each HTTP attempt to this run's call budget. */
-  createAdapters: (onRequest: () => void) => ModelAdapters;
+  /** Built per run so the adapters can report each HTTP attempt to this run's call budget and deadline. */
+  createAdapters: (onRequest: () => void, signal: AbortSignal) => ModelAdapters;
   loadImage: (path: string) => Promise<Uint8Array>;
   crop: (image: Uint8Array, box: Region["bbox"]) => Promise<Uint8Array>;
   maxCalls: number;
+  /** Overrides RUN_BUDGET_MS. Only tests set it. */
+  budgetMs?: number;
 }
 
 export type StartDecision = "start" | "resume" | "noop";
@@ -47,6 +55,8 @@ export function decideRetry(scan: ScanRecord | null, readings: Pick<Reading, "er
   return now - scan.updatedAt.getTime() > STALE_AFTER_MS ? "retry" : "noop";
 }
 
+type ReadTask = { region: Region; reader: ModelAdapters["readers"][number] };
+
 /** Run `items` through `worker`, at most `limit` at a time. Never rejects: workers return their own results. */
 async function pool<T, R>(items: T[], limit: number, worker: (item: T) => Promise<R>): Promise<R[]> {
   const results: R[] = new Array(items.length);
@@ -74,7 +84,9 @@ export async function runPipeline(scanId: string, deps: PipelineDeps): Promise<v
     if (scan.status === "needs_review" || scan.status === "done") return;
 
     const budget = new CallBudget(deps.maxCalls);
-    const adapters = deps.createAdapters(() => budget.take());
+    // One deadline for the whole run: every model call stops when it fires.
+    const deadline = AbortSignal.timeout(deps.budgetMs ?? RUN_BUDGET_MS);
+    const adapters = deps.createAdapters(() => budget.take(), deadline);
     const image = await deps.loadImage(scan.imagePath);
 
     let regions = await store.getRegions(scanId);
@@ -102,10 +114,12 @@ export async function runPipeline(scanId: string, deps: PipelineDeps): Promise<v
     };
 
     let stopped: BudgetExceededError | null = null;
-    // The cap on parallel tasks bounds parallel model calls, whichever reader a task belongs to.
-    await pool(todo, CONCURRENCY, async ({ region, reader }): Promise<Reading | null> => {
+    const readOne = async ({ region, reader }: ReadTask): Promise<Reading | null> => {
       if (stopped) return null;
       try {
+        // Past the deadline nothing new starts. The gap is stored as a failed reading, so it shows on the
+        // review screen and a "read again" redoes it, instead of the platform killing the run mid-way.
+        if (deadline.aborted) throw new DeadlineError();
         const reading = await reader.readRegion({ regionId: region.id, kind: region.kind, image: await cropOf(region) });
         await store.upsertReading(reading);
         return reading;
@@ -115,17 +129,20 @@ export async function runPipeline(scanId: string, deps: PipelineDeps): Promise<v
           return null;
         }
         // One bad region or reader must not sink the scan: keep the failure as that reading.
-        const failed: Reading = {
-          regionId: region.id,
-          model: reader.id,
-          fields: {},
-          latencyMs: 0,
-          error: err instanceof Error ? err.message : "Reading failed",
-        };
+        const message = err instanceof Error ? err.message : "Reading failed";
+        // Our own message only (it never holds a key, URL or header), so the runtime log says who stalled.
+        console.warn(`reading failed: ${region.kind} by ${reader.id}: ${message}`);
+        const failed: Reading = { regionId: region.id, model: reader.id, fields: {}, latencyMs: 0, error: message };
         await store.upsertReading(failed);
         return failed;
       }
-    });
+    };
+    // One pool per reader. In a single shared pool a slow reader filled every lane and the other reader's
+    // tasks waited behind it, so a hung Muse Spark also stopped Muse Spark Open from reading anything.
+    // Lanes are split evenly, so at most CONCURRENCY model calls are still in flight at once.
+    const lanes = Math.max(1, Math.floor(CONCURRENCY / adapters.readers.length));
+    await Promise.all(adapters.readers.map((reader) => pool(todo.filter((task) => task.reader === reader), lanes, readOne)));
+    if (deadline.aborted) console.warn("run deadline reached: unfinished readings were stored as failed");
 
     if (stopped) throw stopped;
     // Judge by every stored reading, not only this run's: a retry that re-fails its few readings must not

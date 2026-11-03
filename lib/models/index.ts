@@ -9,6 +9,8 @@ export * from "./types";
 export interface AdapterOptions {
   /** Called before every real HTTP attempt; the pipeline uses it to enforce MAX_MODEL_CALLS_PER_SCAN. */
   onRequest?: () => void;
+  /** The run's deadline; every model call stops when it fires (see ChatOptions.signal). */
+  signal?: AbortSignal;
 }
 
 /**
@@ -17,10 +19,11 @@ export interface AdapterOptions {
  */
 export function getModelAdapters(opts: AdapterOptions = {}): ModelAdapters {
   if (process.env.MOCK_MODELS === "true") return createMockAdapters();
-  const proposer = createSparkSegmenter({ onRequest: opts.onRequest });
-  const sam = createSamRefiner({ onRequest: opts.onRequest });
+  const chat = { onRequest: opts.onRequest, signal: opts.signal };
+  const proposer = createSparkSegmenter(chat);
+  const sam = createSamRefiner(chat);
   return {
     segmenter: { segment: async (image) => sam.refine(image, await proposer.segment(image)) },
-    readers: [createSparkReader({ onRequest: opts.onRequest }), createBasetenReader({ onRequest: opts.onRequest })],
+    readers: [createSparkReader(chat), createBasetenReader(chat)],
   };
 }

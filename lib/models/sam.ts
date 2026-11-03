@@ -4,7 +4,7 @@ import { getSamEnv } from "@/lib/env";
 import { iou, padBBox } from "@/lib/pipeline/bbox";
 import { BudgetExceededError } from "@/lib/pipeline/budget";
 import { BBoxSchema, type BBox } from "@/lib/schemas";
-import { REQUEST_TIMEOUT_MS, RetryableError, withRetries, type ChatOptions } from "./chat";
+import { DeadlineError, RetryableError, requestSignal, withRetries, type ChatOptions } from "./chat";
 import type { SegmentedRegion } from "./types";
 
 // SAM 3.1 through the Meta API Responses endpoint. Request and output grammar: docs/models-notes.md
@@ -133,9 +133,10 @@ async function postBoxes(prompt: string, image: Uint8Array, opts: SamOptions): P
         method: "POST",
         headers: { Authorization: `Bearer ${env.META_API_KEY}`, "Content-Type": "application/json", Accept: "text/event-stream" },
         body,
-        signal: AbortSignal.timeout(REQUEST_TIMEOUT_MS),
+        signal: requestSignal(opts),
       });
     } catch {
+      if (opts.signal?.aborted) throw new DeadlineError();
       throw new RetryableError(`${LABEL} request timed out or the network failed`);
     }
     if (!res.ok) {
