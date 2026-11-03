@@ -1,0 +1,748 @@
+{
+  "about": "Muse Spark Open (meta-models/muse-spark-open, an open-weight model, run on our own Baseten account) readings from the one held-out eval run. Each entry is what the model returned for one region of one synthetic chart: the shared field keys and values, the latency in ms, and any error. No reasoning text, no prompts, no keys, no headers. Every chart is synthetic.",
+  "source_run": "eval/runs/test-2026-11-02T13-33-17-074Z (not committed; raw outputs)",
+  "run_window_utc": "2026-11-02T13:33Z to 13:41Z (21:33 to 21:41 Manila time)",
+  "command": "MOCK_MODELS=false pnpm eval --split=test --final",
+  "model": "meta-models/muse-spark-open",
+  "charts": [
+    {
+      "chart": "gen-t01",
+      "readings": [
+        {
+          "region_kind": "header",
+          "fields": {
+            "header.patient_name": "Andres F. Soriano",
+            "header.chart_no": "CH-011203",
+            "header.date": "2026-07-01"
+          },
+          "latency_ms": 2959,
+          "error": null
+        },
+        {
+          "region_kind": "table",
+          "fields": {
+            "row1.test": "Hemoglobin",
+            "row1.value": "14.2",
+            "row1.unit": "g/dL",
+            "row2.test": "Potassium",
+            "row2.value": "4.5",
+            "row2.unit": "mmol/L",
+            "row3.test": "Sodium",
+            "row3.value": "141",
+            "row3.unit": "mmol/L",
+            "row4.test": "Creatininine",
+            "row4.value": "88",
+            "row4.unit": "umol/L"
+          },
+          "latency_ms": 3429,
+          "error": null
+        },
+        {
+          "region_kind": "handwriting",
+          "fields": {
+            "line1": "Sample taken 08:05, fasting.",
+            "line2": "Result filed same day."
+          },
+          "latency_ms": 1670,
+          "error": null
+        },
+        {
+          "region_kind": "stamp",
+          "fields": {
+            "stamp.present": true,
+            "stamp.text": "RECEIVED LAB DEPT 01 JUL"
+          },
+          "latency_ms": 2182,
+          "error": null
+        },
+        {
+          "region_kind": "signature",
+          "fields": {
+            "signature.present": true
+          },
+          "latency_ms": 1328,
+          "error": null
+        }
+      ]
+    },
+    {
+      "chart": "gen-t03",
+      "readings": [
+        {
+          "region_kind": "header",
+          "fields": {
+            "header.patient_name": "Benjamin R. Ocampo",
+            "header.chart_no": "CH-012377",
+            "header.date": "2026-07-06"
+          },
+          "latency_ms": 2597,
+          "error": null
+        },
+        {
+          "region_kind": "table",
+          "fields": {
+            "row1.test": "Hemoglobin",
+            "row1.value": "13.1",
+            "row1.unit": "g/dL",
+            "row2.test": "Potassium",
+            "row2.value": "4.2",
+            "row2.unit": "mmol/L",
+            "row3.test": "Sodium",
+            "row3.value": "138",
+            "row3.unit": "mmol/L",
+            "row4.test": "Urea",
+            "row4.value": "4.9",
+            "row4.unit": "mmol/L",
+            "row5.test": "Creatininine",
+            "row5.value": "79",
+            "row5.unit": "umol/L"
+          },
+          "latency_ms": 2766,
+          "error": null
+        },
+        {
+          "region_kind": "handwriting",
+          "fields": {
+            "line1": "Seen by assistant.",
+            "line2": "Chart updated at front desk."
+          },
+          "latency_ms": 2016,
+          "error": null
+        },
+        {
+          "region_kind": "stamp",
+          "fields": {
+            "stamp.present": true,
+            "stamp.text": "RECEIVED LAB DEPT 06 JUL"
+          },
+          "latency_ms": 1640,
+          "error": null
+        },
+        {
+          "region_kind": "signature",
+          "fields": {
+            "signature.present": true
+          },
+          "latency_ms": 1137,
+          "error": null
+        }
+      ]
+    },
+    {
+      "chart": "gen-t04",
+      "readings": [
+        {
+          "region_kind": "header",
+          "fields": {
+            "header.patient_name": "Imelda V. Navarro",
+            "header.chart_no": "CH-013045",
+            "header.date": "2026-07-08"
+          },
+          "latency_ms": 2107,
+          "error": null
+        },
+        {
+          "region_kind": "table",
+          "fields": {
+            "row1.test": "Hemoglobin",
+            "row1.value": "11.9",
+            "row1.unit": "g/dL",
+            "row2.test": "Hematocrit",
+            "row2.value": "36",
+            "row2.unit": "%",
+            "row3.test": "White blood cells",
+            "row3.value": "8.2",
+            "row3.unit": "x10^9/L",
+            "row4.test": "Platelets",
+            "row4.value": "301",
+            "row4.unit": "x10^9/L",
+            "row5.test": "Glucose, random",
+            "row5.value": "7.0",
+            "row5.unit": "mmol/L",
+            "row6.test": "Creatinine",
+            "row6.value": "71",
+            "row6.unit": "umol/L"
+          },
+          "latency_ms": 4359,
+          "error": null
+        },
+        {
+          "region_kind": "handwriting",
+          "fields": {
+            "line1": "Sample taken 1 1:40.",
+            "line2": "Repeat form kept on file."
+          },
+          "latency_ms": 3075,
+          "error": null
+        },
+        {
+          "region_kind": "stamp",
+          "fields": {
+            "stamp.present": true,
+            "stamp.text": "RECEIVED LAB DEPT 08 JUL"
+          },
+          "latency_ms": 2190,
+          "error": null
+        },
+        {
+          "region_kind": "signature",
+          "fields": {
+            "signature.present": true
+          },
+          "latency_ms": 2028,
+          "error": null
+        }
+      ]
+    },
+    {
+      "chart": "gen-t05",
+      "readings": [
+        {
+          "region_kind": "header",
+          "fields": {
+            "header.patient_name": "Gregorio L. Tan",
+            "header.chart_no": "CH-013488",
+            "header.date": "2026-07-10"
+          },
+          "latency_ms": 1919,
+          "error": null
+        },
+        {
+          "region_kind": "table",
+          "fields": {
+            "row1.test": "Potassium",
+            "row1.value": "4.4",
+            "row1.unit": "mmol/L",
+            "row2.test": "Sodium",
+            "row2.value": "140",
+            "row2.unit": "mmol/L",
+            "row3.test": "Urea",
+            "row3.value": "6.1",
+            "row3.unit": "mmol/L",
+            "row4.test": "Calcium",
+            "row4.value": "2.3",
+            "row4.unit": "mmol/L"
+          },
+          "latency_ms": 4257,
+          "error": null
+        },
+        {
+          "region_kind": "handwriting",
+          "fields": {
+            "line1": "Walk-in, no appointment.",
+            "line2": "Sample taken 09:45."
+          },
+          "latency_ms": 1665,
+          "error": null
+        },
+        {
+          "region_kind": "stamp",
+          "fields": {
+            "stamp.present": true,
+            "stamp.text": "RECEIVED\nFRONT DESK 10 JUL"
+          },
+          "latency_ms": 1400,
+          "error": null
+        },
+        {
+          "region_kind": "signature",
+          "fields": {
+            "signature.present": true
+          },
+          "latency_ms": 1171,
+          "error": null
+        }
+      ]
+    },
+    {
+      "chart": "gen-t06",
+      "readings": [
+        {
+          "region_kind": "header",
+          "fields": {
+            "header.patient_name": "Maria Cristina de los Santos-Villanueva",
+            "header.chart_no": "CH-013901",
+            "header.date": "2026-07-13"
+          },
+          "latency_ms": 1942,
+          "error": null
+        },
+        {
+          "region_kind": "table",
+          "fields": {
+            "row1.test": "Hemoglobin",
+            "row1.value": "12.6",
+            "row1.unit": "g/dL",
+            "row2.test": "Glucose, fasting",
+            "row2.value": "5.3",
+            "row2.unit": "mmol/L",
+            "row3.test": "Creatininine",
+            "row3.value": "68",
+            "row3.unit": "umol/L",
+            "row4.test": "Cholesterol, total",
+            "row4.value": "5.0",
+            "row4.unit": "mmol/L"
+          },
+          "latency_ms": 2914,
+          "error": null
+        },
+        {
+          "region_kind": "handwriting",
+          "fields": {
+            "line1": "Sample taken 07:55.",
+            "line2": "Forms signed by nurse."
+          },
+          "latency_ms": 2120,
+          "error": null
+        },
+        {
+          "region_kind": "stamp",
+          "fields": {
+            "stamp.present": true,
+            "stamp.text": "RECEIVED LAB DEPT 13 JUL"
+          },
+          "latency_ms": 2079,
+          "error": null
+        },
+        {
+          "region_kind": "signature",
+          "fields": {
+            "signature.present": true
+          },
+          "latency_ms": 1930,
+          "error": null
+        }
+      ]
+    },
+    {
+      "chart": "gen-t07",
+      "readings": [
+        {
+          "region_kind": "header",
+          "fields": {
+            "header.patient_name": "Victor H. Lim",
+            "header.chart_no": "CH-014266",
+            "header.date": "2026-07-15"
+          },
+          "latency_ms": 2008,
+          "error": null
+        },
+        {
+          "region_kind": "table",
+          "fields": {
+            "row1.test": "Hemoglobin",
+            "row1.value": "13.9",
+            "row1.unit": "g/dL",
+            "row2.test": "Potassium",
+            "row2.value": "4.0",
+            "row2.unit": "mmol/L",
+            "row3.test": "Sodium",
+            "row3.value": "142",
+            "row3.unit": "mmol/L"
+          },
+          "latency_ms": 2378,
+          "error": null
+        },
+        {
+          "region_kind": "handwriting",
+          "fields": {
+            "line1": "Filed today.",
+            "line2": "No other notes."
+          },
+          "latency_ms": 1326,
+          "error": null
+        },
+        {
+          "region_kind": "stamp",
+          "fields": {
+            "stamp.present": true,
+            "stamp.text": "RECEIVED LAB DEPT 15 JUL"
+          },
+          "latency_ms": 1988,
+          "error": null
+        },
+        {
+          "region_kind": "signature",
+          "fields": {
+            "signature.present": true
+          },
+          "latency_ms": 1512,
+          "error": null
+        }
+      ]
+    },
+    {
+      "chart": "gen-t09",
+      "readings": [
+        {
+          "region_kind": "header",
+          "fields": {
+            "header.patient_name": "Ramon B. Castillo",
+            "header.chart_no": "CH-014790",
+            "header.date": "2026-07-20"
+          },
+          "latency_ms": 2054,
+          "error": null
+        },
+        {
+          "region_kind": "table",
+          "fields": {
+            "row1.test": "Hemoglobin",
+            "row1.value": "13.3",
+            "row1.unit": "g/dL",
+            "row2.test": "Potassium",
+            "row2.value": "4.2",
+            "row2.unit": "mmol/L",
+            "row3.test": "Glucose, fasting",
+            "row3.value": "5.8",
+            "row3.unit": "mmol/L",
+            "row4.test": "Creatininine",
+            "row4.value": "90",
+            "row4.unit": "umol/L"
+          },
+          "latency_ms": 2969,
+          "error": null
+        },
+        {
+          "region_kind": "handwriting",
+          "fields": {
+            "line1": "Sample taken 08:30, fasting.",
+            "line2": "Checked by front desk.",
+            "line3": "H. Salazazar"
+          },
+          "latency_ms": 2400,
+          "error": null
+        },
+        {
+          "region_kind": "stamp",
+          "fields": {
+            "stamp.present": true,
+            "stamp.text": "RECEIVED LAB DEPT 20 JUL"
+          },
+          "latency_ms": 1881,
+          "error": null
+        },
+        {
+          "region_kind": "signature",
+          "fields": {
+            "signature.present": true
+          },
+          "latency_ms": 2132,
+          "error": null
+        }
+      ]
+    },
+    {
+      "chart": "gen-t11",
+      "readings": [
+        {
+          "region_kind": "header",
+          "fields": {
+            "header.patient_name": "Pablo N. Reyes",
+            "header.chart_no": "CH-015690",
+            "header.date": "2026-07-24"
+          },
+          "latency_ms": 1869,
+          "error": null
+        },
+        {
+          "region_kind": "table",
+          "fields": {
+            "row1.test": "Hemoglobin",
+            "row1.value": "14.0",
+            "row1.unit": "g/dL",
+            "row2.test": "Glucose, fasting",
+            "row2.value": "5.5",
+            "row2.unit": "mmol/L",
+            "row3.test": "Creatininine",
+            "row3.value": "85",
+            "row3.unit": "umol/L",
+            "row4.test": "Sodium",
+            "row4.value": "140",
+            "row4.unit": "mmol/L"
+          },
+          "latency_ms": 2557,
+          "error": null
+        },
+        {
+          "region_kind": "handwriting",
+          "fields": {
+            "line1": "Sample taken 08:10 07:40 fasting.",
+            "line2": "Sent to lab C."
+          },
+          "latency_ms": 2139,
+          "error": null
+        },
+        {
+          "region_kind": "stamp",
+          "fields": {
+            "stamp.present": true,
+            "stamp.text": "RECEIVED\nLAB DEPT 24 JUL"
+          },
+          "latency_ms": 1988,
+          "error": null
+        },
+        {
+          "region_kind": "signature",
+          "fields": {
+            "signature.present": true
+          },
+          "latency_ms": 1758,
+          "error": null
+        }
+      ]
+    },
+    {
+      "chart": "gen-t12",
+      "readings": [
+        {
+          "region_kind": "header",
+          "fields": {
+            "header.patient_name": "Ana Beatriz Lopez",
+            "header.chart_no": "CH-016128",
+            "header.date": "2026-07-27"
+          },
+          "latency_ms": 2780,
+          "error": null
+        },
+        {
+          "region_kind": "table",
+          "fields": {
+            "row1.test": "Potassium",
+            "row1.value": "4.6",
+            "row1.unit": "mmol/L",
+            "row2.test": "Sodium",
+            "row2.value": "143",
+            "row2.unit": "mmol/L",
+            "row3.test": "Creatinine",
+            "row3.value": "99",
+            "row3.unit": "umol/L",
+            "row4.test": "Hemoglobin",
+            "row4.value": "12.8",
+            "row4.unit": "g/dL"
+          },
+          "latency_ms": 3622,
+          "error": null
+        },
+        {
+          "region_kind": "handwriting",
+          "fields": {
+            "line1": "Form copied-filed at front desk.",
+            "line2": "Sample taken 06:40."
+          },
+          "latency_ms": 1616,
+          "error": null
+        },
+        {
+          "region_kind": "stamp",
+          "fields": {
+            "stamp.present": true,
+            "stamp.text": "RECEIVED\nLAB DEPT 27 JUL"
+          },
+          "latency_ms": 3972,
+          "error": null
+        },
+        {
+          "region_kind": "signature",
+          "fields": {
+            "signature.present": true
+          },
+          "latency_ms": 1615,
+          "error": null
+        }
+      ]
+    },
+    {
+      "chart": "screen-t02",
+      "readings": [
+        {
+          "region_kind": "header",
+          "fields": {
+            "header.patient_name": "Teresita G. Pineda",
+            "header.chart_no": "CH-011920",
+            "header.date": "2026-07-03"
+          },
+          "latency_ms": 3487,
+          "error": null
+        },
+        {
+          "region_kind": "table",
+          "fields": {
+            "row1.test": "White blood cells",
+            "row1.value": "6.1",
+            "row1.unit": "x10^9/L",
+            "row2.test": "Platelelets",
+            "row2.value": "288",
+            "row2.unit": "x10^9/L",
+            "row3.test": "Hemoglobin",
+            "row3.value": "12.4",
+            "row3.unit": "g/dL",
+            "row4.test": "Glucose, fasting",
+            "row4.value": "4.9",
+            "row4.unit": "mmol/L"
+          },
+          "latency_ms": 4258,
+          "error": null
+        },
+        {
+          "region_kind": "handwriting",
+          "fields": {
+            "line1": "Sample taken 07:15.",
+            "line2": "Copy sent to records."
+          },
+          "latency_ms": 2596,
+          "error": null
+        },
+        {
+          "region_kind": "stamp",
+          "fields": {
+            "stamp.present": true,
+            "stamp.text": "RECEIVED LAB DEPT 03 JUL"
+          },
+          "latency_ms": 2049,
+          "error": null
+        },
+        {
+          "region_kind": "signature",
+          "fields": {
+            "signature.present": true
+          },
+          "latency_ms": 1572,
+          "error": null
+        }
+      ]
+    },
+    {
+      "chart": "screen-t08",
+      "readings": [
+        {
+          "region_kind": "header",
+          "fields": {
+            "header.patient_name": "Lorna D. Evangelista",
+            "header.chart_no": "CH-017117",
+            "header.date": "2026-07-17"
+          },
+          "latency_ms": 3373,
+          "error": null
+        },
+        {
+          "region_kind": "table",
+          "fields": {
+            "row1.test": "Hemoglobin",
+            "row1.value": "11.7",
+            "row1.unit": "g/dL",
+            "row2.test": "Potassium",
+            "row2.value": "4.7",
+            "row2.unit": "mmol/L",
+            "row3.test": "Sodium",
+            "row3.value": "136",
+            "row3.unit": "mmol/L",
+            "row4.test": "Glucose, random",
+            "row4.value": "6.5",
+            "row4.unit": "mmol/L",
+            "row5.test": "Creatinine",
+            "row5.value": "71",
+            "row5.unit": "umol/L"
+          },
+          "latency_ms": 4165,
+          "error": null
+        },
+        {
+          "region_kind": "handwriting",
+          "fields": {
+            "line1": "Sample taken 10:17.",
+            "line2": "Lab n ext. 7611."
+          },
+          "latency_ms": 2542,
+          "error": null
+        },
+        {
+          "region_kind": "stamp",
+          "fields": {
+            "stamp.present": true,
+            "stamp.text": null
+          },
+          "latency_ms": 3606,
+          "error": null
+        },
+        {
+          "region_kind": "signature",
+          "fields": {
+            "signature.present": true
+          },
+          "latency_ms": 1684,
+          "error": null
+        }
+      ]
+    },
+    {
+      "chart": "screen-t10",
+      "readings": [
+        {
+          "region_kind": "header",
+          "fields": {
+            "header.patient_name": "Josefina M. Cruz",
+            "header.chart_no": "CH-015233",
+            "header.date": "2026-07-22"
+          },
+          "latency_ms": 3166,
+          "error": null
+        },
+        {
+          "region_kind": "table",
+          "fields": {
+            "row1.test": "Sodium",
+            "row1.value": "139",
+            "row1.unit": "mmol/L",
+            "row2.test": "Potassium",
+            "row2.value": "3.8",
+            "row2.unit": "mmol/L",
+            "row3.test": "Urea",
+            "row3.value": "5.2",
+            "row3.unit": "mmol/L",
+            "row4.test": "Hematocrit",
+            "row4.value": "39",
+            "row4.unit": "%",
+            "row5.test": "Platelets",
+            "row5.value": "262",
+            "row5.unit": "x10^9/L"
+          },
+          "latency_ms": 8259,
+          "error": null
+        },
+        {
+          "region_kind": "handwriting",
+          "fields": {
+            "line1": "Specimen label checked and signed at desk.",
+            "line2": "Sample taken 0720."
+          },
+          "latency_ms": 2728,
+          "error": null
+        },
+        {
+          "region_kind": "stamp",
+          "fields": {
+            "stamp.present": true,
+            "stamp.text": null
+          },
+          "latency_ms": 4476,
+          "error": null
+        },
+        {
+          "region_kind": "signature",
+          "fields": {
+            "signature.present": true
+          },
+          "latency_ms": 2054,
+          "error": null
+        }
+      ]
+    }
+  ],
+  "totals": {
+    "charts": 12,
+    "region_readings": 60,
+    "readings_with_error": 0,
+    "fields_returned": 253
+  }
+}
