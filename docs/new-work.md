@@ -403,6 +403,10 @@ Issues #46 to #49 were opened by Alex while testing. Their descriptions are one 
 - **Not done:** a crop per row. Only region boxes are stored; guessing row heights could put the wrong strip next to a value.
 - **Tests:** `active-region.test.ts`, and two e2e tests (dock follows the region, collapses, keeps Confirm record clear; desktop panel). Checked at 360px on sample data. Not yet checked: a real phone (thumb reach, iOS safe area and browser toolbar).
 
+## 2026-11-03: pinned source dock, easier to use (Tways)
+
+User request: make the pinned photo easier to use while checking rows. Changes: tap the crop to enlarge it in a dialog (browser pinch zoom works there); Previous / Next region buttons in the dock and the desktop panel (`stepRegion`, review order); a text tag shows "Following scroll" or "Pinned here", and a pin lets go after the page scrolls 300px (`shouldReleasePin`) so the dock does not jump while answering; the dock has Hide, small (30dvh, at most 12rem) and large (45dvh, at most 22rem, so a short phone keeps room for fields) sizes kept in `localStorage` (`useDockSize`, replaces the open/closed key `basa.source-dock.open`; an old saved choice is ignored). Tests: unit for `stepRegion` and `shouldReleasePin`, e2e for step, pin, enlarge, size and hide. Not yet checked on a real phone.
+
 ## 2026-11-03 (README restructured)
 
 - **Rewrote `README.md`** around: title, technology and why, process and why, then how the project came about, motivation, limitations, challenges, the problem, and intended use. No credits section, and the team line was removed. Content is taken from `CLAUDE.md`, `PRODUCT.md`, `docs/eval-results.md` and this log; no new claims. The stale per-day status paragraphs were dropped (this log is the record), and setup, commands, layout and data model moved under "Developer reference".

@@ -10,7 +10,7 @@ import { FieldRow } from "@/components/scan/field-row";
 import { ReadAgain } from "@/components/scan/read-again";
 import { RecordPrint } from "@/components/scan/record-print";
 import { RecordSummary } from "@/components/scan/record-summary";
-import { DOCK_CLOSED_PAD, DOCK_OPEN_PAD, SourceDock, SourcePanel, useDockOpen } from "@/components/scan/source-dock";
+import { DOCK_PAD, SourceDock, SourcePanel, useDockSize } from "@/components/scan/source-dock";
 import { SourceCrop } from "@/components/scan/source-crop";
 import { regionDomId, useActiveRegion } from "@/components/scan/use-active-region";
 import { useImageSize } from "@/components/scan/use-image-size";
@@ -217,8 +217,9 @@ export function ReviewWorkspace({
   const summary = canPrint ? buildSummary(numbered, choices) : [];
 
   // The region being checked, for the pinned photo: follows scrolling and keyboard focus.
-  const { activeId, pin } = useActiveRegion(shown.map((x) => x.region.id));
-  const [dockOpen, setDockOpen] = useDockOpen();
+  const { activeId, pinned, pin, step, canPrev, canNext } = useActiveRegion(shown.map((x) => x.region.id));
+  const [dockSize, setDockSize] = useDockSize();
+  const dockNav = { canPrev, canNext, pinned, onStep: step };
   const focused = shown.find((x) => x.region.id === activeId);
   const dockRegion = focused ? { n: focused.n, kindLabel: KIND_LABEL[focused.region.kind], box: focused.region.bbox } : null;
 
@@ -243,7 +244,7 @@ export function ReviewWorkspace({
       <BackHome dirty={dirty && save.kind !== "saved"} />
     </nav>
     {/* On phones the pinned photo covers the bottom of the screen, so the page keeps room under its last control. */}
-    <div className={`grid items-start gap-6 lg:grid-cols-[minmax(0,2fr)_minmax(0,3fr)] lg:pb-0 print:hidden ${dockRegion ? (dockOpen ? DOCK_OPEN_PAD : DOCK_CLOSED_PAD) : ""}`}>
+    <div className={`grid items-start gap-6 lg:grid-cols-[minmax(0,2fr)_minmax(0,3fr)] lg:pb-0 print:hidden ${dockRegion ? DOCK_PAD[dockSize] : ""}`}>
       {/* One sticky stack on desktop: the whole photo, then the crop of the region being checked. */}
       <div className="flex flex-col gap-4 lg:sticky lg:top-4 lg:max-h-[calc(100dvh-2rem)] lg:overflow-auto">
         {photoUrl ? (
@@ -251,7 +252,7 @@ export function ReviewWorkspace({
         ) : (
           <p className="rounded-md border bg-muted p-3 text-muted-foreground">The photo could not be loaded.</p>
         )}
-        <SourcePanel region={dockRegion} url={photoUrl} size={size} />
+        <SourcePanel region={dockRegion} url={photoUrl} size={size} nav={dockNav} />
       </div>
 
       <div className="flex flex-col gap-6">
@@ -381,7 +382,7 @@ export function ReviewWorkspace({
         </div>
       </div>
     </div>
-    <SourceDock region={dockRegion} url={photoUrl} size={size} open={dockOpen} onOpenChange={setDockOpen} />
+    <SourceDock region={dockRegion} url={photoUrl} size={size} dockSize={dockSize} onSizeChange={setDockSize} nav={dockNav} />
     <RecordPrint sections={buildPrintable(numbered, choices)} scanId={scan.scanId} confirmedOn={confirmedOn} />
     </>
   );

@@ -110,6 +110,31 @@ test.describe("the photo stays in view while checking rows", () => {
     await page.locator("section[aria-labelledby^='review-region-']").first().getByRole("radio").first().focus();
     await expect(dock).not.toContainText(`Region ${n},`);
 
+    // The dock says it is pinned, and lets go after a long scroll.
+    await expect(dock).toContainText("Pinned");
+    await page.evaluate(() => window.scrollBy(0, 1500));
+    await expect(dock).toContainText("Following scroll");
+
+    // Next moves to the following region and pins it.
+    const before = (await dock.getByText(/^Region \d+,/).textContent()) ?? "";
+    await dock.getByRole("button", { name: "Next region" }).click();
+    await expect(dock.getByText(/^Region \d+,/)).not.toHaveText(before);
+    await expect(dock).toContainText("Pinned");
+
+    // Enlarge opens the crop in a dialog; Escape closes it.
+    await dock.getByRole("button", { name: /^Enlarge the photo of region/ }).click();
+    await expect(page.getByRole("dialog")).toBeVisible();
+    await page.keyboard.press("Escape");
+    await expect(page.getByRole("dialog")).toHaveCount(0);
+
+    // Larger photo grows the dock; Confirm stays clear of it at the bottom.
+    // The sample crop is short, so compare the room the photo area is given, not its drawn height.
+    const room = () => page.locator("#source-dock-body").evaluate((el) => parseFloat(getComputedStyle(el).maxHeight));
+    const small = await room();
+    await dock.getByRole("button", { name: "Make the photo larger" }).click();
+    expect(await room()).toBeGreaterThan(small);
+    await dock.getByRole("button", { name: "Make the photo smaller" }).click();
+
     // Hide and show; the choice survives a reload.
     const toggle = dock.getByRole("button", { name: "Hide photo" });
     await toggle.click();
@@ -135,5 +160,6 @@ test.describe("the photo stays in view while checking rows", () => {
     await page.evaluate(() => window.scrollBy(0, 200));
     await expect(panel).toBeInViewport();
     await expect(panel.getByRole("heading")).toContainText("Region");
+    await expect(panel.getByRole("button", { name: "Next region" })).toBeVisible();
   });
 });
