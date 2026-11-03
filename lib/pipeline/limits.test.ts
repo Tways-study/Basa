@@ -1,6 +1,7 @@
 import { readFileSync } from "node:fs";
 import path from "node:path";
 import { describe, expect, it } from "vitest";
+import { REQUEST_TIMEOUT_MS } from "@/lib/models/chat";
 import { STALL_AFTER_MS } from "@/lib/ui/scan-status";
 import { RUN_BUDGET_MS, STALE_AFTER_MS } from "./run";
 
@@ -33,5 +34,17 @@ describe("time limits", () => {
 
   it("the sync and resume routes use the same limit", () => {
     expect(maxDurationMs(routes[0])).toBe(maxDurationMs(routes[1]));
+  });
+
+  it("one model call, even when every attempt hangs, fits inside the run budget", () => {
+    // Three attempts (two retries) plus the short pauses between them, about 2.4 s. At 40 s per attempt this was
+    // about 122 s, longer than the whole 60 s function, which is how scans got stuck on 2026-11-03.
+    const worstCaseMs = 3 * REQUEST_TIMEOUT_MS + 3_000;
+    expect(worstCaseMs).toBeLessThan(RUN_BUDGET_MS);
+  });
+
+  it("keeps the request timeout well above how long healthy calls take", () => {
+    // Healthy calls took 1 to 8 s (31 s once) in the held-out run; a timeout under 10 s would cut off real answers.
+    expect(REQUEST_TIMEOUT_MS).toBeGreaterThanOrEqual(10_000);
   });
 });
