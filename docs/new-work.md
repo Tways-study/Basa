@@ -410,3 +410,10 @@ User request: make the pinned photo easier to use while checking rows. Changes: 
 ## 2026-11-03 (README restructured)
 
 - **Rewrote `README.md`** around: title, technology and why, process and why, then how the project came about, motivation, limitations, challenges, the problem, and intended use. No credits section, and the team line was removed. Content is taken from `CLAUDE.md`, `PRODUCT.md`, `docs/eval-results.md` and this log; no new claims. The stale per-day status paragraphs were dropped (this log is the record), and setup, commands, layout and data model moved under "Developer reference".
+
+## 2026-11-03 (final check and Open Weights provenance)
+
+- **Final check on `main`** (`73d9439`): `pnpm typecheck`, `pnpm lint`, `pnpm test` (253 tests) and `pnpm build` pass.
+- **Production** is `basa-chi.vercel.app`; Deployment Protection is off. One synthetic scan (`smoke-chart-02.jpg`) reached `needs_review` with 10 readings and no errors; latencies were 1.5 to 3.1 s for Muse Spark and 1.1 to 4.0 s for Muse Spark Open, so Production runs the real models, not the mock. The Vercel value of `MOCK_MODELS` is hidden (Secret) and was not read. That test scan is still in the database and should be cleared before the demo recording.
+- **Open Weights provenance added** in `docs/provenance/`: `baseten-usage-by-day-2026-11-03.png` (Baseten Model APIs usage, Muse Spark Open only, 11/01 to 11/03), `baseten-budget-2026-11-03.png` ($0.36 of a $5.00 monthly budget, billing contact cropped out) and `review-screen-both-readers.png` (`/review-preview`, sample data). These are daily totals, not per-request logs. `README.md` now links them in place of the "still to be added" sentence.
+- **README:** added the organizers' 2026-10-29 exception for shadcn/ui, GSAP and lucide-react beside the "nothing reused" claim.
