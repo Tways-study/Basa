@@ -375,3 +375,16 @@ Issues #46 to #49 were opened by Alex while testing. Their descriptions are one 
 - **Tests:** 2 new in `lib/pipeline/limits.test.ts` (one call's worst case fits the run budget; the timeout stays at or above 10 s) and 1 in `lib/models/chat.test.ts` (a request that hangs past its own timeout is cut off and retried). `pnpm typecheck`, `pnpm lint`, `pnpm test` pass.
 - **Held-out result unaffected in meaning:** the prompts, readers, parsing and reconcile are unchanged since the freeze at `cdc18fb`; only transport code changed (`lib/models/chat.ts`, `sam.ts`, `index.ts`, `lib/pipeline/run.ts`: deadline, per-reader lanes, request timeout). The held-out run was measured with a 40 s request timeout. Noted in `docs/eval-tuning.md`.
 - **For the recording:** a scan can still take 20 to 45 s if one call hangs once. It finishes, but leave room in the take.
+
+## 2026-11-03 (Open Weights provenance, part 1: the readings)
+
+- **Added `docs/provenance/open-weights-readings.json`:** every reading Muse Spark Open (`meta-models/muse-spark-open`, on our own Baseten account) returned in the one held-out eval run, taken from `eval/runs/test-2026-11-02T13-33-17-074Z` (raw outputs, not committed). 12 synthetic charts, 60 region readings, 253 fields returned, 0 errors, latency 1,137 to 8,259 ms with a median of 2,132 ms. Each entry has the region kind, the field keys and values, the latency and any error, and nothing else: no reasoning text, prompts, keys or headers. Checked: none of the four secret values appears in the file.
+- **Time note:** run folders are stamped in UTC. The held-out run was 13:33 to 13:41 UTC on Nov 2, which is **21:33 to 21:41 Manila time**. Search the Baseten dashboard for that window.
+- **README** provenance paragraph now says what is in the repo and what is still missing.
+- **Still to add (needs a person):** Baseten dashboard or run-log captures for that window and for the demo recording (no key or account details visible), and a capture of the review screen showing both readers. If a recording scan is made, export its stored readings with a read-only query before the next Supabase cleanup.
+
+## 2026-11-03 (phone and browser recorded for the Nov 1 runs)
+
+- **Reported by Tways:** the Nov 1 real-phone runs (Phases 3, 5 and 6) used an iPhone (model not recorded) and the Brave browser. `docs/phone-test.md` result log updated with a note that this is reported, not observed.
+- **What it means:** Brave on iOS runs on WebKit, the same engine as Safari, so the Phase 6 finding (WebKit refuses a Blob in IndexedDB in a private tab) and the phone results hold for the iPhone engine. The Safari app itself was not tested, so Safari-specific behavior (for example its own print preview for the patient copy) is untested. Any "iOS Safari" claim should read "iPhone, Brave (WebKit)".
+- **Phase 8 is not marked closed yet:** it waits for Tways's confirmation, and for an answer on whether the `t23` tick included a Safari check.

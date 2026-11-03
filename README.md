@@ -72,7 +72,7 @@ Muse Spark Open (`meta-models/muse-spark-open`, an open-weight model) is the **s
 - **How it is called:** `POST` to the Baseten chat-completions endpoint with the image as a base64 data URL, `reasoning_effort: "low"`, `max_tokens` 1500. Only `message.content` is read; its reasoning text is never stored or shown.
 - **Why it matters to the product:** the error-catch idea depends on two independent readers. Without the open-weight reader there is nothing to disagree with.
 
-**Provenance (to add before submission):** Baseten run logs for our calls, screen captures of the Baseten dashboard and of the review screen showing both readers, and sample outputs (the stored readings for a scan). These are not in the repo yet.
+**Provenance.** In the repo: [`docs/provenance/open-weights-readings.json`](docs/provenance/open-weights-readings.json) holds every reading Muse Spark Open returned in the one held-out eval run (2026-11-02, 13:33 to 13:41 UTC; 12 synthetic charts, 60 region readings, 253 fields, no errors, latency 1.1 to 8.3 s, median 2.1 s): the shared field keys and values, the latency and any error, and nothing else (no reasoning text, prompts or keys). To add before submission: screen captures of the Baseten dashboard or run logs for our calls (for that eval run and for the demo recording, with no key or account details visible) and of the review screen showing both readers. These captures are not in the repo yet.
 
 Job states: `queued → segmenting → reading → reconciling → needs_review → done`, with `failed` reachable from any state.
 
