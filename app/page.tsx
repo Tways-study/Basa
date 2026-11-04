@@ -1,8 +1,10 @@
 import Image from "next/image";
-import { Check, Info, TriangleAlert } from "lucide-react";
+import Link from "next/link";
+import { ArrowRight, Check, Info, TriangleAlert } from "lucide-react";
 import { CaptureForm } from "@/components/capture/capture-form";
 import { OutboxList } from "@/components/capture/outbox-list";
 import { type Mark, Marks } from "@/components/scan/marks";
+import { SAMPLE_CHARTS } from "@/lib/ui/sample-charts";
 
 // The sample is the synthetic chart from eval/fixtures. Boxes are its real regions (1100 x 1400 px),
 // coloured the way the review screen colours them, so the person has seen the language before using it.
@@ -56,6 +58,33 @@ export default function Home() {
             </p>
           </div>
           <OutboxList />
+
+          {/* For a visitor with no chart to photograph: two charts already read, to open and check. */}
+          <section aria-labelledby="try-sample" className="flex flex-col gap-3">
+            <h2 id="try-sample" className="font-display text-2xl font-semibold">
+              No chart at hand? Try a sample
+            </h2>
+            <p className="max-w-[52ch] text-muted-foreground">
+              These are already read. Open one to check the values against the photo, the same way you would for your own.
+              Samples are shared, so answers saved here can be seen by anyone who opens them.
+            </p>
+            <ul className="flex flex-col gap-3">
+              {SAMPLE_CHARTS.map((chart) => (
+                <li key={chart.id}>
+                  <Link
+                    href={`/scans/${chart.id}`}
+                    className="flex min-h-11 items-center justify-between gap-4 rounded-md border border-ink px-4 py-3 hover:bg-card focus-visible:outline-2 focus-visible:outline-offset-2"
+                  >
+                    <span className="flex flex-col">
+                      <span className="font-semibold">{chart.title}</span>
+                      <span className="text-sm text-muted-foreground">{chart.note}</span>
+                    </span>
+                    <ArrowRight aria-hidden="true" className="size-5 shrink-0" />
+                  </Link>
+                </li>
+              ))}
+            </ul>
+          </section>
 
           <section aria-labelledby="how-it-works" className="flex flex-col gap-4">
             <h2 id="how-it-works" className="sr-only">
