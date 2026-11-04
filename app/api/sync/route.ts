@@ -2,9 +2,10 @@ import { after } from "next/server";
 import { getModelAdapters } from "@/lib/models";
 import { getPipelineEnv } from "@/lib/env";
 import { cropRegion, normalizeImage } from "@/lib/pipeline/crop";
+import { decideAdmission } from "@/lib/pipeline/admission";
 import { decideStart, runPipeline } from "@/lib/pipeline/run";
 import { MAX_UPLOAD_BYTES, ScanIdSchema, type SyncAccepted } from "@/lib/schemas";
-import { createSupabaseStore } from "@/lib/server/store";
+import { countScansSince, createSupabaseStore } from "@/lib/server/store";
 import { downloadScanImage, imagePathFor, uploadScanImage } from "@/lib/server/storage";
 
 // Hobby allows up to 300 s. A healthy scan takes about 10-25 s, but on 2026-11-03 model calls hung (segmenting took
@@ -39,6 +40,21 @@ export async function POST(request: Request) {
     if (decision === "noop") {
       const body: SyncAccepted = { scanId: scanId.data, status: existing?.status ?? "queued" };
       return json(body, 200);
+    }
+
+    // Only a new scan costs model calls, so only a new scan is counted. A known id returned above.
+    const { MAX_SCANS_PER_HOUR, MAX_SCANS_PER_DAY } = getPipelineEnv();
+    const now = Date.now();
+    const [lastHour, lastDay] = await Promise.all([
+      countScansSince(new Date(now - 3_600_000)),
+      countScansSince(new Date(now - 86_400_000)),
+    ]);
+    const admission = decideAdmission({ lastHour, lastDay }, { perHour: MAX_SCANS_PER_HOUR, perDay: MAX_SCANS_PER_DAY });
+    if (!admission.ok) {
+      return Response.json(
+        { error: "Basa is busy right now. Your photo is saved on this device; try again in a few minutes." },
+        { status: 429, headers: { "Retry-After": String(admission.retryAfterSeconds) } },
+      );
     }
 
     let image: Uint8Array;

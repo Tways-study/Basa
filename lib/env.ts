@@ -37,6 +37,9 @@ const BasetenEnvSchema = z.object({
 
 const PipelineEnvSchema = z.object({
   MAX_MODEL_CALLS_PER_SCAN: z.coerce.number().int().positive().default(30),
+  // Caps on NEW scans across everyone (see lib/pipeline/admission.ts). Re-sending a known scan is never counted.
+  MAX_SCANS_PER_HOUR: z.coerce.number().int().positive().default(30),
+  MAX_SCANS_PER_DAY: z.coerce.number().int().positive().default(100),
 });
 
 export const getSupabaseEnv = () => parseEnv(SupabaseEnvSchema, "Supabase");
