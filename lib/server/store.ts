@@ -170,3 +170,13 @@ export function buildScanResult(
     }),
   };
 }
+
+/** How many scans were created since `since`. Not on ScanStore: only the sync route's rate limit needs it. */
+export async function countScansSince(since: Date): Promise<number> {
+  const { count, error } = await getServiceClient()
+    .from("scans")
+    .select("id", { count: "exact", head: true })
+    .gte("created_at", since.toISOString());
+  if (error) fail("count", error);
+  return count ?? 0;
+}
